@@ -650,7 +650,18 @@ public class SwerveTestFinal extends OpMode {
     boolean rlReverse = false;
     boolean rrReverse = false;
 
+    boolean flHasReverse = false;
+    boolean frHasReverse = false;
+    boolean rlHasReverse = false;
+    boolean rrHasReverse = false;
+
     double lastRawAngleFL, lastRawAngleFR, lastRawAngleRL, lastRawAngleRR = 0;
+
+    public enum SwerveState
+    {
+        UNWINDING_STATE,
+        MAIN_STATE
+    }
 
     public void swerveDrive(double y_cmd_field, double x_cmd_field, double turn_cmd, boolean reset) {
         double heading_rad = Math.toRadians(0);
@@ -840,6 +851,12 @@ public class SwerveTestFinal extends OpMode {
 
     private double getRawAngle(AnalogInput sensor, double offset) {
         double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
+
+        if (rawAngle < 0)
+        {
+            rawAngle *= -1;
+            rawAngle = 360 - rawAngle;
+        }
 
         // Apply offset in servo space (before gearbox conversion)
         return (rawAngle - offset) / GEARBOX_RATIO;
