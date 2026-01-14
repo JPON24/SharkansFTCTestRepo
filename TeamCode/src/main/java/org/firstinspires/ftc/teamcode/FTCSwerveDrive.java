@@ -121,10 +121,10 @@ public class FTCSwerveDrive {
         double[] opt_rl = optimize(angle_rl, speed_rl, current_rl);
         double[] opt_rr = optimize(angle_rr, speed_rr, current_rr);
 
-        frontRightMotor.setPower(opt_fr[1]);
-        frontLeftMotor.setPower(opt_fl[1]);
-        backLeftMotor.setPower(opt_rl[1]);
-        backRightMotor.setPower(opt_rr[1]);
+//        frontRightMotor.setPower(opt_fr[1]);
+//        frontLeftMotor.setPower(opt_fl[1]);
+//        backLeftMotor.setPower(opt_rl[1]);
+//        backRightMotor.setPower(opt_rr[1]);
 
         lastTargetFR = opt_fr[0];
         lastTargetFL = opt_fl[0];
