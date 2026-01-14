@@ -740,41 +740,41 @@ public class SwerveTestFinal extends OpMode {
         double rawAngleRL = getRawAngle(frontLeftAnalog, FL_OFFSET);
         double rawAngleRR = getRawAngle(frontLeftAnalog, FL_OFFSET);
 
-        if (Math.abs(rawAngleFL) < 20 && Math.abs(lastRawAngleFL) > 520)
-        {
-            flReverse = !flReverse;
-        }
-        else if (Math.abs(rawAngleFL) > 520 && Math.abs(lastRawAngleFL) < 20)
-        {
-            flReverse = !flReverse;
-        }
+        // if (Math.abs(rawAngleFL) < 20 && Math.abs(lastRawAngleFL) > 520)
+        // {
+        //     flReverse = !flReverse;
+        // }
+        // else if (Math.abs(rawAngleFL) > 520 && Math.abs(lastRawAngleFL) < 20)
+        // {
+        //     flReverse = !flReverse;
+        // }
 
-        if (Math.abs(rawAngleFR) < 20 && Math.abs(lastRawAngleFR) > 520)
-        {
-            frReverse = !frReverse;
-        }
-        else if (Math.abs(rawAngleFR) > 520 && Math.abs(lastRawAngleFR) < 20)
-        {
-            frReverse = !frReverse;
-        }
+        // if (Math.abs(rawAngleFR) < 20 && Math.abs(lastRawAngleFR) > 520)
+        // {
+        //     frReverse = !frReverse;
+        // }
+        // else if (Math.abs(rawAngleFR) > 520 && Math.abs(lastRawAngleFR) < 20)
+        // {
+        //     frReverse = !frReverse;
+        // }
 
-        if (Math.abs(rawAngleRL) < 20 && Math.abs(lastRawAngleRL) > 520)
-        {
-            rlReverse = !rlReverse;
-        }
-        else if (Math.abs(rawAngleRL) > 520 && Math.abs(lastRawAngleRL) < 20)
-        {
-            rlReverse = !rlReverse;
-        }
+        // if (Math.abs(rawAngleRL) < 20 && Math.abs(lastRawAngleRL) > 520)
+        // {
+        //     rlReverse = !rlReverse;
+        // }
+        // else if (Math.abs(rawAngleRL) > 520 && Math.abs(lastRawAngleRL) < 20)
+        // {
+        //     rlReverse = !rlReverse;
+        // }
 
-        if (Math.abs(rawAngleRR) < 20 && Math.abs(lastRawAngleRR) > 520)
-        {
-            rrReverse = !rrReverse;
-        }
-        else if (Math.abs(rawAngleRR) > 520 && Math.abs(lastRawAngleRR) < 20)
-        {
-            rrReverse = !rrReverse;
-        }
+        // if (Math.abs(rawAngleRR) < 20 && Math.abs(lastRawAngleRR) > 520)
+        // {
+        //     rrReverse = !rrReverse;
+        // }
+        // else if (Math.abs(rawAngleRR) > 520 && Math.abs(lastRawAngleRR) < 20)
+        // {
+        //     rrReverse = !rrReverse;
+        // }
 
         frontRightMotor.setPower(frSpeed * (frReverse ? -1 : 1));
         frontLeftMotor.setPower(flSpeed* (flReverse ? -1 : 1));
