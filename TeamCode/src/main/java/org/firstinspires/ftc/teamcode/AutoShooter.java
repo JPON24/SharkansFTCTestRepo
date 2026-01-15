@@ -33,9 +33,9 @@ public class AutoShooter extends OpMode
     }
     double integralSum = 0.0;
     double lastError = 0.0;
-    double kP = 0.02;
+    double kP = 0.01;
     double kI = 0.0001;
-    double kD = 0.0015;
+    double kD = 0.001;
 
 
 
@@ -43,9 +43,11 @@ public class AutoShooter extends OpMode
     double hoodPosition = 0.2;
 
     double filterStrength = 0.7; // we can tune this to make it smooth & slow, or kinda FREAKY & fast.
-    double deadband = 0.67; // This just says if the error is less than this. Just don't bother moving. It's going to save power and still maintain accuracy.
-    double maxPower = 0.67;
+    double deadband = 2; // This just says if the error is less than this. Just don't bother moving. It's going to save power and still maintain accuracy.
+    double maxPower = 0.7;
     double maxDeltaPower = 0.03; // Basically prevents the turret from imploding into a black hole. (See me for more info).
+
+    double turretMinSpeed = 0.1; // 0.3
 
     double lastFilteredTx = 0;
     double lastOutput = 0;
@@ -78,8 +80,10 @@ public class AutoShooter extends OpMode
     @Override
     public void init() {
 //        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        limeLight.init(hardwareMap);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); // Ctrl Hub 3
+        turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -100,6 +104,11 @@ public class AutoShooter extends OpMode
         boolean shootButtonPressed = gamepad1.a;
         boolean hardShotPressed = gamepad1.b;
 
+
+//        turretMotor.setPower(0.3);
+//
+//        telemetry.addData("thing", 0);
+//        telemetry.update();
         update(shootButtonPressed, hardShotPressed);
 
         turnTurretBlue();
@@ -220,6 +229,16 @@ public class AutoShooter extends OpMode
             }
         }
 
+        if (output > 0)
+        {
+            output += turretMinSpeed;
+        }
+
+        if (output < 0)
+        {
+            output -= turretMinSpeed;
+        }
+
         // lowkey, if it's backwards, just reverse the output!!
         turretMotor.setPower(-output);
     }
@@ -288,8 +307,8 @@ public class AutoShooter extends OpMode
 
         // Soft or HARD limit check ya know?
         int currentPos = turretMotor.getCurrentPosition();
-        boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
-        boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output < 0);
+        boolean hitMax = (currentPos > TURRET_MAX_TICKS && output > 0);
+        boolean hitMin = (currentPos < TURRET_MIN_TICKS && output < 0);
 
         if (hitMax || hitMin) {
             output = 0;
@@ -309,7 +328,7 @@ public class AutoShooter extends OpMode
         }
 
         // lowkey, if it's backwards, just reverse the output!!
-        turretMotor.setPower(-output);
+        turretMotor.setPower(output);
     }
 
     public void setFlywheelRPM(double targetRPM) {

@@ -4,7 +4,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
+//import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -14,7 +14,7 @@ import java.util.List;
 public class AprilTagLimelight
 {
     private Limelight3A limeLight;
-    private IMU Imu;
+//    private IMU Imu;
 
     private final double LIMELIGHTANGLECONST_D = 21;
 
@@ -24,21 +24,20 @@ public class AprilTagLimelight
 
     public void init(HardwareMap hwMap) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");
-        Imu = hwMap.get(IMU.class, "imu");
+//        Imu = hwMap.get(IMU.class, "imu");
         limeLight.pipelineSwitch(0); // ASK JACOB HOW TO FIX. IDK WHAT THIS IS. WE MIGHT NEED TWO FOR BOTH COLOR SENSING AND APRIL TAG DETECTION
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP);
 
-        Imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
+//        Imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
         limeLight.start(); // Uses large  amount of battery btw... IF DELAY MOVE TO INIT METHOD.
-
     }
 
     private LLResult GetResult()
     {
-        YawPitchRollAngles orientation = Imu.getRobotYawPitchRollAngles();
-        limeLight.updateRobotOrientation(orientation.getYaw());
+//        YawPitchRollAngles orientation = Imu.getRobotYawPitchRollAngles();
+        limeLight.updateRobotOrientation(0);
         LLResult llresult = limeLight.getLatestResult();
         return llresult;
     }
