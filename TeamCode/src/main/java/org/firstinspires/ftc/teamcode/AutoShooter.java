@@ -14,6 +14,7 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 @TeleOp
 public class AutoShooter extends OpMode
 {
+    floatingIntake intakeObj = new floatingIntake();
     AprilTagLimelight limeLight = new AprilTagLimelight();
     DcMotorEx leftShooter = null;
     DcMotorEx rightShooter = null;
@@ -33,17 +34,14 @@ public class AutoShooter extends OpMode
     }
     double integralSum = 0.0;
     double lastError = 0.0;
-    double kP = 0.01;
+    double kP = 0.001;
     double kI = 0.0001;
-    double kD = 0.001;
-
-
-
+    double kD = 0.0005; //
 
     double hoodPosition = 0.2;
 
-    double filterStrength = 0.7; // we can tune this to make it smooth & slow, or kinda FREAKY & fast.
-    double deadband = 2; // This just says if the error is less than this. Just don't bother moving. It's going to save power and still maintain accuracy.
+    double filterStrength = 0.8; // we can tune this to make it smooth & slow, or kinda FREAKY & fast.
+    double deadband = 3; // This just says if the error is less than this. Just don't bother moving. It's going to save power and still maintain accuracy.
     double maxPower = 0.7;
     double maxDeltaPower = 0.03; // Basically prevents the turret from imploding into a black hole. (See me for more info).
 
@@ -53,8 +51,8 @@ public class AutoShooter extends OpMode
     double lastOutput = 0;
 
     // Safety Limits - PLACEHOLDER VALUES, MUST BE TUNED
-    final int TURRET_MAX_TICKS = 2000;
-    final int TURRET_MIN_TICKS = -2000;
+    final int TURRET_MAX_TICKS = 2500;
+    final int TURRET_MIN_TICKS = -2500;
 
     final double TICKS_PER_REV = 537.7;
     final double GEAR_RATIO = 5.0;
@@ -68,6 +66,8 @@ public class AutoShooter extends OpMode
     private AutoShooter.ShootState currentHoodState = AutoShooter.ShootState.NO_SHOT;
 
 
+    double targetRPM = 0;
+
     enum TurretState {
         TRACKING,
         UNWINDING
@@ -75,28 +75,37 @@ public class AutoShooter extends OpMode
     TurretState currentState = TurretState.TRACKING;
     double unwindTargetAngle = 0;
     double unwindStartHeading = 0; // To track robot rotation
-//    SparkFunOTOS otos;
+    SparkFunOTOS otos;
 
     @Override
     public void init() {
-//        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         limeLight.init(hardwareMap);
+
+        intakeObj.init(hardwareMap);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); // Ctrl Hub 3
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 //        leftShooter = hwMap.get(DcMotorEx.class, "leftShooter");
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); // Exp Motor Port 3
         rightShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightShooter.setDirection(DcMotorSimple.Direction.REVERSE);
         rightShooter.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(0.01, 0, 0, 0));
 
         leftHood = hardwareMap.get(Servo.class, "leftHood"); // Exp Port 2
         rightHood = hardwareMap.get(Servo.class, "rightHood"); // Exp Port 3
 
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        otos.setOffset(new SparkFunOTOS.Pose2D(0,-3.74016,0));
+        otos.calibrateImu();
+
         timer.reset();
     }
+
+    boolean lastRightBumperState = false;
+    boolean lastLeftBumperState = false;
 
     @Override
     public void loop()
@@ -104,12 +113,48 @@ public class AutoShooter extends OpMode
         boolean shootButtonPressed = gamepad1.a;
         boolean hardShotPressed = gamepad1.b;
 
+        boolean leftDpad = gamepad1.dpad_left;
+        boolean rightDpad = gamepad1.dpad_right;
 
-//        turretMotor.setPower(0.3);
-//
-//        telemetry.addData("thing", 0);
-//        telemetry.update();
-        update(shootButtonPressed, hardShotPressed);
+        boolean upDpad = gamepad1.dpad_up;
+        boolean downDpad = gamepad1.dpad_down;
+
+        boolean rightBumperPressed = gamepad1.right_bumper;
+        boolean leftBumperPressed = gamepad1.left_bumper;
+
+        if (rightBumperPressed && !lastRightBumperState)
+        {
+            if (targetRPM + 100 < 6000)
+            {
+                targetRPM += 100;
+            }
+        }
+        else if (leftBumperPressed && !lastLeftBumperState)
+        {
+            if (targetRPM - 100 > 0)
+            {
+                targetRPM -= 100;
+            }
+        }
+
+        setFlywheelRPM(targetRPM);
+
+        lastRightBumperState = rightBumperPressed;
+        lastLeftBumperState = leftBumperPressed;
+
+        telemetry.addData("tgtRPM", targetRPM);
+        telemetry.update();
+//        update(shootButtonPressed, hardShotPressed);
+
+        if (leftDpad) {
+            intakeObj.intake(true);
+        }
+        else if (rightDpad) {
+            intakeObj.outtake(true);
+        } else {
+            intakeObj.intake(false);
+            intakeObj.outtake(false);
+        }
 
         turnTurretBlue();
     }
@@ -150,7 +195,7 @@ public class AutoShooter extends OpMode
         double tx = limeLight.GetTX();
 
         // should make it just stop if it sees wrong april tag
-        if (limeLight.GetLimelightId() != 20) { // Lowkey not sure what this does for sorting APRILTAGLOL!!
+        if (limeLight.GetLimelightId() != 21) { // Lowkey not sure what this does for sorting APRILTAGLOL!! Obelisk btw. 20 is the blue
             turretMotor.setPower(0);
             integralSum = 0;
             lastError = 0;

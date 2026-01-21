@@ -539,10 +539,10 @@ public class SwerveTestFinal extends OpMode {
     double inputAngle = 0;
     double turnSpeedDeg = 60;
 
-    double FL_OFFSET = 6; // Test these offsets LMAO
-    double FR_OFFSET = -6.4;
-    double BL_OFFSET = 19;
-    double BR_OFFSET = -13.4;
+    double FL_OFFSET = 135.9;
+    double FR_OFFSET = 110.4;
+    double BL_OFFSET = 225.5;
+    double BR_OFFSET = 100.3;
 
 
     final double GEARBOX_RATIO = 1 / (36.0f / 24.0f);
@@ -564,6 +564,69 @@ public class SwerveTestFinal extends OpMode {
     double initFL = 0;
     double initRL = 0;
     double initRR = 0;
+
+    // ==================== CUMULATIVE ANGLE TRACKING ====================
+    //
+    // THE FACKING RAHHHHHHH PROBLEM:
+    // Our analog encoder reads 0-360° on the SERVO, but due to the gear ratio (0.75 or whatevers),
+    // the WHEEL rotates only 240° for each full 360° servo rotation or 540 or whatever for a full rotation..
+    // When the servo crosses 360°→0°, the sensor jumps, causing the PID to freak out and our wheel to flip thinking it's right but it's wrong yatayat.
+    //
+    // THE FACKING RAHHHHHHH SOLUTION:
+    // Instead of using the raw rAAAHHHH servo angle, we track how much the wheel has ACTUALLY rotated
+    // since startup. This cumulative RAAAAHHHHH angle can go beyond ±180° (e.g., 400°, -300°, etc.)
+    // and never has sudden jumps.
+    //
+    // How my genius brain has done it......
+    // 1. Each loop, we read the current rAAAHHHH servo angle
+    // 2. We DELTA!!!
+    // 3. If delta is huge (>180°), we know the sensor wrapped, so we correct it
+    // 4. We add the corrected DELTA to our cumulative RAAAAHHHHH angle
+    //
+    // Example: If servo goes 359° → 1°, the raw DELTA is -358°.
+    //          We detect this wrap and correct it to +2° (the actual FACKING MOVEMENTS!!!!!!). HUEWHIOWOIFEJW
+    // ======================================================================
+
+    // Cumulative wheel angles - these keep counting up/down and never reset at 360°
+    // Can be any value: -500°, 0°, 720°, 1 GOOGL PLEXX!!!!!!!
+    double cumulativeAngleFL = 0;
+    double cumulativeAngleFR = 0;
+    double cumulativeAngleRL = 0;
+    double cumulativeAngleRR = 0;
+
+    // Previous RAAAAHHHHH SERVO readings (0-360°) - used to detect Harvey's Buffalo Chicken Wraps
+    double lastRawFL = 0;
+    double lastRawFR = 0;
+    double lastRawRL = 0;
+    double lastRawRR = 0;
+
+    //  UNWIND MY FHISHWIEFWO
+    //
+    // BACKUP PLAN... SOOO MYSTERIOO: If the cumulative tracking gets confused (wheel thinks it's
+    // at correct position but is actually flipped 180°), we can "unwind" by:
+    // Rotate the servo GUH!!!
+    // When we eat the Buffalo Chicken Wrap we know the servo angle yuhhh!!
+    // EEEEE ERRRRR Recalibrate the cum angle to known position
+    //
+    // Each module can unwind independently.
+
+    // Current state for each swerve module
+    SwerveState stateFL = SwerveState.MAIN_STATE;
+    SwerveState stateFR = SwerveState.MAIN_STATE;
+    SwerveState stateRL = SwerveState.MAIN_STATE;
+    SwerveState stateRR = SwerveState.MAIN_STATE;
+
+    // Direction to unwind: +1 = clockwise, -1 = counter-clockwise... WHERRRREEEEEEE HAVVVVVEEEEEEE YOUUUUUU BEEEEEEENNN
+    double unwindDirectionFL = 1;
+    double unwindDirectionFR = 1;
+    double unwindDirectionRL = 1;
+    double unwindDirectionRR = 1;
+
+    // Unwind servo power (slow and steady... OR FREAKY AND FAST!!!)
+    double UNWIND_POWER = 0.3;
+
+    // Threshold for detecting Buffalo Chicken Wrap (how close to 0° or 360° triggers recalibration)
+    double WRAP_THRESHOLD = 20;
 
     ElapsedTime dx = new ElapsedTime();
 
@@ -604,18 +667,42 @@ public class SwerveTestFinal extends OpMode {
     }
 
     boolean canSetInit = true;
+    boolean startupUnwindTriggered = false;  // Track if we've done the startup unwind
 
     @Override
     public void loop()
     {
+        // PHASE 1 OF ACTION PLANN!!!!!: Wait for sensors to stabilize (first 0.5 seconds or whatevers)
         if (waitForCalibration.seconds() > 0.5 && canSetInit)
         {
-            initFL = getAngle(frontLeftAnalog, FL_OFFSET);
-            initFR = getAngle(frontRightAnalog, FR_OFFSET);
-            initRL = getAngle(backLeftAnalog, BL_OFFSET);
-            initRR = getAngle(backRightAnalog, BR_OFFSET);
+            // Initialize cumu angles from first reading
+            double rawFL = getRawServoAngle(frontLeftAnalog);
+            double rawFR = getRawServoAngle(frontRightAnalog);
+            double rawRL = getRawServoAngle(backLeftAnalog);
+            double rawRR = getRawServoAngle(backRightAnalog);
+
+            // Store initial RAAAAAHHHHHH readings
+            lastRawFL = rawFL;
+            lastRawFR = rawFR;
+            lastRawRL = rawRL;
+            lastRawRR = rawRR;
+
+            // Convert to wheel space: apply offset in servo space, then convert
+            cumulativeAngleFL = (rawFL - FL_OFFSET) / GEARBOX_RATIO;
+            cumulativeAngleFR = (rawFR - FR_OFFSET) / GEARBOX_RATIO;
+            cumulativeAngleRL = (rawRL - BL_OFFSET) / GEARBOX_RATIO;
+            cumulativeAngleRR = (rawRR - BR_OFFSET) / GEARBOX_RATIO;
+
+            initFL = normalizeAngle(cumulativeAngleFL);
+            initFR = normalizeAngle(cumulativeAngleFR);
+            initRL = normalizeAngle(cumulativeAngleRL);
+            initRR = normalizeAngle(cumulativeAngleRR);
 
             canSetInit = false;
+
+            // Trigger automatic startup unwind
+            triggerUnwind(1);  // Unwind clockwise
+            startupUnwindTriggered = true;
         }
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = -gamepad1.left_stick_y;
@@ -623,14 +710,38 @@ public class SwerveTestFinal extends OpMode {
         double rightStickX = gamepad1.right_stick_x;
         boolean reset = gamepad1.options;
 
+        // UNWIND TRIGGERS:
+        // Press Y to unwind clockwise (if wheels seem flipped)
+        // Press A to unwind counter-clockwise
+        if (gamepad1.y) {
+            triggerUnwind(1);  // Clockwise
+        }
+        if (gamepad1.a) {
+            triggerUnwind(-1);  // Counter-clockwise
+        }
+
         dx.reset();
 
         swerveDrive(leftStickY, leftStickX, rightStickX, reset);
 
-        telemetry.addData("servo FL:", normalizeAngle(getAngle(frontLeftAnalog, FL_OFFSET)));
-        telemetry.addData("servo FR :", normalizeAngle(getAngle(frontRightAnalog, FR_OFFSET)));
-        telemetry.addData("servo BL :", normalizeAngle(getAngle(backLeftAnalog, BL_OFFSET)));
-        telemetry.addData("servo BR :", normalizeAngle(getAngle(backRightAnalog, BR_OFFSET)));
+        // TELEMETRY RAHHHHH
+        telemetry.addData("State FL", stateFL);
+        telemetry.addData("State FR", stateFR);
+        telemetry.addData("State RL", stateRL);
+        telemetry.addData("State RR", stateRR);
+
+        // CURRENT WHEEL ANGLES (with offset applied)
+        // getAngle already returns wheel space angle, don't divide again!
+        telemetry.addData("FL Wheel", "%.1f°", getAngle(frontLeftAnalog, FL_OFFSET));
+        telemetry.addData("FR Wheel", "%.1f°", getAngle(frontRightAnalog, FR_OFFSET));
+        telemetry.addData("BL Wheel", "%.1f°", getAngle(backLeftAnalog, BL_OFFSET));
+        telemetry.addData("BR Wheel", "%.1f°", getAngle(backRightAnalog, BR_OFFSET));
+
+        // Cumulative angles for debugging
+        telemetry.addData("Cumulative FL", "%.1f°", cumulativeAngleFL);
+        telemetry.addData("Cumulative FR", "%.1f°", cumulativeAngleFR);
+        telemetry.addData("Cumulative RL", "%.1f°", cumulativeAngleRL);
+        telemetry.addData("Cumulative RR", "%.1f°", cumulativeAngleRR);
 
         telemetry.addData("FL Speed", flSpeed);
         telemetry.addData("FR Speed", frSpeed);
@@ -645,25 +756,110 @@ public class SwerveTestFinal extends OpMode {
         telemetry.update();
     }
 
-    boolean flReverse = false;
-    boolean frReverse = false;
-    boolean rlReverse = false;
-    boolean rrReverse = false;
-
-    boolean flHasReverse = false;
-    boolean frHasReverse = false;
-    boolean rlHasReverse = false;
-    boolean rrHasReverse = false;
-
-    double lastRawAngleFL, lastRawAngleFR, lastRawAngleRL, lastRawAngleRR = 0;
+    // No need for wrap detection... Optimize is now in charge of the motors buddy...
 
     public enum SwerveState
     {
-        UNWINDING_STATE,
-        MAIN_STATE
+        UNWINDING_STATE,  // Rotating servo to find the wrap point
+        MAIN_STATE        // Normal swerve operation
+    }
+
+    /**
+     * Triggers an unwind for all modules.
+     * Call this if you lowkey thunking it up and the wheels are flipped 180° from where they should be.
+     * @param direction +1 for clockwise unwind, -1 for counter-clockwise
+     */
+    public void triggerUnwind(double direction) {
+        stateFL = SwerveState.UNWINDING_STATE;
+        stateFR = SwerveState.UNWINDING_STATE;
+        stateRL = SwerveState.UNWINDING_STATE;
+        stateRR = SwerveState.UNWINDING_STATE;
+        unwindDirectionFL = direction;
+        unwindDirectionFR = direction;
+        unwindDirectionRL = direction;
+        unwindDirectionRR = direction;
+    }
+
+    /**
+     * Nahndles the unwinding stute for mama modules!!!!.
+     * Returns true if still unwinding, false if done.
+     */
+    private boolean processUnwind(CRServo servo, AnalogInput analog, double offset,
+                                  double direction, double lastRaw,
+                                  int moduleIndex) {
+        double rawAngle = getRawServoAngle(analog);
+
+        // Check if we've crossed the Buffalo Chicken wrap point (near 0° or near 360°)
+        // We detect a Buffalo Chickenwrap by seeing if we've moved from one side to the other
+        boolean wrappedForward = (lastRaw > 360 - WRAP_THRESHOLD && rawAngle < WRAP_THRESHOLD);
+        boolean wrappedBackward = (lastRaw < WRAP_THRESHOLD && rawAngle > 360 - WRAP_THRESHOLD);
+
+        if (wrappedForward || wrappedBackward) {
+            // BUFFALO CHICKENWRAP DETECTED!!!!!!! OMMMM NONMMMM NOMMMM Recalibrate the cum angle
+            // The servo is now at approximately 0° (or 360°)
+            // Apply offset in servo space, then convert to wheel space
+            double wheelAngle = (rawAngle - offset) / GEARBOX_RATIO;
+
+            // Update the appropriate cumulative angle based on module index
+            switch (moduleIndex) {
+                case 0: cumulativeAngleFL = wheelAngle; lastRawFL = rawAngle; break;
+                case 1: cumulativeAngleFR = wheelAngle; lastRawFR = rawAngle; break;
+                case 2: cumulativeAngleRL = wheelAngle; lastRawRL = rawAngle; break;
+                case 3: cumulativeAngleRR = wheelAngle; lastRawRR = rawAngle; break;
+            }
+
+            servo.setPower(0);
+            return false;
+        }
+
+        // Still unwinding?? - FAAAAAHHHHH
+        servo.setPower(UNWIND_POWER * direction);
+        return true;
     }
 
     public void swerveDrive(double y_cmd_field, double x_cmd_field, double turn_cmd, boolean reset) {
+        // ==================== UNWIND STATE HANDLING ====================
+        // If any module is unwinding, handle that first before normal swerve
+        boolean anyUnwinding = false;
+
+        if (stateFL == SwerveState.UNWINDING_STATE) {
+            boolean stillUnwinding = processUnwind(frontLeftServo, frontLeftAnalog, FL_OFFSET,
+                    unwindDirectionFL, lastRawFL, 0);
+            if (!stillUnwinding) stateFL = SwerveState.MAIN_STATE;
+            else anyUnwinding = true;
+        }
+        if (stateFR == SwerveState.UNWINDING_STATE) {
+            boolean stillUnwinding = processUnwind(frontRightServo, frontRightAnalog, FR_OFFSET,
+                    unwindDirectionFR, lastRawFR, 1);
+            if (!stillUnwinding) stateFR = SwerveState.MAIN_STATE;
+            else anyUnwinding = true;
+        }
+        if (stateRL == SwerveState.UNWINDING_STATE) {
+            boolean stillUnwinding = processUnwind(backLeftServo, backLeftAnalog, BL_OFFSET,
+                    unwindDirectionRL, lastRawRL, 2);
+            if (!stillUnwinding) stateRL = SwerveState.MAIN_STATE;
+            else anyUnwinding = true;
+        }
+        if (stateRR == SwerveState.UNWINDING_STATE) {
+            boolean stillUnwinding = processUnwind(backRightServo, backRightAnalog, BR_OFFSET,
+                    unwindDirectionRR, lastRawRR, 3);
+            if (!stillUnwinding) stateRR = SwerveState.MAIN_STATE;
+            else anyUnwinding = true;
+        }
+
+        // If any module is still unwinding, stop the drive motors and skip normal swerve... NOOOOO
+        if (anyUnwinding) {
+            frontLeftMotor.setPower(0);
+            frontRightMotor.setPower(0);
+            backLeftMotor.setPower(0);
+            backRightMotor.setPower(0);
+
+            // Still need to update lastRAAAAHHHHH for modules that aren't unwinding
+            // to keep cum tracking working
+            updateCumulativeAngles();
+            return;
+        }
+
         double heading_rad = Math.toRadians(0);
 
         double x_cmd = x_cmd_field * Math.cos(heading_rad) + y_cmd_field * Math.sin(heading_rad);
@@ -698,98 +894,35 @@ public class SwerveTestFinal extends OpMode {
             speed_fr /= max; speed_fl /= max; speed_rl /= max; speed_rr /= max;
         }
 
-        double current_fr = getAngle(frontRightAnalog, FR_OFFSET);
-        double current_fl = getAngle(frontLeftAnalog, FL_OFFSET);
-        double current_rl = getAngle(backLeftAnalog, BL_OFFSET);
-        double current_rr = getAngle(backRightAnalog, BR_OFFSET);
+        // Update cum angles (handle buffalo chicken wrap)
+        updateCumulativeAngles();
 
-//        if (speed_fr < 0.05)
-//        {
-//            angle_fr = lastTargetFR;
-//        }
-//        if (speed_fl < 0.05)
-//        {
-//            angle_fl = lastTargetFL;
-//        }
-//        if (speed_rl < 0.05)
-//        {
-//            angle_rl = lastTargetRL;
-//        }
-//        if (speed_rr < 0.05)
-//        {
-//            angle_rr = lastTargetRR;
-//        }
+        // Use cum angles for current position??
+        double current_fr = cumulativeAngleFR;
+        double current_fl = cumulativeAngleFL;
+        double current_rl = cumulativeAngleRL;
+        double current_rr = cumulativeAngleRR;
 
-        double initDeltaFL = normalizeAngle(initFL - lastTargetFL);
-        double initDeltaFR = normalizeAngle(initFR - lastTargetFR);
-        double initDeltaRL = normalizeAngle(initRL - lastTargetRL);
-        double initDeltaRR = normalizeAngle(initRR - lastTargetRR);
+        double[] opt_fr = optimize(angle_fr, speed_fr, current_fr);
+        double[] opt_fl = optimize(angle_fl, speed_fl, current_fl);
+        double[] opt_rl = optimize(angle_rl, speed_rl, current_rl);
+        double[] opt_rr = optimize(angle_rr, speed_rr, current_rr);
 
-        double[] opt_fr = optimize(angle_fr, speed_fr, current_fr, initDeltaFR);
-        double[] opt_fl = optimize(angle_fl, speed_fl, current_fl, initDeltaFL); // Jacob has a boo boo!!
-        double[] opt_rl = optimize(angle_rl, speed_rl, current_rl, initDeltaRL);
-        double[] opt_rr = optimize(angle_rr, speed_rr, current_rr, initDeltaRR);
-
+        // opt_*[1] already has the correct sign (negative if flipped)
         frSpeed = opt_fr[1] * speed;
         flSpeed = opt_fl[1] * speed;
         blSpeed = opt_rl[1] * speed;
         brSpeed = opt_rr[1] * speed;
 
-        double rawAngleFL = getRawAngle(frontLeftAnalog, FL_OFFSET);
-        double rawAngleFR = getRawAngle(frontLeftAnalog, FL_OFFSET);
-        double rawAngleRL = getRawAngle(frontLeftAnalog, FL_OFFSET);
-        double rawAngleRR = getRawAngle(frontLeftAnalog, FL_OFFSET);
-
-        // if (Math.abs(rawAngleFL) < 20 && Math.abs(lastRawAngleFL) > 520)
-        // {
-        //     flReverse = !flReverse;
-        // }
-        // else if (Math.abs(rawAngleFL) > 520 && Math.abs(lastRawAngleFL) < 20)
-        // {
-        //     flReverse = !flReverse;
-        // }
-
-        // if (Math.abs(rawAngleFR) < 20 && Math.abs(lastRawAngleFR) > 520)
-        // {
-        //     frReverse = !frReverse;
-        // }
-        // else if (Math.abs(rawAngleFR) > 520 && Math.abs(lastRawAngleFR) < 20)
-        // {
-        //     frReverse = !frReverse;
-        // }
-
-        // if (Math.abs(rawAngleRL) < 20 && Math.abs(lastRawAngleRL) > 520)
-        // {
-        //     rlReverse = !rlReverse;
-        // }
-        // else if (Math.abs(rawAngleRL) > 520 && Math.abs(lastRawAngleRL) < 20)
-        // {
-        //     rlReverse = !rlReverse;
-        // }
-
-        // if (Math.abs(rawAngleRR) < 20 && Math.abs(lastRawAngleRR) > 520)
-        // {
-        //     rrReverse = !rrReverse;
-        // }
-        // else if (Math.abs(rawAngleRR) > 520 && Math.abs(lastRawAngleRR) < 20)
-        // {
-        //     rrReverse = !rrReverse;
-        // }
-
-        frontRightMotor.setPower(frSpeed * (frReverse ? -1 : 1));
-        frontLeftMotor.setPower(flSpeed* (flReverse ? -1 : 1));
-        backLeftMotor.setPower(blSpeed* (rlReverse ? -1 : 1));
-        backRightMotor.setPower(brSpeed* (rrReverse ? -1 : 1));
+        frontRightMotor.setPower(frSpeed);
+        frontLeftMotor.setPower(flSpeed);
+        backLeftMotor.setPower(blSpeed);
+        backRightMotor.setPower(brSpeed);
 
         lastTargetFR = opt_fr[0];
         lastTargetFL = opt_fl[0];
         lastTargetRL = opt_rl[0];
         lastTargetRR = opt_rr[0];
-
-        lastRawAngleFL = rawAngleFL;
-        lastRawAngleFR = rawAngleFR;
-        lastRawAngleRL = rawAngleRL;
-        lastRawAngleRR = rawAngleRR;
 
         runPID(opt_fl[0], opt_fr[0], opt_rl[0], opt_rr[0]);
     }
@@ -800,7 +933,20 @@ public class SwerveTestFinal extends OpMode {
         backLeftMotor.setPower(0);
         backRightMotor.setPower(0);
 
-        runPID(lastTargetFL,lastTargetFR,lastTargetRL,lastTargetRR);
+        // Stop all servos - don't try to hold position
+        frontLeftServo.setPower(0);
+        frontRightServo.setPower(0);
+        backLeftServo.setPower(0);
+        backRightServo.setPower(0);
+
+        // Keep cumulative tracking updated
+        updateCumulativeAngles();
+
+        // Update last targets to current position so we don't jump when we start moving again
+        lastTargetFL = cumulativeAngleFL;
+        lastTargetFR = cumulativeAngleFR;
+        lastTargetRL = cumulativeAngleRL;
+        lastTargetRR = cumulativeAngleRR;
     }
 
     private void runPID(double tFL ,double tFR, double tRL, double tRR) {
@@ -812,20 +958,21 @@ public class SwerveTestFinal extends OpMode {
         double servoTargetRL = tRL;
         double servoTargetRR = tRR;
 
-        double currentServoAngleFL = getAngle(frontLeftAnalog, FL_OFFSET);
-        double currentServoAngleFR = getAngle(frontRightAnalog, FR_OFFSET);
-        double currentServoAngleRL = getAngle(backLeftAnalog, BL_OFFSET);
-        double currentServoAngleRR = getAngle(backRightAnalog, BR_OFFSET);
+        double currentServoAngleFL = cumulativeAngleFL;
+        double currentServoAngleFR = cumulativeAngleFR;
+        double currentServoAngleRL = cumulativeAngleRL;
+        double currentServoAngleRR = cumulativeAngleRR;
 
-        double velFL = normalizeAngle(servoTargetFL - lastTargetFL) * dt;
-        double velFR = normalizeAngle(servoTargetFR - lastTargetFR) * dt;
-        double velRL = normalizeAngle(servoTargetRL - lastTargetRL) * dt;
-        double velRR = normalizeAngle(servoTargetRR - lastTargetRR) * dt;
+        double velFL = (servoTargetFL - lastTargetFL) * dt;
+        double velFR = (servoTargetFR - lastTargetFR) * dt;
+        double velRL = (servoTargetRL - lastTargetRL) * dt;
+        double velRR = (servoTargetRR - lastTargetRR) * dt;
 
-        double powerFL = flPID.calculate(servoTargetFL, currentServoAngleFL, velFL);
-        double powerFR = frPID.calculate(servoTargetFR, currentServoAngleFR, velFR);
-        double powerRL = rlPID.calculate(servoTargetRL, currentServoAngleRL, velRL);
-        double powerRR = rrPID.calculate(servoTargetRR, currentServoAngleRR, velRR);
+        // For cumulative angles, we use direct difference (not normalized)
+        double powerFL = flPID.calculateCumulative(servoTargetFL, currentServoAngleFL, velFL);
+        double powerFR = frPID.calculateCumulative(servoTargetFR, currentServoAngleFR, velFR);
+        double powerRL = rlPID.calculateCumulative(servoTargetRL, currentServoAngleRL, velRL);
+        double powerRR = rrPID.calculateCumulative(servoTargetRR, currentServoAngleRR, velRR);
 
         angleTimer.reset();
 
@@ -840,15 +987,72 @@ public class SwerveTestFinal extends OpMode {
         lastTargetRR = tRR;
     }
 
+    /**
+     * Gets the RAAHAHHHHH servo angle in degrees (0-360), before poopy gear ratio
+     */
+    private double getRawServoAngle(AnalogInput sensor) {
+        return (sensor.getVoltage() / 3.3) * 360.0;
+    }
+
+    /**
+     * Updates cum angles for buffalo chicken wrap-around detection.
+     * Call this once per poop iteration, before using cumulative angles.
+     *
+     * GUH DETECTION ESPXOAJIO:
+     * - The servo sensor reads 0-360°, so when it rotates past 360°, it jumps back to 0°
+     * - If the servo was at 350° last loop and is now at 10°, the raw delta is -340°
+     * - But physically, the servo only moved +20° (350° → 360° → 10°)
+     * - We detect this by checking: if |delta| > 180°, a wrap occurred
+     * - To correct: if delta > 180, subtract 360; if delta < -180, add 360
+     * - This turns -340° into +20° (THE RAHHHHHH MOVEMENT)
+     */
+    private void updateCumulativeAngles() {
+        // STEP 1: Read current raw servo angles (in servo space, 0-360°)
+        double rawFL = getRawServoAngle(frontLeftAnalog);
+        double rawFR = getRawServoAngle(frontRightAnalog);
+        double rawRL = getRawServoAngle(backLeftAnalog);
+        double rawRR = getRawServoAngle(backRightAnalog);
+
+        // DELTA = THE CHANGE IN RAHHHHHHHH
+        double deltaFL = rawFL - lastRawFL;
+        double deltaFR = rawFR - lastRawFR;
+        double deltaRL = rawRL - lastRawRL;
+        double deltaRR = rawRR - lastRawRR;
+
+        // IF THE DELTA RAHHHHH THEN FLIP
+        if (deltaFL > 180) deltaFL -= 360;
+        if (deltaFL < -180) deltaFL += 360;
+        if (deltaFR > 180) deltaFR -= 360;
+        if (deltaFR < -180) deltaFR += 360;
+        if (deltaRL > 180) deltaRL -= 360;
+        if (deltaRL < -180) deltaRL += 360;
+        if (deltaRR > 180) deltaRR -= 360;
+        if (deltaRR < -180) deltaRR += 360;
+
+        // ADD DELTA RAHHHHH TO CUMULATIVE RAHHHHHH
+        cumulativeAngleFL += deltaFL / GEARBOX_RATIO;
+        cumulativeAngleFR += deltaFR / GEARBOX_RATIO;
+        cumulativeAngleRL += deltaRL / GEARBOX_RATIO;
+        cumulativeAngleRR += deltaRR / GEARBOX_RATIO;
+
+        // REMEMBER THE LAST RAHHHHHHHH
+        lastRawFL = rawFL;
+        lastRawFR = rawFR;
+        lastRawRL = rawRL;
+        lastRawRR = rawRR;
+    }
+
     private double getAngle(AnalogInput sensor, double offset)
     {
         double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
 
-        double adjustedAngle = (rawAngle/GEARBOX_RATIO) - offset; // Coordinate missmatch between servo and wheel space!
+        // Apply offset in servo space first, then convert to wheel space
+        double adjustedAngle = (rawAngle - offset) / GEARBOX_RATIO;
 
         return adjustedAngle;
     }
 
+    // No longer used RAHHHHH
     private double getRawAngle(AnalogInput sensor, double offset) {
         double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
 
@@ -862,6 +1066,7 @@ public class SwerveTestFinal extends OpMode {
         return (rawAngle - offset) / GEARBOX_RATIO;
     }
 
+
     private double normalizeAngle(double angle)
     {
         angle = (angle + 180.0) % 360.0;
@@ -869,20 +1074,61 @@ public class SwerveTestFinal extends OpMode {
         return angle - 180.0;
     }
 
+    /**
+     * OPTIMIZE FUNCTION... MAAAAAHHHHH BREEADDD AND BUTTTTERRRRRRR - Minimizes wheel travel by potentially flipping 180°?? GUH?
+     *
+     * THE PROBLEM WITH CUM angles... GUH... Okay lock in on comments
+     * - Target comes from atan2, so it's always -180° to +180°
+     * - But cumulative angle can be anything: -500°, 0°, 400°, 720°, etc.
+     * - We need to find the equivalent target in the cumulative angle's "neighborhood"
+     *
+     * EXAMPLE: GUH
+     * - Joystick says "go to 45°" (target = 45°)
+     * - Wheel is currently at 380° (cumulative, which is equivalent to 20°)
+     * - We need to adjust target to 405° (45° + 360°) to be in the same range
+     * - Then delta = 405° - 380° = 25°, which is the actual travel needed
+     *
+     * THE FLIP OPTIMIZATION: GUH
+     * - If the wheel would need to rotate more than 90°, it's faster to:
+     *   1. Flip the target by 180° (point the wheel the opposite way)
+     *   2. Reverse the RAAAAHHHH MOTOR direction (negative speed)
+     * - This way the wheel never needs to rotate more than 90° to reach any target
+     *
+     * @param target  The desired wheel angle (-180° to +180° from joystick)
+     * @param speed   The desired RAAAAHHH motor speed
+     * @param current The current cumulative wheel angle (can be any value)
+     * @return [adjustedTarget, adjustedSpeed] - target in cum space??, speed may be negated
+     */
     private double[] optimize(
             double target,
             double speed,
-            double current,
-            double initDelta
+            double current
     ) {
-        double delta = normalizeAngle(target - current);
+        // STEP 1 of SECOND ACTION PLAAAAANNNNNN: Figure out which "rotation pluh" the wheel is currently in
+        // If current = 380°, rotations = floor((380+180)/360) = floor(1.56) = 1... lowkey learned about the floor in like 5 mins
+        // This means we're in the "first" full rotation past zero
+        double rotations = Math.floor((current + 180) / 360.0);
 
+        // STEP 2 of SECOND ACTION PLAAAAANNNNNN: Bring target up to the same rotation level
+        // If target = 45° and rotations = 1, adjustedTarget = 45° + 360° = 405°
+        double adjustedTarget = target + (rotations * 360);
+
+        // STEP 3 of SECOND ACTION PLAAAAANNNNNN: Calculate how far we need to rotate my ballsack... Okay that's not okay imma get rid of that later
+        double delta = adjustedTarget - current;
+
+        // STEP 4 of SECOND ACTION PLAAAAANNNNNN: If we need to rotate more than 90°, flip instead!! GUH!!!
         if (Math.abs(delta) > 90) {
-            target = normalizeAngle(target + 180);
+            // Flip the target by 180° (in the direction that minimizes travel)
+            if (delta > 0) {
+                adjustedTarget -= 180;  // Target was ahead, bring it back... Who decided that???
+            } else {
+                adjustedTarget += 180;  // Target was behind, push it forward... Who decided that???
+            }
+            // Reverse motor direction since wheel is now pointing "backwards"... Who decided that???
             speed *= -1;
         }
 
-        return new double[]{target, speed};
+        return new double[]{adjustedTarget, speed};
     }
 
 
@@ -909,9 +1155,33 @@ public class SwerveTestFinal extends OpMode {
             double derivative = (error - lastError) / dt;
             double dTerm = derivative * kD;
 
-            // PLEASE SPEED I NEED THIS!!!
-            // MY FEED IS KINDA FORWARDLESS!!!
-//            double fTerm = targetVel * kF;
+            lastError = error;
+
+            double output = pTerm + dTerm;
+
+            if (Math.abs(error) < 5.0)
+                return Math.signum(error) * minServoPower;
+
+            output += Math.signum(output) * minServoPower;
+
+            timer.reset();
+
+            return Range.clip(output, -1.0, 1.0);
+        }
+
+        /**
+         * Calculate PID output for cumulative (unwrapped) angles.
+         * Uses direct error instead of normalized, since cumulative angles don't wrap.
+         */
+        public double calculateCumulative(double target, double current, double targetVel) {
+            double error = target - current;  // Direct difference for cumulative angles
+            double dt = timer.seconds();
+
+            if (dt < 0.001) dt = 0.001;
+
+            double pTerm = error * kP;
+            double derivative = (error - lastError) / dt;
+            double dTerm = derivative * kD;
 
             lastError = error;
 
