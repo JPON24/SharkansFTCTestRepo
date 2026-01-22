@@ -56,8 +56,9 @@ public class AutoShooter extends OpMode
     final double GEAR_RATIO = 5.0;
     final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
 
-    final int TURRET_MAX_TICKS = 400;
-    final int TURRET_MIN_TICKS = -250;
+    // Physical limits based on actual turret range
+    final int TURRET_MAX_TICKS = (int)(180 * TICKS_PER_DEGREE);  // ≈ 363 ticks (left)
+    final int TURRET_MIN_TICKS = -235;  // Physical limit is -255, use -235 for safety
 
     // Shooter PLUH
     final double COUNTS_PER_MOTOR_REV = 28.0;
@@ -150,6 +151,7 @@ public class AutoShooter extends OpMode
         telemetry.addData("turret Position", turretMotor.getCurrentPosition());
         telemetry.addData("turretAngle", getTurretAngle());
         telemetry.addData("alt ticks", alternativeAngle);
+        telemetry.addData("State", currentState);
         telemetry.update();
 //        update(shootButtonPressed, hardShotPressed);
 
@@ -213,12 +215,12 @@ public class AutoShooter extends OpMode
     public void turnTurretBlue() {
         // UNWINDING takes priority over tracking - check FIRSTWLJORJEWIJF!!
         if (currentState == TurretState.UNWINDING) {
-            // Field-Centric Unwinding
-            double currentHeading = 0;
+            // Field-Centric Unwinding - compensate for robot rotation
+            double currentHeading = Math.toDegrees(otos.getPosition().h);  // Read actual heading
             double headingDelta = currentHeading - unwindStartHeading;
             double dynamicTarget = unwindTargetAngle - headingDelta;
 
-            turnToAngle(dynamicTarget, true);  // true = negate for Blue alliance
+            turnToAngle(dynamicTarget, false);  // false = don't double-negate for Blue
 
             // Check if we've reached the target
             if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
@@ -277,19 +279,21 @@ public class AutoShooter extends OpMode
         // At METHX: block if trying to go right (output < 0 → -output > 0 → going positive)
         // At METHN: block if trying to go left (output > 0 → -output < 0 → going negative)
         boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
-        boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output < 0);
+        boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output > 0);  // SWAPPED THIS
 
         if (hitMax || hitMin) {
             turretMotor.setPower(0);
 
+            // Calculate alternative angle by going 360° the other way
             double currentAngle = getTurretAngle();
             alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
 
+            // With proper ±180° limits, the alternative should always be in range
             double altTicks = alternativeAngle * TICKS_PER_DEGREE;
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
                 currentState = TurretState.UNWINDING;
                 unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = 0;
+                unwindStartHeading = Math.toDegrees(otos.getPosition().h);  // Capture current heading
             }
             return;
         }
@@ -309,12 +313,12 @@ public class AutoShooter extends OpMode
     public void turnTurretRed() {
         // UNWINDING takes priority over tracking - check first! TURSTWIJFOIWJE
         if (currentState == TurretState.UNWINDING) {
-            // Field-Centric Unwinding
-            double currentHeading = 0;
+            // Field-Centric Unwinding - compensate for robot rotation
+            double currentHeading = Math.toDegrees(otos.getPosition().h);  // Reeeeeeed actual heading
             double headingDelta = currentHeading - unwindStartHeading;
             double dynamicTarget = unwindTargetAngle - headingDelta;
 
-            turnToAngle(dynamicTarget, false);  // false = don't negate for Red alliance
+            turnToAngle(dynamicTarget, true);  // true = negate for Red
 
             // Check if we've reached the target
             if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
@@ -385,7 +389,7 @@ public class AutoShooter extends OpMode
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
                 currentState = TurretState.UNWINDING;
                 unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = 0;
+                unwindStartHeading = Math.toDegrees(otos.getPosition().h);  // Capture current heading
             }
             return;  // Don't apply any power this loop
         }
