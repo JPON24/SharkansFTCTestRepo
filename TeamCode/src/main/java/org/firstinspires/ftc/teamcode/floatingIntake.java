@@ -7,17 +7,17 @@ public class floatingIntake {
     DcMotorSimple intakeMotor; // Ctrl hub port 2
     DcMotorSimple transferMotor; // Exp port 2
 
-    double transferIntakeSpeed = 0.3;
+    double transferIntakeSpeed = -0.3;
 
-    double transferSpeed = 1.0;
+    double transferSpeed = -1.0;
 
-    double intakeSpeed = -1.0;
+    double intakeSpeed = 1.0;
 
 
 
     public void init(HardwareMap hwMap) {
-        intakeMotor = hwMap.get(DcMotorSimple.class, "intakeMotor");
-        transferMotor = hwMap.get(DcMotorSimple.class, "transferMotor");
+        intakeMotor = hwMap.get(DcMotorSimple.class, "intakeMotor"); // exp hub port 2
+        transferMotor = hwMap.get(DcMotorSimple.class, "transferMotor"); // ctrl hub port 2
     }
 
     public void intake(boolean runIntake) {

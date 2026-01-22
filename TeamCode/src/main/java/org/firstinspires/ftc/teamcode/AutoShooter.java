@@ -51,12 +51,13 @@ public class AutoShooter extends OpMode
     double lastOutput = 0;
 
     // Safety Limits - PLACEHOLDER VALUES, MUST BE TUNED
-    final int TURRET_MAX_TICKS = 2500;
-    final int TURRET_MIN_TICKS = -2500;
 
-    final double TICKS_PER_REV = 537.7;
+    final double TICKS_PER_REV = 145.1;
     final double GEAR_RATIO = 5.0;
     final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
+
+    final int TURRET_MAX_TICKS = 400;
+    final int TURRET_MIN_TICKS = -250;
 
     // Shooter PLUH
     final double COUNTS_PER_MOTOR_REV = 28.0;
@@ -65,6 +66,7 @@ public class AutoShooter extends OpMode
 
     private AutoShooter.ShootState currentHoodState = AutoShooter.ShootState.NO_SHOT;
 
+    double alternativeAngle = 0;
 
     double targetRPM = 0;
 
@@ -90,9 +92,10 @@ public class AutoShooter extends OpMode
 
 //        leftShooter = hwMap.get(DcMotorEx.class, "leftShooter");
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); // Exp Motor Port 3
-        rightShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightShooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightShooter.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(0.01, 0, 0, 0));
+        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(100, 1, 10, 1));
+
 
         leftHood = hardwareMap.get(Servo.class, "leftHood"); // Exp Port 2
         rightHood = hardwareMap.get(Servo.class, "rightHood"); // Exp Port 3
@@ -143,6 +146,10 @@ public class AutoShooter extends OpMode
         lastLeftBumperState = leftBumperPressed;
 
         telemetry.addData("tgtRPM", targetRPM);
+        telemetry.addData("curRPM", getFlywheelRPM());
+        telemetry.addData("turret Position", turretMotor.getCurrentPosition());
+        telemetry.addData("turretAngle", getTurretAngle());
+        telemetry.addData("alt ticks", alternativeAngle);
         telemetry.update();
 //        update(shootButtonPressed, hardShotPressed);
 
@@ -154,6 +161,18 @@ public class AutoShooter extends OpMode
         } else {
             intakeObj.intake(false);
             intakeObj.outtake(false);
+        }
+
+        if (shootButtonPressed) {
+            update(true, false);
+        } else {
+            update(false, false);
+        }
+
+        if (hardShotPressed) {
+            update(false, true);
+        } else {
+            update(false, false);
         }
 
         turnTurretBlue();
@@ -192,6 +211,24 @@ public class AutoShooter extends OpMode
     }
 
     public void turnTurretBlue() {
+        // UNWINDING takes priority over tracking - check FIRSTWLJORJEWIJF!!
+        if (currentState == TurretState.UNWINDING) {
+            // Field-Centric Unwinding
+            double currentHeading = 0;
+            double headingDelta = currentHeading - unwindStartHeading;
+            double dynamicTarget = unwindTargetAngle - headingDelta;
+
+            turnToAngle(dynamicTarget, true);  // true = negate for Blue alliance
+
+            // Check if we've reached the target
+            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
+                currentState = TurretState.TRACKING;
+                timer.reset();
+            }
+            return;  // Skip all tracking logic while unwinding
+        }
+
+        // Normal AprilTag tracking logic
         double tx = limeLight.GetTX();
 
         // should make it just stop if it sees wrong april tag
@@ -234,53 +271,35 @@ public class AutoShooter extends OpMode
         lastOutput = output;
         timer.reset();
 
-        // Maybe unwind?
-        if (currentState == TurretState.UNWINDING) {
-            // Field-Centric Unwinding
-            double currentHeading = 0;
-            double headingDelta = currentHeading - unwindStartHeading;
-            double dynamicTarget = unwindTargetAngle - headingDelta;
-
-            turnToAngle(dynamicTarget);
-
-            // We track or we UNWIND
-            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
-                currentState = TurretState.TRACKING;
-                timer.reset();
-            }
-            return;
-        }
-
         output = Math.max(-maxPower, Math.min(maxPower, output));
 
-        // Onn skibidi?
         int currentPos = turretMotor.getCurrentPosition();
+        // At METHX: block if trying to go right (output < 0 → -output > 0 → going positive)
+        // At METHN: block if trying to go left (output > 0 → -output < 0 → going negative)
         boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
         boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output < 0);
 
         if (hitMax || hitMin) {
-            output = 0;
+            turretMotor.setPower(0);
 
-            // Maybe unwind again?
             double currentAngle = getTurretAngle();
-            double alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
+            alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
 
             double altTicks = alternativeAngle * TICKS_PER_DEGREE;
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
                 currentState = TurretState.UNWINDING;
                 unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = 0; // Capture start heading
-                return;
+                unwindStartHeading = 0;
             }
+            return;
         }
 
-        if (output > 0)
-        {
+        // Add minimum speed to overcome friction
+        if (output > 0) {
             output += turretMinSpeed;
         }
 
-        if (output < 0)
-        {
+        if (output < 0) {
             output -= turretMinSpeed;
         }
 
@@ -288,6 +307,24 @@ public class AutoShooter extends OpMode
         turretMotor.setPower(-output);
     }
     public void turnTurretRed() {
+        // UNWINDING takes priority over tracking - check first! TURSTWIJFOIWJE
+        if (currentState == TurretState.UNWINDING) {
+            // Field-Centric Unwinding
+            double currentHeading = 0;
+            double headingDelta = currentHeading - unwindStartHeading;
+            double dynamicTarget = unwindTargetAngle - headingDelta;
+
+            turnToAngle(dynamicTarget, false);  // false = don't negate for Red alliance
+
+            // Check if we've reached the target
+            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
+                currentState = TurretState.TRACKING;
+                timer.reset();
+            }
+            return;  // Skip all tracking logic while unwinding
+        }
+
+        // Normal AprilTag tracking logic
         double tx = limeLight.GetTX();
 
         // should make it just stop if it sees wrong april tag
@@ -330,46 +367,36 @@ public class AutoShooter extends OpMode
         lastOutput = output;
         timer.reset();
 
-        // UNWIND HIS SHIIIII
-        if (currentState == TurretState.UNWINDING) {
-            // Field-Centric Unwinding
-            // Field-Centric Unwinding
-            double currentHeading = 0;
-            double headingDelta = currentHeading - unwindStartHeading;
-            double dynamicTarget = unwindTargetAngle - headingDelta;
-
-            turnToAngle(dynamicTarget);
-
-            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
-                currentState = TurretState.TRACKING;
-                timer.reset();
-            }
-            return;
-        }
-
         // Normul jrrrking logic
         output = Math.max(-maxPower, Math.min(maxPower, output));
 
-        // Soft or HARD limit check ya know?
+        // Check if we hit limits - no negation here, output is applied directly
         int currentPos = turretMotor.getCurrentPosition();
-        boolean hitMax = (currentPos > TURRET_MAX_TICKS && output > 0);
-        boolean hitMin = (currentPos < TURRET_MIN_TICKS && output < 0);
+        boolean hitMax = (currentPos > TURRET_MAX_TICKS && output > 0);  // Block positive output (going right) at max
+        boolean hitMin = (currentPos < TURRET_MIN_TICKS && output < 0);  // Block negative output (going left) at min
 
         if (hitMax || hitMin) {
-            output = 0;
+            turretMotor.setPower(0);
 
-            // Ong the other side is reachable!!
             double currentAngle = getTurretAngle();
-            double alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360); // should theoreticaly actually unwind at 270
+            alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
 
-            // Who decided that!?
             double altTicks = alternativeAngle * TICKS_PER_DEGREE;
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
                 currentState = TurretState.UNWINDING;
                 unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = 0; // Capture start heading
-                return;
+                unwindStartHeading = 0;
             }
+            return;  // Don't apply any power this loop
+        }
+
+        // Add minimum speed to overcome friction
+        if (output > 0) {
+            output += turretMinSpeed;
+        }
+
+        if (output < 0) {
+            output -= turretMinSpeed;
         }
 
         // lowkey, if it's backwards, just reverse the output!!
@@ -393,15 +420,11 @@ public class AutoShooter extends OpMode
         return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
     }
 
-    public void turnToAngle(double targetAngle) {
+    public void turnToAngle(double targetAngle, boolean negateOutput) {
 
-        // SOOOo... I just realized that using RUN_TO_POSITION with my own PID and the FTC one is going to basically ruin things.
-        // So i'm basically just making my own new PID for new things.
         double currentAngle = getTurretAngle();
 
         double error = targetAngle - currentAngle;
-        while (error > 180) error -= 360;
-        while (error < -180) error += 360;
 
         double dtSeconds = timer.seconds();
         timer.reset();
@@ -423,6 +446,11 @@ public class AutoShooter extends OpMode
         lastOutput = output;
 
         output = Math.max(-maxPower, Math.min(maxPower, output));
+
+        // Apply negation for blue alliance if needed
+        if (negateOutput) {
+            output = -output;
+        }
 
         turretMotor.setPower(output);
     }

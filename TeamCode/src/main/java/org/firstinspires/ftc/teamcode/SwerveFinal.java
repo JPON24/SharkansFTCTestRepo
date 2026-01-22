@@ -36,10 +36,10 @@ public class SwerveFinal extends OpMode {
 
     double ANGLE_HOLD_SPEED = 0.05;
 
-    double FL_OFFSET = -156.7;
-    double FR_OFFSET = -156.7;
-    double BL_OFFSET = -99.4;
-    double BR_OFFSET = -56.0;
+    double FL_OFFSET = -156.7 + 27;
+    double FR_OFFSET = -156.7 + 6.8;
+    double BL_OFFSET = -99.4 + 15.5;
+    double BR_OFFSET = -56.0 + 5.0;
 
     double speed = 0.4;
 
