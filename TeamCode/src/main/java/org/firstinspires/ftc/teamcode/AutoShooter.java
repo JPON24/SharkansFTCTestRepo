@@ -56,9 +56,9 @@ public class AutoShooter extends OpMode
     final double GEAR_RATIO = 5.0;
     final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
 
-    // Physical limits based on actual turret range
-    final int TURRET_MAX_TICKS = (int)(180 * TICKS_PER_DEGREE);  // ≈ 363 ticks (left)
-    final int TURRET_MIN_TICKS = -235;  // Physical limit is -255, use -235 for safety
+    // Asymmetric 360° range: 235° left + 125° right = 360° total
+    final int TURRET_MAX_TICKS = (int)(235 * TICKS_PER_DEGREE);  // ≈ +474 ticks (left limit)
+    final int TURRET_MIN_TICKS = (int)(-125 * TICKS_PER_DEGREE); // ≈ -252 ticks (right limit)
 
     // Shooter PLUH
     final double COUNTS_PER_MOTOR_REV = 28.0;
@@ -288,6 +288,7 @@ public class AutoShooter extends OpMode
             double currentAngle = getTurretAngle();
             alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
 
+
             // With proper ±180° limits, the alternative should always be in range
             double altTicks = alternativeAngle * TICKS_PER_DEGREE;
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
@@ -382,6 +383,7 @@ public class AutoShooter extends OpMode
         if (hitMax || hitMin) {
             turretMotor.setPower(0);
 
+            // Calculate 360° alternative - with proper asymmetric 360° range, always in bounds
             double currentAngle = getTurretAngle();
             alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
 
@@ -389,7 +391,7 @@ public class AutoShooter extends OpMode
             if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
                 currentState = TurretState.UNWINDING;
                 unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = Math.toDegrees(otos.getPosition().h);  // Capture current heading
+                unwindStartHeading = Math.toDegrees(otos.getPosition().h);
             }
             return;  // Don't apply any power this loop
         }
