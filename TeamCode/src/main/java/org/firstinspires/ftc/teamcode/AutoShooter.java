@@ -23,7 +23,7 @@ public class AutoShooter extends OpMode
      */
 
 
-    floatingIntake intakeObj = new floatingIntake();
+//    floatingIntake intakeObj = new floatingIntake();
     AprilTagLimelight limeLight = new AprilTagLimelight();
     DcMotorEx leftShooter = null;
     DcMotorEx rightShooter = null;
@@ -92,7 +92,7 @@ public class AutoShooter extends OpMode
     public void init() {
         limeLight.init(hardwareMap);
 
-        intakeObj.init(hardwareMap);
+//        intakeObj.init(hardwareMap);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); // Ctrl Hub 3
         turretMotor.setTargetPosition(0);
@@ -163,15 +163,15 @@ public class AutoShooter extends OpMode
         telemetry.update();
 //        update(shootButtonPressed, hardShotPressed);
 
-        if (leftDpad) {
-            intakeObj.intake(true);
-        }
-        else if (rightDpad) {
-            intakeObj.outtake(true);
-        } else {
-            intakeObj.intake(false);
-            intakeObj.outtake(false);
-        }
+//        if (leftDpad) {
+//            intakeObj.intake(true);
+//        }
+//        else if (rightDpad) {
+//            intakeObj.outtake(true);
+//        } else {
+//            intakeObj.intake(false);
+//            intakeObj.outtake(false);
+//        }
 
         if (shootButtonPressed) {
             update(true, false);

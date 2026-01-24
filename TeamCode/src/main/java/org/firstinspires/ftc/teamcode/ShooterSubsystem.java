@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class ShooterSubsystem {
-    
+
     public enum ShootState {
         FAR_LOB_SHOT,
         FAR_HARD_SHOT,
@@ -17,26 +17,26 @@ public class ShooterSubsystem {
         CLOSE_SHOT,
         NO_SHOT,
     }
-    
+
     public enum TurretState {
         TRACKING,
         UNWINDING
     }
-    
+
     private AprilTagLimelight limeLight = new AprilTagLimelight();
     private DcMotorEx turretMotor = null;
-    private DcMotorEx rightShooter = null;
-    private Servo leftHood = null;
-    private Servo rightHood = null;
+//    private DcMotorEx rightShooter = null;
+//    private Servo leftHood = null;
+//    private Servo rightHood = null;
     private SparkFunOTOS otos;
-    
+
     private ElapsedTime timer = new ElapsedTime();
     private double integralSum = 0.0;
     private double lastError = 0.0;
-    private double kP = 0.0002;
-    private double kI = 0.00001;
+    private double kP = 0.002;
+    private double kI = 0.0001;
     private double kD = 0.00;
-    
+
     private double hoodPosition = 0.2;
     private double filterStrength = 0.8;
     private double deadband = 2.5;
@@ -45,58 +45,59 @@ public class ShooterSubsystem {
     private double turretMinSpeed = 0.1;
     private double lastFilteredTx = 0;
     private double lastOutput = 0;
-    
+
     private final double TICKS_PER_REV = 145.1;
     private final double GEAR_RATIO = 5.0;
     private final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
     private final int TURRET_MAX_TICKS = (int)(235 * TICKS_PER_DEGREE);
     private final int TURRET_MIN_TICKS = (int)(-125 * TICKS_PER_DEGREE);
-    
+
     private final double COUNTS_PER_MOTOR_REV = 28.0;
     private final double GEAR_REDUCTION = 1;
     private final double COUNTS_PER_WHEEL_REV = COUNTS_PER_MOTOR_REV * GEAR_REDUCTION;
-    
+
     private ShootState currentHoodState = ShootState.NO_SHOT;
     private double targetRPM = 0;
     private double alternativeAngle = 0;
-    
+
     private TurretState currentState = TurretState.TRACKING;
     private double unwindTargetAngle = 0;
     private double unwindStartHeading = 0;
-    
+
     // Debug variables for telemetry gng
     private double lastLimelightYaw = 0;
     private double lastCalculatedTargetAngle = 0;
     private double lastTX = 0;
-    
+
     // Hybrid calibration mode
     private boolean calibrationMode = true;  // Start in reactive mode (visual tracking)
     private boolean wantsToCalibrate = false;  // True when Y is pressed to trigger calibration yayay
     private double savedOffset = 0;
     private boolean offsetCalibrated = false;
     private int targetAprilTagId = 20;
-    
+    private double searchAngle = 0;  // Default angle to search for AprilTag when lost
+
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
         limeLight.init(hardwareMap);
         this.otos = otosRef;
-        
+
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
-        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
-        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
-        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, 
-                                         new PIDFCoefficients(10, 1, 1, 1));
-        
-        leftHood = hardwareMap.get(Servo.class, "leftHood");
-        rightHood = hardwareMap.get(Servo.class, "rightHood");
-        
+
+//        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
+//        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+//        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+//        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+//                new PIDFCoefficients(10, 1, 1, 1));
+
+//        leftHood = hardwareMap.get(Servo.class, "leftHood");
+//        rightHood = hardwareMap.get(Servo.class, "rightHood");
+
         timer.reset();
     }
-    
+
     public void update(boolean isShootButtonPressed, boolean isHardShotPressed) {
         double currentDistance = limeLight.GetDistance();
         final double CLOSE_LIMIT = 40.0;
@@ -120,9 +121,9 @@ public class ShooterSubsystem {
             currentHoodState = ShootState.NO_SHOT;
         }
 
-        updateHood();
+//        updateHood();
     }
-    
+
     public void turnTurretBLUE() {
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
@@ -220,10 +221,46 @@ public class ShooterSubsystem {
         }
 
         if (limeLight.GetLimelightId() != targetAprilTagId) {
-            turretMotor.setPower(0);
+            // AprilTag not visible - go to predicted position based on last calibration
             integralSum = 0;
             lastError = 0;
-            timer.reset();
+            
+            // Calculate search position using saved offset (if we have calibrated)
+            double predictedAngle;
+            if (offsetCalibrated) {
+                // Use last known offset with current IMU heading to predict where target is
+                double limelightYaw = limeLight.GetYaw();
+                predictedAngle = savedOffset - limelightYaw;
+                // Normalize
+                while (predictedAngle > 180) predictedAngle -= 360;
+                while (predictedAngle < -180) predictedAngle += 360;
+            } else {
+                // No calibration yet - use default search angle
+                predictedAngle = searchAngle;
+            }
+            
+            // Check turret limits before moving (protect wires!)
+            double targetTicks = predictedAngle * TICKS_PER_DEGREE;
+            int currentPos = turretMotor.getCurrentPosition();
+            
+            if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
+                // Target out of range - trigger unwind if needed
+                if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
+                    turretMotor.setPower(0);
+                    double currentAngle = getTurretAngle();
+                    alternativeAngle = (currentPos > TURRET_MAX_TICKS) ? (currentAngle - 360) : (currentAngle + 360);
+                    double altTicks = alternativeAngle * TICKS_PER_DEGREE;
+                    if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
+                        currentState = TurretState.UNWINDING;
+                        unwindTargetAngle = alternativeAngle;
+                        unwindStartHeading = Math.toDegrees(otos.getPosition().h);
+                    }
+                }
+                return;
+            }
+            
+            // Go to predicted position (stay in current mode, don't reset calibration)
+            turnToAngle(predictedAngle, false);
             return;
         }
 
@@ -234,15 +271,14 @@ public class ShooterSubsystem {
             double filteredTx = filterStrength * lastFilteredTx + (1 - filterStrength) * tx;
             lastFilteredTx = filteredTx;
 
-            // Check if we should calibrate (Y was pressed and we're centered)
-            if (wantsToCalibrate && Math.abs(filteredTx) < deadband) {
+            // AUTO-CALIBRATE DA DINGY: When centered on target, save offset and switch to predictive
+            if (Math.abs(filteredTx) < deadband) {
                 // Centered on target! Save the offset and switch to predictive
                 double limelightYaw = limeLight.GetYaw();
                 double turretAngle = getTurretAngle();
                 savedOffset = turretAngle - limelightYaw;
                 offsetCalibrated = true;
                 calibrationMode = false;  // Switch to predictive mode
-                wantsToCalibrate = false;
                 turretMotor.setPower(0);
                 return;  // Exit to prevent continuing to normal tracking
             }
@@ -252,7 +288,7 @@ public class ShooterSubsystem {
             if (dt <= 0) dt = 0.001;
 
             double error = filteredTx;
-            
+
             // STOP if within deadband - this prevents oscillation!
             if (Math.abs(error) < deadband) {
                 turretMotor.setPower(0);
@@ -261,7 +297,7 @@ public class ShooterSubsystem {
                 timer.reset();
                 return;
             }
-            
+
             double derivative = (error - lastError) / dt;
             lastError = error;
             integralSum += error * dt;
@@ -277,10 +313,31 @@ public class ShooterSubsystem {
 
             output = Math.max(-maxPower, Math.min(maxPower, output));
 
-            // Only add minSpeed for large errors to overcome friction
-            if (Math.abs(error) > 10) {
-                if (output > 0) output += turretMinSpeed;
-                if (output < 0) output -= turretMinSpeed;
+            int currentPos = turretMotor.getCurrentPosition();
+            boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
+            boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output > 0);
+
+            if (hitMax || hitMin) {
+                turretMotor.setPower(0);
+
+                double currentAngle = getTurretAngle();
+                alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
+
+                double altTicks = alternativeAngle * TICKS_PER_DEGREE;
+                if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
+                    currentState = TurretState.UNWINDING;
+                    unwindTargetAngle = alternativeAngle;
+                    unwindStartHeading = Math.toDegrees(otos.getPosition().h);
+                }
+                return;
+            }
+
+            // Add minimum speed to overcome friction (matching turnTurretBlue)
+            if (output > 0) {
+                output += turretMinSpeed;
+            }
+            if (output < 0) {
+                output -= turretMinSpeed;
             }
 
             turretMotor.setPower(-output);
@@ -292,13 +349,22 @@ public class ShooterSubsystem {
                 return;
             }
 
+            // CONTINUOUS OFFSET because drivers are lazy: Use tx to slowly correct savedOffset while driving
+            double tx = limeLight.GetTX();
+            lastTX = tx;
+            if (limeLight.GetLimelightId() == targetAprilTagId && Math.abs(tx) > 0.5) {
+                // Slowly drift toward true center (correction factor 0.01 = 1% per looooop)
+                // If tx > 0 (target on right), increase offset to turn turret right
+                savedOffset += tx * 0.01;
+            }
+
             double limelightYaw = limeLight.GetYaw();
             lastLimelightYaw = limelightYaw;
-            
-            //use da saved offset
-            double targetAngle = limelightYaw + savedOffset;
+
+            //use da saved offset (targetAngle = savedOffset - robotHeading compensates for rotation)
+            double targetAngle = savedOffset - limelightYaw;
             lastCalculatedTargetAngle = targetAngle;
-            
+
             // Normalize to 180 deg
             while (targetAngle > 180) targetAngle -= 360;
             while (targetAngle < -180) targetAngle += 360;
@@ -306,7 +372,7 @@ public class ShooterSubsystem {
             // Check limits
             double targetTicks = targetAngle * TICKS_PER_DEGREE;
             int currentPos = turretMotor.getCurrentPosition();
-            
+
             if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
                 if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
                     turretMotor.setPower(0);
@@ -339,6 +405,10 @@ public class ShooterSubsystem {
         return savedOffset;
     }
 
+    public void setSearchAngle(double angle) {
+        this.searchAngle = angle;
+    }
+
     public void setTargetAprilTagId(int aprilTagId) {
         this.targetAprilTagId = aprilTagId;
     }
@@ -368,11 +438,11 @@ public class ShooterSubsystem {
         // Get Limelight's absolute... orientation from IMU
         double limelightYaw = limeLight.GetYaw();
         lastLimelightYaw = limelightYaw;  // Store for debug
-        
+
         // Target angle = Limelight yaw + offset for target position
         double targetAngle = limelightYaw + targetOffsetDegrees;
         lastCalculatedTargetAngle = targetAngle;  // Store for debug
-        
+
         // Normalize to 180 deg
         while (targetAngle > 180) targetAngle -= 360;
         while (targetAngle < -180) targetAngle += 360;
@@ -380,7 +450,7 @@ public class ShooterSubsystem {
         // Check if target is within turet limmits
         double targetTicks = targetAngle * TICKS_PER_DEGREE;
         int currentPos = turretMotor.getCurrentPosition();
-        
+
         if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
             // Target out of range? NOT ANYMORE!!
             if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
@@ -483,9 +553,9 @@ public class ShooterSubsystem {
     public void setTargetRPM(double rpm) {
         this.targetRPM = rpm;
         double ticksPerSecond = (targetRPM / 60.0) * COUNTS_PER_WHEEL_REV;
-        rightShooter.setVelocity(ticksPerSecond);
+//        rightShooter.setVelocity(ticksPerSecond);
     }
-    
+
     private void turnToAngle(double targetAngle, boolean negateOutput) {
         double currentAngle = getTurretAngle();
         double error = targetAngle - currentAngle;
@@ -523,39 +593,49 @@ public class ShooterSubsystem {
             output = -output;
         }
 
+        // SAFETY: Don't move if at limits and trying to go further
+        int currentPos = turretMotor.getCurrentPosition();
+        boolean atMaxGoingFurther = (currentPos > TURRET_MAX_TICKS && output > 0);
+        boolean atMinGoingFurther = (currentPos < TURRET_MIN_TICKS && output < 0);
+        
+        if (atMaxGoingFurther || atMinGoingFurther) {
+            turretMotor.setPower(0);
+            return;
+        }
+
         turretMotor.setPower(output);
     }
 
-    private void updateHood() {
-        switch(currentHoodState) {
-            case FAR_LOB_SHOT:
-                setHoodPosition(0.40);
-                break;
-            case FAR_HARD_SHOT:
-                setHoodPosition(0.2);
-                break;
-            case MEDIUM_SHOT:
-                setHoodPosition(0.30);
-                break;
-            case CLOSE_SHOT:
-                setHoodPosition(0.40);
-                break;
-            case NO_SHOT:
-                setHoodPosition(0.30);
-                break;
-        }
-    }
+//    private void updateHood() {
+//        switch(currentHoodState) {
+//            case FAR_LOB_SHOT:
+//                setHoodPosition(0.40);
+//                break;
+//            case FAR_HARD_SHOT:
+//                setHoodPosition(0.2);
+//                break;
+//            case MEDIUM_SHOT:
+//                setHoodPosition(0.30);
+//                break;
+//            case CLOSE_SHOT:
+//                setHoodPosition(0.40);
+//                break;
+//            case NO_SHOT:
+//                setHoodPosition(0.30);
+//                break;
+//        }
+//    }
 
-    private void setHoodPosition(double value) {
-        leftHood.setPosition(value);
-        rightHood.setPosition(value);
-    }
+//    private void setHoodPosition(double value) {
+//        leftHood.setPosition(value);
+//        rightHood.setPosition(value);
+//    }
 
     // Public getters for telemetry
     public double getTargetRPM() { return targetRPM; }
-    public double getCurrentRPM() { 
-        return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
-    }
+//    public double getCurrentRPM() {
+//        return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
+//    }
     public double getTurretAngle() {
         return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
     }
