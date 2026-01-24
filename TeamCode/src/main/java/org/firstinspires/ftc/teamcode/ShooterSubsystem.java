@@ -81,19 +81,19 @@ public class ShooterSubsystem {
         limeLight.init(hardwareMap);
         this.otos = otosRef;
 
-        turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
+        turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); //
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-//        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
+//        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
 //        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
 //        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 //        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
 //                new PIDFCoefficients(10, 1, 1, 1));
 
-//        leftHood = hardwareMap.get(Servo.class, "leftHood");
-//        rightHood = hardwareMap.get(Servo.class, "rightHood");
+//        leftHood = hardwareMap.get(Servo.class, "leftHood"); //
+//        rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
         timer.reset();
     }
@@ -207,7 +207,7 @@ public class ShooterSubsystem {
      * NEWEST NEW TRACKING HYBRID BEAST LIKE DA GOAT
      */
     public void trackTargetHybrid() {
-        // ayo we gotta unwind first or the wires gonna cry
+        // ayo we gotta unwind first or the wires gonna break
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
             double headingDelta = currentHeading - unwindStartHeading;
@@ -221,7 +221,7 @@ public class ShooterSubsystem {
         }
 
         if (limeLight.GetLimelightId() != targetAprilTagId) {
-            // bruh where'd the april tag go?? use our big brain to guess
+            // bruh where'd the april tag go??
             integralSum = 0;
             lastError = 0;
             
@@ -244,7 +244,7 @@ public class ShooterSubsystem {
             int currentPos = turretMotor.getCurrentPosition();
             
             if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
-                // uh oh, too far! time to do the spinny spin
+                // uh oh, too far! time to do da unwind
                 if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
                     turretMotor.setPower(0);
                     double currentAngle = getTurretAngle();
@@ -265,7 +265,7 @@ public class ShooterSubsystem {
         }
 
         if (calibrationMode) {
-            // REACTIVE MODE: we see it, we chase it, we're basically a dog
+            // REACTIVE MODE: we see it gng
             double tx = limeLight.GetTX();
             lastTX = tx;  // Store for debug
             double filteredTx = filterStrength * lastFilteredTx + (1 - filterStrength) * tx;
@@ -289,7 +289,7 @@ public class ShooterSubsystem {
 
             double error = filteredTx;
 
-            // close enough lol, stop twitching like me in math class
+            // close enough lol
             if (Math.abs(error) < deadband) {
                 turretMotor.setPower(0);
                 lastOutput = 0;
@@ -332,7 +332,7 @@ public class ShooterSubsystem {
                 return;
             }
 
-            // give it some OOMPH to overcome the laziness (friction)
+            // to ooomphs
             if (output > 0) {
                 output += turretMinSpeed;
             }
