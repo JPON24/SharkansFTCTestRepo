@@ -39,20 +39,20 @@ public class SwerveSubsystem {
     private double angleFL, angleFR, angleRL, angleRR;
     
     public void init(HardwareMap hardwareMap) {
-        frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
-        backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
-        backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor");
+        frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor"); // Ctrl h 3
+        frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor"); // Exp h 1 OR 2
+        backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor"); // Ctrl h 0
+        backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor"); // Exp h 1 OR 2
         
-        frontLeftServo = hardwareMap.get(CRServo.class, "frontLeftServo");
-        frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo");
-        backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo");
-        backRightServo = hardwareMap.get(CRServo.class, "backRightServo");
+        frontLeftServo = hardwareMap.get(CRServo.class, "frontLeftServo"); // Ctrl h 1
+        frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo"); // Exp h 5
+        backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo"); // Ctrl h 2
+        backRightServo = hardwareMap.get(CRServo.class, "backRightServo"); // Exp h 4
         
-        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog");
-        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
-        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
-        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
+        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog"); //
+        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog"); //
+        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog"); //
+        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog"); //
         
         frontLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         frontRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);

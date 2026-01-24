@@ -207,7 +207,7 @@ public class ShooterSubsystem {
      * NEWEST NEW TRACKING HYBRID BEAST LIKE DA GOAT
      */
     public void trackTargetHybrid() {
-        // Handle unwinding state
+        // ayo we gotta unwind first or the wires gonna cry
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
             double headingDelta = currentHeading - unwindStartHeading;
@@ -221,11 +221,11 @@ public class ShooterSubsystem {
         }
 
         if (limeLight.GetLimelightId() != targetAprilTagId) {
-            // AprilTag not visible - go to predicted position based on last calibration
+            // bruh where'd the april tag go?? use our big brain to guess
             integralSum = 0;
             lastError = 0;
             
-            // Calculate search position using saved offset (if we have calibrated)
+            // Calculate search position using saved offsat (if we have calibratad)
             double predictedAngle;
             if (offsetCalibrated) {
                 // Use last known offset with current IMU heading to predict where target is
@@ -235,16 +235,16 @@ public class ShooterSubsystem {
                 while (predictedAngle > 180) predictedAngle -= 360;
                 while (predictedAngle < -180) predictedAngle += 360;
             } else {
-                // No calibration yet - use default search angle
+                // we're blind AND dumb, just spin to default lol
                 predictedAngle = searchAngle;
             }
             
-            // Check turret limits before moving (protect wires!)
+            // dont break the wires pls or mentor will be mad
             double targetTicks = predictedAngle * TICKS_PER_DEGREE;
             int currentPos = turretMotor.getCurrentPosition();
             
             if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
-                // Target out of range - trigger unwind if needed
+                // uh oh, too far! time to do the spinny spin
                 if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
                     turretMotor.setPower(0);
                     double currentAngle = getTurretAngle();
@@ -259,13 +259,13 @@ public class ShooterSubsystem {
                 return;
             }
             
-            // Go to predicted position (stay in current mode, don't reset calibration)
+            // trust the process and yeet to predicted position
             turnToAngle(predictedAngle, false);
             return;
         }
 
         if (calibrationMode) {
-            // REACTIVE/CALIBRATION MODE: Use visual tx tracking
+            // REACTIVE MODE: we see it, we chase it, we're basically a dog
             double tx = limeLight.GetTX();
             lastTX = tx;  // Store for debug
             double filteredTx = filterStrength * lastFilteredTx + (1 - filterStrength) * tx;
@@ -283,13 +283,13 @@ public class ShooterSubsystem {
                 return;  // Exit to prevent continuing to normal tracking
             }
 
-            // Use visual PID tracking
+            // do the PID thing everyone talks about
             double dt = timer.seconds();
             if (dt <= 0) dt = 0.001;
 
             double error = filteredTx;
 
-            // STOP if within deadband - this prevents oscillation!
+            // close enough lol, stop twitching like me in math class
             if (Math.abs(error) < deadband) {
                 turretMotor.setPower(0);
                 lastOutput = 0;
@@ -332,7 +332,7 @@ public class ShooterSubsystem {
                 return;
             }
 
-            // Add minimum speed to overcome friction (matching turnTurretBlue)
+            // give it some OOMPH to overcome the laziness (friction)
             if (output > 0) {
                 output += turretMinSpeed;
             }
@@ -365,11 +365,11 @@ public class ShooterSubsystem {
             double targetAngle = savedOffset - limelightYaw;
             lastCalculatedTargetAngle = targetAngle;
 
-            // Normalize to 180 deg
+            // wrap it around like a burrito (normalize to ±180)
             while (targetAngle > 180) targetAngle -= 360;
             while (targetAngle < -180) targetAngle += 360;
 
-            // Check limits
+            // check if we're about to commit wire violence
             double targetTicks = targetAngle * TICKS_PER_DEGREE;
             int currentPos = turretMotor.getCurrentPosition();
 

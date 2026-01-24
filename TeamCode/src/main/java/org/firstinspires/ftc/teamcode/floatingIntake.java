@@ -4,8 +4,8 @@
 //
 //public class floatingIntake {
 //
-//    DcMotorSimple intakeMotor; // Ctrl hub port 2
-//    DcMotorSimple transferMotor; // Exp port 2
+//    DcMotorSimple intakeMotor; // Exp hub port 2
+//    DcMotorSimple transferMotor; // Exp port 3
 //
 //    double transferIntakeSpeed = -0.3;
 //
