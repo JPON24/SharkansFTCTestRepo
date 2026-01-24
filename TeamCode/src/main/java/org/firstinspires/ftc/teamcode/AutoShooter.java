@@ -14,6 +14,15 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 @TeleOp
 public class AutoShooter extends OpMode
 {
+    /*
+    Shooter tuning
+
+    Long shot
+
+
+     */
+
+
     floatingIntake intakeObj = new floatingIntake();
     AprilTagLimelight limeLight = new AprilTagLimelight();
     DcMotorEx leftShooter = null;
@@ -34,9 +43,9 @@ public class AutoShooter extends OpMode
     }
     double integralSum = 0.0;
     double lastError = 0.0;
-    double kP = 0.001;
-    double kI = 0.0001;
-    double kD = 0.0005; //
+    double kP = 0.01;
+    double kI = 0;
+    double kD = 0.00; //
 
     double hoodPosition = 0.2;
 
@@ -56,9 +65,8 @@ public class AutoShooter extends OpMode
     final double GEAR_RATIO = 5.0;
     final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
 
-    // Asymmetric 360° range: 235° left + 125° right = 360° total
-    final int TURRET_MAX_TICKS = (int)(235 * TICKS_PER_DEGREE);  // ≈ +474 ticks (left limit)
-    final int TURRET_MIN_TICKS = (int)(-125 * TICKS_PER_DEGREE); // ≈ -252 ticks (right limit)
+    final int TURRET_MAX_TICKS = (int)(235 * TICKS_PER_DEGREE);  // ≈ +474 ticks (left limit) // full max is 235
+    final int TURRET_MIN_TICKS = (int)(-125 * TICKS_PER_DEGREE); // ≈ -252 ticks (right limit) full max is -125
 
     // Shooter PLUH
     final double COUNTS_PER_MOTOR_REV = 28.0;
