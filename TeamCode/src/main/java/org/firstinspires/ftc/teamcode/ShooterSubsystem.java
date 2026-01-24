@@ -25,9 +25,9 @@ public class ShooterSubsystem {
 
     private AprilTagLimelight limeLight = new AprilTagLimelight();
     private DcMotorEx turretMotor = null;
-//    private DcMotorEx rightShooter = null;
-//    private Servo leftHood = null;
-//    private Servo rightHood = null;
+    private DcMotorEx rightShooter = null;
+    private Servo leftHood = null;
+    private Servo rightHood = null;
     private SparkFunOTOS otos;
 
     private ElapsedTime timer = new ElapsedTime();
@@ -81,19 +81,19 @@ public class ShooterSubsystem {
         limeLight.init(hardwareMap);
         this.otos = otosRef;
 
-        turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); //
+        turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); // Unchanged
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-//        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
-//        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
-//        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-//        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
-//                new PIDFCoefficients(10, 1, 1, 1));
+        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
+        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+                new PIDFCoefficients(10, 1, 1, 1));
 
-//        leftHood = hardwareMap.get(Servo.class, "leftHood"); //
-//        rightHood = hardwareMap.get(Servo.class, "rightHood"); //
+        leftHood = hardwareMap.get(Servo.class, "leftHood"); //
+        rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
         timer.reset();
     }
@@ -121,7 +121,7 @@ public class ShooterSubsystem {
             currentHoodState = ShootState.NO_SHOT;
         }
 
-//        updateHood();
+        updateHood();
     }
 
     public void turnTurretBLUE() {
@@ -239,7 +239,7 @@ public class ShooterSubsystem {
                 predictedAngle = searchAngle;
             }
             
-            // dont break the wires pls or mentor will be mad
+            // dont break the wires p
             double targetTicks = predictedAngle * TICKS_PER_DEGREE;
             int currentPos = turretMotor.getCurrentPosition();
             
@@ -605,36 +605,36 @@ public class ShooterSubsystem {
         turretMotor.setPower(output);
     }
 
-//    private void updateHood() {
-//        switch(currentHoodState) {
-//            case FAR_LOB_SHOT:
-//                setHoodPosition(0.40);
-//                break;
-//            case FAR_HARD_SHOT:
-//                setHoodPosition(0.2);
-//                break;
-//            case MEDIUM_SHOT:
-//                setHoodPosition(0.30);
-//                break;
-//            case CLOSE_SHOT:
-//                setHoodPosition(0.40);
-//                break;
-//            case NO_SHOT:
-//                setHoodPosition(0.30);
-//                break;
-//        }
-//    }
+    private void updateHood() {
+        switch(currentHoodState) {
+            case FAR_LOB_SHOT:
+                setHoodPosition(0.40);
+                break;
+            case FAR_HARD_SHOT:
+                setHoodPosition(0.2);
+                break;
+            case MEDIUM_SHOT:
+                setHoodPosition(0.30);
+                break;
+            case CLOSE_SHOT:
+                setHoodPosition(0.40);
+                break;
+            case NO_SHOT:
+                setHoodPosition(0.30);
+                break;
+        }
+    }
 
-//    private void setHoodPosition(double value) {
-//        leftHood.setPosition(value);
-//        rightHood.setPosition(value);
-//    }
+    private void setHoodPosition(double value) {
+        leftHood.setPosition(value);
+        rightHood.setPosition(value);
+    }
 
     // Public getters for telemetry
     public double getTargetRPM() { return targetRPM; }
-//    public double getCurrentRPM() {
-//        return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
-//    }
+    public double getCurrentRPM() {
+        return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
+    }
     public double getTurretAngle() {
         return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
     }

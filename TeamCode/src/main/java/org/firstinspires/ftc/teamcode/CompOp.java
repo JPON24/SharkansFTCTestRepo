@@ -7,9 +7,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp(name = "Competition TeleOp")
 public class CompOp extends OpMode {
 
-//    private SwerveSubsystem swerve;
+    private SwerveSubsystem swerve;
     private ShooterSubsystem shooter;
-//    private floatingIntake intake;
+    private floatingIntake intake;
 
     private SparkFunOTOS otos;
 
@@ -22,15 +22,15 @@ public class CompOp extends OpMode {
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
         otos.calibrateImu();
 
-        // Initialize subsystems
-//        swerve = new SwerveSubsystem();
-//        swerve.init(hardwareMap);
+//         Initialize subsystems
+        swerve = new SwerveSubsystem();
+        swerve.init(hardwareMap);
 
         shooter = new ShooterSubsystem();
         shooter.init(hardwareMap, otos);
 
-//        intake = new floatingIntake();
-//        intake.init(hardwareMap);
+        intake = new floatingIntake();
+        intake.init(hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -42,7 +42,7 @@ public class CompOp extends OpMode {
         double leftStickY = -gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;
 
-//        swerve.drive(leftStickY, leftStickX, rightStickX);
+        swerve.drive(leftStickY, leftStickX, rightStickX);
 
         boolean shootButtonPressed = gamepad1.a;
         boolean hardShotPressed = gamepad1.b;
@@ -76,28 +76,28 @@ public class CompOp extends OpMode {
         
         shooter.trackTargetHybrid();
 
-//        if (gamepad1.dpad_left) {
-//            intake.intake(true);
-//        } else if (gamepad1.dpad_right) {
-//            intake.outtake(true);
-//        } else {
-//            intake.intake(false);
-//            intake.outtake(false);
-//        }
+        if (gamepad1.dpad_left) {
+            intake.intake(true);
+        } else if (gamepad1.dpad_right) {
+            intake.outtake(true);
+        } else {
+            intake.intake(false);
+            intake.outtake(false);
+        }
 
-//        telemetry.addData("rpm", shooter.getCurrentRPM());
+        telemetry.addData("rpm", shooter.getCurrentRPM());
         telemetry.addData("=== SWERVE ===", "");
-//        telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
-//                swerve.getFLAngle(), swerve.getFRAngle(),
-//                swerve.getBLAngle(), swerve.getBRAngle());
+        telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
+                swerve.getFLAngle(), swerve.getFRAngle(),
+                swerve.getBLAngle(), swerve.getBRAngle());
         telemetry.addData("", "");
         telemetry.addData("=== SHOOTER ===", "");
-//        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
+        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
         telemetry.addData("Turret", "%.1f° (%d ticks)", shooter.getTurretAngle(), shooter.getTurretTicks());
         telemetry.addData("Mode", shooter.isCalibrationMode() ? "REACTIVE" : "PREDICTIVE");
         telemetry.addData("Calibrated", shooter.isCalibrated() ? "YES" : "NO");
         telemetry.addData("Saved Offset", "%.1f°", shooter.getSavedOffset());
-        
+
         if (!shooter.isCalibrationMode()) {
             // Show predictive mode details
             telemetry.addData("LL IMU Yaw", "%.1f°", shooter.getLimelightYaw());
