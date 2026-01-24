@@ -65,12 +65,16 @@ public class CompOp extends OpMode {
         lastRightBumperState = rightBumperPressed;
         lastLeftBumperState = leftBumperPressed;
 
-        // Must call setTargetRPM every loop to keep motor controller updated
         shooter.setTargetRPM(shooter.getTargetRPM());
 
         shooter.update(shootButtonPressed, hardShotPressed);
 
-        shooter.turnTurretBLUE();
+        // Press Y to calibrate and switch to predictive mode
+        if (gamepad1.y) {
+            shooter.requestCalibration();
+        }
+        
+        shooter.trackTargetHybrid();
 
         if (gamepad1.dpad_left) {
             intake.intake(true);
@@ -90,6 +94,20 @@ public class CompOp extends OpMode {
         telemetry.addData("=== SHOOTER ===", "");
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
         telemetry.addData("Turret", "%.1f° (%d ticks)", shooter.getTurretAngle(), shooter.getTurretTicks());
+        telemetry.addData("Mode", shooter.isCalibrationMode() ? "REACTIVE" : "PREDICTIVE");
+        telemetry.addData("Calibrated", shooter.isCalibrated() ? "YES" : "NO");
+        telemetry.addData("Saved Offset", "%.1f°", shooter.getSavedOffset());
+        
+        if (!shooter.isCalibrationMode()) {
+            // Show predictive mode details
+            telemetry.addData("LL IMU Yaw", "%.1f°", shooter.getLimelightYaw());
+            telemetry.addData("Target Angle", "%.1f°", shooter.getLastTargetAngle());
+            telemetry.addData("Turret Current", "%.1f°", shooter.getTurretAngle());
+            telemetry.addData("Error", "%.1f°", shooter.getLastTargetAngle() - shooter.getTurretAngle());
+        } else {
+            telemetry.addData("DEBUG TX Error", "%.2f°", shooter.getLastTX());
+            telemetry.addData("DEBUG Deadband", "%.1f°", shooter.getDeadband());
+        }
         telemetry.update();
     }
 }

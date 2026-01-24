@@ -78,4 +78,14 @@ public class AprilTagLimelight
         }
         return fiducial.get(0).getFiducialId();
     }
+
+    public double GetYaw()
+    {
+        LLResult llresult = GetResult();
+        if (llresult != null && llresult.isValid()) {
+/// THE ABSOLUTE YAHHHHH FOR THE LIM LIGHT
+            return llresult.getBotpose().getOrientation().getYaw();
+        }
+        return 0;
+    }
 }
