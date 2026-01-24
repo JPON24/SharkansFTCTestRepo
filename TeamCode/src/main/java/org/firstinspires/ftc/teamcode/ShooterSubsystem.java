@@ -593,7 +593,6 @@ public class ShooterSubsystem {
             output = -output;
         }
 
-        // SAFETY: Don't move if at limits and trying to go further
         int currentPos = turretMotor.getCurrentPosition();
         boolean atMaxGoingFurther = (currentPos > TURRET_MAX_TICKS && output > 0);
         boolean atMinGoingFurther = (currentPos < TURRET_MIN_TICKS && output < 0);
