@@ -73,8 +73,16 @@ public class CompOp extends OpMode {
         if (gamepad1.y) {
             shooter.requestCalibration();
         }
-        
-        shooter.trackTargetHybrid();
+
+        if (gamepad1.right_trigger > 0.5)
+        {
+            shooter.decideAutoOrHybrid(1);
+        }
+        else if (gamepad1.left_trigger > 0.5)
+        {
+            shooter.decideAutoOrHybrid(-1);
+        }
+//        shooter.trackTargetHybrid();
 
         if (gamepad1.dpad_left) {
             intake.intake(true);

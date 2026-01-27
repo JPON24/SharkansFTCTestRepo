@@ -31,6 +31,8 @@ public class ShooterSubsystem {
     private SparkFunOTOS otos;
 
     private ElapsedTime timer = new ElapsedTime();
+    private ElapsedTime dt = new ElapsedTime();
+
     private double integralSum = 0.0;
     private double lastError = 0.0;
     private double kP = 0.002;
@@ -43,6 +45,7 @@ public class ShooterSubsystem {
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
     private double turretMinSpeed = 0.1;
+    private double turretManualSpeed = 120; // deg/s
     private double lastFilteredTx = 0;
     private double lastOutput = 0;
 
@@ -202,6 +205,18 @@ public class ShooterSubsystem {
         if (output < 0) output -= turretMinSpeed;
 
         turretMotor.setPower(-output);
+    }
+
+    public void decideAutoOrHybrid(double input)
+    {
+        if (limeLight.GetLimelightId() != targetAprilTagId && !offsetCalibrated)
+        {
+            turnToAngle(input * dt.seconds() * turretManualSpeed, false);
+        }
+        else
+        {
+            trackTargetHybrid();
+        }
     }
 
     public void trackTargetHybrid() {
