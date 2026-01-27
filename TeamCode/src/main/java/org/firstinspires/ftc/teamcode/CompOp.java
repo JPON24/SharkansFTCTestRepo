@@ -22,9 +22,9 @@ public class CompOp extends OpMode {
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
         otos.calibrateImu();
 
-//         Initialize subsystems
+        // Initialize subsystems
         swerve = new SwerveSubsystem();
-        swerve.init(hardwareMap);
+        swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
         shooter.init(hardwareMap, otos);

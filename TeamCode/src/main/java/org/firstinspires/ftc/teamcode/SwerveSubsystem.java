@@ -17,28 +17,34 @@ public class SwerveSubsystem {
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
     private CRServo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
     private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
+    private SparkFunOTOS otos;
     
     private PIDController flPID, frPID, rlPID, rrPID;
     private ElapsedTime pidTimer = new ElapsedTime();
     
-    private double FLkP = 0.0035, FLkI = 0, FLkD = 0;
-    private double FRkP = 0.0035, FRkI = 0, FRkD = 0;
-    private double BLkP = 0.0035, BLkI = 0, BLkD = 0;
-    private double BRkP = 0.0035, BRkI = 0, BRkD = 0;
+    private double FLkP = 0.0035, FLkI = 0, FLkD = 0.0001;
+    private double FRkP = 0.0035, FRkI = 0, FRkD = 0.0001;
+    private double BLkP = 0.0035, BLkI = 0, BLkD = 0.0001;
+    private double BRkP = 0.0035, BRkI = 0, BRkD = 0.0001;
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
     
-    private double FL_OFFSET = -14 - 97;
-    private double FR_OFFSET = 4 -154;
-    private double BL_OFFSET = -63 -50;
-    private double BR_OFFSET = 0 -77;
+    private double FL_OFFSET = -81;
+    private double FR_OFFSET = -151;
+    private double BL_OFFSET = -124;
+    private double BR_OFFSET = -156;
     
-    private double speed = 0.65;
+    private double speed = 0.70;
     private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     private double angleFL, angleFR, angleRL, angleRR;
     
     public void init(HardwareMap hardwareMap) {
+        init(hardwareMap, null);
+    }
+    
+    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
+        this.otos = otosRef;
         frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor"); // Ctrl h 3
         frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor"); // Exp h 1
         backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor"); // Ctrl h 0
@@ -76,12 +82,24 @@ public class SwerveSubsystem {
             return;
         }
 
+        if (otos != null) {
+            double heading = otos.getPosition().h;  // radians
+            double cos = Math.cos(-heading);
+            double sin = Math.sin(-heading);
+            double temp = y_cmd * cos - x_cmd * sin;
+            x_cmd = y_cmd * sin + x_cmd * cos;
+            y_cmd = temp;
+        }
+
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;
+
         double y_fl = y_cmd - turn_cmd * L;
         double x_fl = x_cmd - turn_cmd * W;
+
         double y_rl = y_cmd - turn_cmd * L;
         double x_rl = x_cmd + turn_cmd * W;
+
         double y_rr = y_cmd + turn_cmd * L;
         double x_rr = x_cmd + turn_cmd * W;
 
@@ -214,7 +232,7 @@ public class SwerveSubsystem {
 
             double output = pTerm + dTerm;
 
-            if (Math.abs(error) > 2.0) {
+            if (Math.abs(error) > 1.25) {
                 output += Math.signum(output) * minServoPower;
             } else {
                 output = 0;
