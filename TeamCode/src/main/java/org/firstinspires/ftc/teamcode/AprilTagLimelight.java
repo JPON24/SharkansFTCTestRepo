@@ -22,6 +22,8 @@ public class AprilTagLimelight
     private final double LIMELIGHTDISTBOTTOM_M = 245.7;
     private final double LIMELIGHTDISTCONST_M = APRILTAGH_M - LIMELIGHTDISTBOTTOM_M;
 
+    private final int POLLING_RATE = 20;
+
     public void init(HardwareMap hwMap) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");
 //        Imu = hwMap.get(IMU.class, "imu");
@@ -29,6 +31,8 @@ public class AprilTagLimelight
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP);
+
+        limeLight.setPollRateHz(POLLING_RATE);
 
 //        Imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
         limeLight.start(); // Uses large  amount of battery btw... IF DELAY MOVE TO INIT METHOD.

@@ -35,9 +35,9 @@ public class ShooterSubsystem {
 
     private double integralSum = 0.0;
     private double lastError = 0.0;
-    private double kP = 0.002;
-    private double kI = 0.0001;
-    private double kD = 0.00;
+    private double kP = 0.002; // 0.002
+    private double kI = 0.0001; // 0.0001
+    private double kD = 0.00; // 0.00
 
     private double hoodPosition = 0.2;
     private double filterStrength = 0.8;
@@ -89,6 +89,7 @@ public class ShooterSubsystem {
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
         rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
@@ -128,7 +129,26 @@ public class ShooterSubsystem {
         updateHood();
     }
 
-    public void turnTurretBLUE() {
+    public void decideManualOrTx(double input)
+    {
+        if (limeLight.GetLimelightId() != targetAprilTagId)
+        {
+            turnToAngle(input * dt.seconds() * turretManualSpeed, false);
+        }
+        else
+        {
+            AggresiveTxTracking();
+        }
+
+        dt.reset();
+    }
+
+    public void AggresiveTxTracking()
+    {
+        kP = 0.2;
+        kI = 0.001;
+        kD = 0;
+
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
             double headingDelta = currentHeading - unwindStartHeading;
@@ -145,12 +165,16 @@ public class ShooterSubsystem {
 
         double tx = limeLight.GetTX();
 
-        if (limeLight.GetLimelightId() != 20) {
-            turretMotor.setPower(0);
-            integralSum = 0;
-            lastError = 0;
-            timer.reset();
-            return;
+        int id = limeLight.GetLimelightId();
+        if (id != 0)
+        {
+            if (limeLight.GetLimelightId() != targetAprilTagId) {
+                turretMotor.setPower(0);
+                integralSum = 0;
+                lastError = 0;
+                timer.reset();
+                return;
+            }
         }
 
         double dt = timer.seconds();
@@ -205,18 +229,6 @@ public class ShooterSubsystem {
         if (output < 0) output -= turretMinSpeed;
 
         turretMotor.setPower(-output);
-    }
-
-    public void decideAutoOrHybrid(double input)
-    {
-        if (limeLight.GetLimelightId() != targetAprilTagId && !offsetCalibrated)
-        {
-            turnToAngle(input * dt.seconds() * turretManualSpeed, false);
-        }
-        else
-        {
-            trackTargetHybrid();
-        }
     }
 
     public void trackTargetHybrid() {
@@ -448,85 +460,6 @@ public class ShooterSubsystem {
         turnToAngle(targetAngle, false);
     }
 
-    public void turnTurretRED() {
-        if (currentState == TurretState.UNWINDING) {
-            double currentHeading = Math.toDegrees(otos.getPosition().h);
-            double headingDelta = currentHeading - unwindStartHeading;
-            double dynamicTarget = unwindTargetAngle - headingDelta;
-
-            turnToAngle(dynamicTarget, false);
-
-            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
-                currentState = TurretState.TRACKING;
-                timer.reset();
-            }
-            return;
-        }
-
-        double tx = limeLight.GetTX();
-
-        if (limeLight.GetLimelightId() != 24) {
-            turretMotor.setPower(0);
-            integralSum = 0;
-            lastError = 0;
-            timer.reset();
-            return;
-        }
-
-        double dt = timer.seconds();
-        if (dt <= 0) dt = 0.001;
-
-        double filteredTx = filterStrength * lastFilteredTx + (1 - filterStrength) * tx;
-        lastFilteredTx = filteredTx;
-
-        if (Math.abs(filteredTx) < deadband) {
-            turretMotor.setPower(0);
-            lastOutput = 0;
-            integralSum = 0;
-            return;
-        }
-
-        double error = filteredTx;
-        double derivative = (error - lastError) / dt;
-        lastError = error;
-        integralSum += error * dt;
-
-        double output = kP * error + kI * integralSum + kD * derivative;
-
-        double delta = output - lastOutput;
-        if (Math.abs(delta) > maxDeltaPower) {
-            output = lastOutput + Math.signum(delta) * maxDeltaPower;
-        }
-        lastOutput = output;
-        timer.reset();
-
-        output = Math.max(-maxPower, Math.min(maxPower, output));
-
-        int currentPos = turretMotor.getCurrentPosition();
-        boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
-        boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output > 0);
-
-        if (hitMax || hitMin) {
-            turretMotor.setPower(0);
-
-            double currentAngle = getTurretAngle();
-            alternativeAngle = hitMax ? (currentAngle - 360) : (currentAngle + 360);
-
-            double altTicks = alternativeAngle * TICKS_PER_DEGREE;
-            if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
-                currentState = TurretState.UNWINDING;
-                unwindTargetAngle = alternativeAngle;
-                unwindStartHeading = Math.toDegrees(otos.getPosition().h);
-            }
-            return;
-        }
-
-        if (output > 0) output += turretMinSpeed;
-        if (output < 0) output -= turretMinSpeed;
-
-        turretMotor.setPower(-output);
-    }
-
     public void setTargetRPM(double rpm) {
         this.targetRPM = rpm;
         double ticksPerSecond = (targetRPM / 60.0) * COUNTS_PER_WHEEL_REV;
@@ -629,3 +562,5 @@ public class ShooterSubsystem {
     public double getLastTX() { return lastTX; }
     public double getDeadband() { return deadband; }
 }
+
+// hi liam :)
