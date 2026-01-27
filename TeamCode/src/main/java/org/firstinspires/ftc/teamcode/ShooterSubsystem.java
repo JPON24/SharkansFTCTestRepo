@@ -229,7 +229,7 @@ public class ShooterSubsystem {
                 // Normalize
                 while (targetAngle > 180) targetAngle -= 360;
                 while (targetAngle < -180) targetAngle += 360;
-                
+
                 // Turret limit check
                 double targetTicks = targetAngle * TICKS_PER_DEGREE;
                 int currentPos = turretMotor.getCurrentPosition();
@@ -273,11 +273,11 @@ public class ShooterSubsystem {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
             double headingChange = currentHeading - savedOtosHeading;
             double targetAngle = savedTurretAngle - headingChange;
-            
+
             // Normalize
             while (targetAngle > 180) targetAngle -= 360;
             while (targetAngle < -180) targetAngle += 360;
-            
+
             lastCalculatedTargetAngle = targetAngle;
 
             // Slow drift correction using tx
@@ -364,7 +364,7 @@ public class ShooterSubsystem {
     }
 
     public double getSavedOffset() {
-        return savedOffset;
+        return savedOtosHeading;
     }
 
     public void setSearchAngle(double angle) {
