@@ -83,7 +83,7 @@ public class SwerveSubsystem {
         }
 
         if (otos != null) {
-            double heading = otos.getPosition().h;  // radians
+            double heading = otos.getPosition().h * Math.PI / 180;  // degrees to radians
             double cos = Math.cos(-heading);
             double sin = Math.sin(-heading);
             double temp = y_cmd * cos - x_cmd * sin;

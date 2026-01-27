@@ -222,7 +222,7 @@ public class ShooterSubsystem {
         if (limeLight.GetLimelightId() != targetAprilTagId) {
             if (offsetCalibrated) {
                 // PREDICTIVE: Use OTOS heading to track even without vision
-                double currentHeading = Math.toDegrees(otos.getPosition().h);
+                double currentHeading = Math.toDegrees(-otos.getPosition().h); // flipping for coordinate systems
                 double headingChange = currentHeading - savedOtosHeading;
                 // Counter-rotate turret as robot rotates
                 double targetAngle = savedTurretAngle - headingChange;
@@ -263,14 +263,14 @@ public class ShooterSubsystem {
 
         // CALIBRATE: When centered on AprilTag, save OTOS heading + turret angle
         if (Math.abs(filteredTx) < deadband && !offsetCalibrated) {
-            savedOtosHeading = Math.toDegrees(otos.getPosition().h);
+            savedOtosHeading = Math.toDegrees(-otos.getPosition().h);
             savedTurretAngle = getTurretAngle();
             offsetCalibrated = true;
         }
 
         // OTOS heading based PID
         if (offsetCalibrated) {
-            double currentHeading = Math.toDegrees(otos.getPosition().h);
+            double currentHeading = Math.toDegrees(-otos.getPosition().h);
             double headingChange = currentHeading - savedOtosHeading;
             double targetAngle = savedTurretAngle - headingChange;
 
@@ -553,6 +553,12 @@ public class ShooterSubsystem {
 
         if (negateOutput) {
             output = -output;
+        }
+
+        // prevent integral windup by resetting when pass over
+        if (output * lastOutput < 0)
+        {
+            integralSum = 0;
         }
 
         int currentPos = turretMotor.getCurrentPosition();
