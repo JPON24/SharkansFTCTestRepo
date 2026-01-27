@@ -94,6 +94,10 @@ public class CompOp extends OpMode {
         }
 
         telemetry.addData("rpm", shooter.getCurrentRPM());
+        telemetry.addData("=== OTOS POSITION ===", "");
+        telemetry.addData("X", "%.2f", otos.getPosition().x);
+        telemetry.addData("Y", "%.2f", otos.getPosition().y);
+        telemetry.addData("Heading", "%.1f°", Math.toDegrees(otos.getPosition().h));
         telemetry.addData("=== SWERVE ===", "");
         telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
                 swerve.getFLAngle(), swerve.getFRAngle(),

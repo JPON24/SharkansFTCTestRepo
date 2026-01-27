@@ -214,6 +214,8 @@ public class SwerveSubsystem {
     public class PIDController {
         private double kP, kI, kD;
         private double lastError = 0;
+        private double integralSum = 0;
+        private double maxIntegral = 0.5;  // Anti-windup clamp
 
         public PIDController(double kP, double kI, double kD) {
             this.kP = kP;
@@ -225,20 +227,30 @@ public class SwerveSubsystem {
             double error = normalizeAngle(target - current);
 
             double pTerm = error * kP;
+
+            integralSum += error * dt;
+            integralSum = Range.clip(integralSum, -maxIntegral, maxIntegral);
+            double iTerm = integralSum * kI;
+            
             double derivative = (error - lastError) / dt;
             double dTerm = derivative * kD;
 
             lastError = error;
 
-            double output = pTerm + dTerm;
+            double output = pTerm + iTerm + dTerm;
 
             if (Math.abs(error) > 1.25) {
                 output += Math.signum(output) * minServoPower;
             } else {
                 output = 0;
+                integralSum = 0;  // Reset integral when at target
             }
 
             return Range.clip(output, -1.0, 1.0);
+        }
+        
+        public void resetIntegral() {
+            integralSum = 0;
         }
     }
 }
