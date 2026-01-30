@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class ShooterSubsystem {
 
+    // 4200 + max hood angle for far zone shot
+
     public enum ShootState {
         FAR_LOB_SHOT,
         FAR_HARD_SHOT,
@@ -28,6 +30,7 @@ public class ShooterSubsystem {
     private DcMotorEx rightShooter = null;
     private Servo leftHood = null;
     private Servo rightHood = null;
+//    private Servo ledLight = null;
     private SparkFunOTOS otos;
 
     private ElapsedTime timer = new ElapsedTime();
@@ -41,11 +44,11 @@ public class ShooterSubsystem {
 
     private double hoodPosition = 0.2;
     private double filterStrength = 0.8;
-    private double deadband = 2.5;
+    private double deadband = 5;
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
     private double turretMinSpeed = 0.1;
-    private double turretManualSpeed = 120; // deg/s
+    private double turretManualSpeed = 360; // deg/s
     private double lastFilteredTx = 0;
     private double lastOutput = 0;
 
@@ -81,9 +84,16 @@ public class ShooterSubsystem {
     private int targetAprilTagId = 20;
     private double searchAngle = 0;  // Default angle to search for AprilTag when lost
 
+    // Field-centric tracking - target tower coordinates (tune these!)
+    private double targetTowerX = 0.0;   // X coordinate of blue tower in inches (from OTOS origin)
+    private double targetTowerY = 0.0;    // Y coordinate of blue tower in inches
+
+    private double turretAutoSpeed = 0.4;
+
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
         limeLight.init(hardwareMap);
         this.otos = otosRef;
+//        ledLight = hardwareMap.get(Servo.class, "RPM_Light");
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor"); // Unchanged
         turretMotor.setTargetPosition(0);
@@ -95,12 +105,52 @@ public class ShooterSubsystem {
         rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
         rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
-                new PIDFCoefficients(10, 1, 1, 1));
+                new PIDFCoefficients(100,1,0,0));
 
         leftHood = hardwareMap.get(Servo.class, "leftHood"); //
         rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
         timer.reset();
+    }
+
+//    public void setLEDLight() {
+//        if (Math.abs(getCurrentRPM() - getTargetRPM()) < 150 && getCurrentRPM() != 0) {
+//            ledLight.setPosition(0.500);
+//        }
+//        else if (Math.abs(getCurrentRPM() - getTargetRPM()) > 150)
+//        {
+//            ledLight.setPosition(0.275);
+//        }
+//        else
+//        {
+//            ledLight.setPosition(0.0);
+//        }
+//    }
+    
+    // Nathans request
+    private double normalP = 100;
+    private double boostP = 200;
+    private double rpmDropThreshold = 300;
+    
+    public void updateShooterPIDF() {
+        double error = getTargetRPM() - getCurrentRPM();
+        if (error > rpmDropThreshold && getTargetRPM() > 0) {
+            rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+                    new PIDFCoefficients(boostP, 0, 1, 1));
+        } else {
+            rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+                    new PIDFCoefficients(normalP, 0, 1, 1));
+        }
+    }
+
+    public void BangBang() {
+        double error = getTargetRPM() - getCurrentRPM();
+        double ticksPerSecond = (getTargetRPM() / 60.0) * COUNTS_PER_WHEEL_REV;
+        if (error > 0) {
+            rightShooter.setVelocity(ticksPerSecond * 1.1);
+        } else {
+            rightShooter.setVelocity(ticksPerSecond);
+        }
     }
 
     public void update(boolean isShootButtonPressed, boolean isHardShotPressed) {
@@ -133,7 +183,7 @@ public class ShooterSubsystem {
     {
         if (limeLight.GetLimelightId() != targetAprilTagId)
         {
-            turnToAngle(input * dt.seconds() * turretManualSpeed, false);
+            turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
         }
         else
         {
@@ -145,9 +195,9 @@ public class ShooterSubsystem {
 
     public void AggresiveTxTracking()
     {
-        kP = 0.2;
-        kI = 0.001;
-        kD = 0;
+        kP = 0.15;
+        kI = 0.0;
+        kD = 0.0;
 
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
@@ -165,22 +215,22 @@ public class ShooterSubsystem {
 
         double tx = limeLight.GetTX();
 
-        int id = limeLight.GetLimelightId();
-        if (id != 0)
-        {
-            if (limeLight.GetLimelightId() != targetAprilTagId) {
-                turretMotor.setPower(0);
-                integralSum = 0;
-                lastError = 0;
-                timer.reset();
-                return;
-            }
-        }
+//        int id = limeLight.GetLimelightId();
+//        if (id != 0)
+//        {
+//            if (limeLight.GetLimelightId() != targetAprilTagId) {
+//                turretMotor.setPower(0);
+//                integralSum = 0;
+//                lastError = 0;
+//                timer.reset();
+//                return;
+//            }
+//        }
 
         double dt = timer.seconds();
         if (dt <= 0) dt = 0.001;
 
-        double filteredTx = filterStrength * lastFilteredTx + (1 - filterStrength) * tx;
+        double filteredTx = tx;
         lastFilteredTx = filteredTx;
 
         if (Math.abs(filteredTx) < deadband) {
@@ -190,7 +240,7 @@ public class ShooterSubsystem {
             return;
         }
 
-        double error = filteredTx;
+        double error = 0-filteredTx;
         double derivative = (error - lastError) / dt;
         lastError = error;
         integralSum += error * dt;
@@ -207,8 +257,8 @@ public class ShooterSubsystem {
         output = Math.max(-maxPower, Math.min(maxPower, output));
 
         int currentPos = turretMotor.getCurrentPosition();
-        boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
-        boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output > 0);
+        boolean hitMax = (currentPos > TURRET_MAX_TICKS && output > 0);
+        boolean hitMin = (currentPos < TURRET_MIN_TICKS && output > 0);
 
         if (hitMax || hitMin) {
             turretMotor.setPower(0);
@@ -228,7 +278,7 @@ public class ShooterSubsystem {
         if (output > 0) output += turretMinSpeed;
         if (output < 0) output -= turretMinSpeed;
 
-        turretMotor.setPower(-output);
+        turretMotor.setPower(output * turretAutoSpeed);
     }
 
     public void trackTargetHybrid() {
@@ -402,6 +452,80 @@ public class ShooterSubsystem {
         this.targetAprilTagId = aprilTagId;
     }
 
+    public void setTargetTowerPosition(double x, double y) {
+        this.targetTowerX = x;
+        this.targetTowerY = y;
+    }
+
+    /**
+     * FIELD-CENTRIC TRACKING for da tower position
+     * Uses atan2 to calculate angle from robot position to target tower
+     * Works regardless of where robot moves on field so it's better than otos
+     * called manually btw
+     */
+    public void trackTargetFieldCentric() {
+        // Handle unwinding first
+        if (currentState == TurretState.UNWINDING) {
+            double currentHeading = Math.toDegrees(otos.getPosition().h);
+            double headingDelta = currentHeading - unwindStartHeading;
+            double dynamicTarget = unwindTargetAngle - headingDelta;
+            turnToAngle(dynamicTarget, false);
+            if (Math.abs(getTurretAngle() - dynamicTarget) < 5.0) {
+                currentState = TurretState.TRACKING;
+                timer.reset();
+            }
+            return;
+        }
+
+        // Get robot position from OTOS
+        double robotX = otos.getPosition().x;
+        double robotY = otos.getPosition().y;
+        double robotHeading = Math.toDegrees(otos.getPosition().h);
+
+        // Calculate angle to target tower using atan2
+        double dx = targetTowerX - robotX;
+        double dy = targetTowerY - robotY;
+        double fieldAngleToTarget = Math.toDegrees(Math.atan2(dy, dx));
+
+        // Convert field angle to turret angle (relative to robot heading)
+        double turretTargetAngle = fieldAngleToTarget - robotHeading;
+
+        // Normalize to ±180
+        while (turretTargetAngle > 180) turretTargetAngle -= 360;
+        while (turretTargetAngle < -180) turretTargetAngle += 360;
+
+        lastCalculatedTargetAngle = turretTargetAngle;
+
+        // If we see the AprilTag, use tx for fine correction
+        if (limeLight.GetLimelightId() == targetAprilTagId) {
+            double tx = limeLight.GetTX();
+            lastTX = tx;
+            // Blend vision correction with odometry
+            turretTargetAngle = turretTargetAngle * 0.7 + (getTurretAngle() - tx) * 0.3;
+        }
+
+        // Turret limit check
+        double targetTicks = turretTargetAngle * TICKS_PER_DEGREE;
+        int currentPos = turretMotor.getCurrentPosition();
+
+        if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
+            if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
+                turretMotor.setPower(0);
+                double currentAngle = getTurretAngle();
+                alternativeAngle = (currentPos > TURRET_MAX_TICKS) ? (currentAngle - 360) : (currentAngle + 360);
+                double altTicks = alternativeAngle * TICKS_PER_DEGREE;
+                if (altTicks >= TURRET_MIN_TICKS && altTicks <= TURRET_MAX_TICKS) {
+                    currentState = TurretState.UNWINDING;
+                    unwindTargetAngle = alternativeAngle;
+                    unwindStartHeading = robotHeading;
+                }
+            }
+            return;
+        }
+
+        turnToAngle(turretTargetAngle, false);
+    }
+
     public void trackTargetPredictive(double targetOffsetDegrees) {
         // Handle unwinding state cause thats more important
         if (currentState == TurretState.UNWINDING) {
@@ -463,7 +587,7 @@ public class ShooterSubsystem {
     public void setTargetRPM(double rpm) {
         this.targetRPM = rpm;
         double ticksPerSecond = (targetRPM / 60.0) * COUNTS_PER_WHEEL_REV;
-        rightShooter.setVelocity(ticksPerSecond);
+//        rightShooter.setVelocity(ticksPerSecond);
     }
 
     private void turnToAngle(double targetAngle, boolean negateOutput) {
@@ -528,6 +652,7 @@ public class ShooterSubsystem {
                 break;
             case FAR_HARD_SHOT:
                 setHoodPosition(0.2);
+                // max hood, 4.5k RPM
                 break;
             case MEDIUM_SHOT:
                 setHoodPosition(0.30);

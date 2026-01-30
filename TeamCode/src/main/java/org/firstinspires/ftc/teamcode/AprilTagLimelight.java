@@ -22,7 +22,7 @@ public class AprilTagLimelight
     private final double LIMELIGHTDISTBOTTOM_M = 245.7;
     private final double LIMELIGHTDISTCONST_M = APRILTAGH_M - LIMELIGHTDISTBOTTOM_M;
 
-    private final int POLLING_RATE = 20;
+    private final int POLLING_RATE = 50;
 
     public void init(HardwareMap hwMap) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");

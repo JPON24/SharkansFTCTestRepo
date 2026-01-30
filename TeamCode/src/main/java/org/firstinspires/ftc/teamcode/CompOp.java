@@ -55,6 +55,7 @@ public class CompOp extends OpMode {
         if (willIncrement) {
             if (shooter.getTargetRPM() + 100 < 6000) {
                 shooter.setTargetRPM(shooter.getTargetRPM() + 100);
+                shooter.BangBang();
             }
         } else if (willDecrement) {
             if (shooter.getTargetRPM() - 100 >= 0) {
@@ -62,25 +63,33 @@ public class CompOp extends OpMode {
             }
         }
 
+//        if (shooter.getCurrentRPM() > 0) {
+////            shooter.setLEDLight();
+        shooter.BangBang();
+//        }
+
         lastRightBumperState = rightBumperPressed;
         lastLeftBumperState = leftBumperPressed;
 
-        shooter.setTargetRPM(shooter.getTargetRPM());
+//        shooter.setTargetRPM(shooter.getTargetRPM());
 
         shooter.update(shootButtonPressed, hardShotPressed);
 
         // Press Y to calibrate and switch to predictive mode
-        if (gamepad1.y) {
-            shooter.requestCalibration();
-        }
+//        if (gamepad1.y) {
+//            shooter.requestCalibration();
+//        }
 
         if (gamepad1.right_trigger > 0.5)
         {
-            shooter.decideManualOrTx(1);
+            shooter.decideManualOrTx(-1);
         }
         else if (gamepad1.left_trigger > 0.5)
         {
-            shooter.decideManualOrTx(-1);
+            shooter.decideManualOrTx(1);
+        }
+        else {
+            shooter.decideManualOrTx(0);
         }
 //        shooter.trackTargetHybrid();
 
