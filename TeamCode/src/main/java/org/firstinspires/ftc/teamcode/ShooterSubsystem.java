@@ -44,7 +44,7 @@ public class ShooterSubsystem {
 
     private double hoodPosition = 0.2;
     private double filterStrength = 0.8;
-    private double deadband = 5;
+    private double deadband = 4.5;
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
     private double turretMinSpeed = 0.1;
@@ -664,16 +664,19 @@ public class ShooterSubsystem {
         switch(currentHoodState) {
             case FAR_LOB_SHOT:
                 setHoodPosition(0.40);
+                setTargetRPM(3500); // not actual speed, rn the logic is broken
                 break;
             case FAR_HARD_SHOT:
-                setHoodPosition(0.2);
-                // max hood, 4.5k RPM
+                setHoodPosition(1);
+                setTargetRPM(4500);
                 break;
             case MEDIUM_SHOT:
                 setHoodPosition(0.30);
+                setTargetRPM(3300);
                 break;
             case CLOSE_SHOT:
                 setHoodPosition(0.40);
+                setTargetRPM(3200);
                 break;
             case NO_SHOT:
                 setHoodPosition(0.30);
@@ -681,8 +684,8 @@ public class ShooterSubsystem {
         }
     }
 
-    private void setHoodPosition(double value) {
-        leftHood.setPosition(value);
+    public void setHoodPosition(double value) {
+        leftHood.setPosition(-value);
         rightHood.setPosition(value);
     }
 

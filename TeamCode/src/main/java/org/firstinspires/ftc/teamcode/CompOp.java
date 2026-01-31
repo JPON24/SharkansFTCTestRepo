@@ -4,7 +4,7 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.SharkSwerve.SwerveSubsystem;
+import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
 @TeleOp(name = "Competition TeleOp BLUE")
 public class CompOp extends OpMode {
@@ -17,6 +17,8 @@ public class CompOp extends OpMode {
 
     private boolean lastRightBumperState = false;
     private boolean lastLeftBumperState = false;
+
+    public double hoodAdjust = 0;
 
     @Override
     public void init() {
@@ -46,10 +48,13 @@ public class CompOp extends OpMode {
 
         swerve.drive(leftStickY, leftStickX, rightStickX);
 
-        boolean shootButtonPressed = gamepad1.a;
-        boolean hardShotPressed = gamepad1.b;
-        boolean rightBumperPressed = gamepad1.right_bumper;
-        boolean leftBumperPressed = gamepad1.left_bumper;
+        boolean shootButtonPressed = gamepad2.a;
+        boolean hardShotPressed = gamepad2.b;
+        boolean rightBumperPressed = gamepad2.right_bumper;
+        boolean leftBumperPressed = gamepad2.left_bumper;
+
+        boolean hoodUp = gamepad2.y;
+        boolean hoodDown = gamepad2.x;
 
         boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
         boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
@@ -64,6 +69,14 @@ public class CompOp extends OpMode {
                 shooter.setTargetRPM(shooter.getTargetRPM() - 100);
             }
         }
+
+        if (hoodUp) {
+            hoodAdjust = hoodAdjust + 0.1;
+        } else if (hoodDown){
+            hoodAdjust -= 0.1;
+        }
+
+        shooter.setHoodPosition(hoodAdjust);
 
 //        if (shooter.getCurrentRPM() > 0) {
 ////            shooter.setLEDLight();
@@ -82,11 +95,11 @@ public class CompOp extends OpMode {
 //            shooter.requestCalibration();
 //        }
 
-        if (gamepad1.right_trigger > 0.5)
+        if (gamepad2.right_trigger > 0.5)
         {
             shooter.decideManualOrTxBLUE(-1);
         }
-        else if (gamepad1.left_trigger > 0.5)
+        else if (gamepad2.left_trigger > 0.5)
         {
             shooter.decideManualOrTxBLUE(1);
         }
@@ -95,9 +108,9 @@ public class CompOp extends OpMode {
         }
 //        shooter.trackTargetHybrid();
 
-        if (gamepad1.dpad_left) {
+        if (gamepad2.dpad_left) {
             intake.intake(true);
-        } else if (gamepad1.dpad_right) {
+        } else if (gamepad2.dpad_right) {
             intake.outtake(true);
         } else {
             intake.intake(false);

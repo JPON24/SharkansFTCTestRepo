@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.firstinspires.ftc.teamcode.SharkSwerve.SwerveSubsystem;
+import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
 @TeleOp
 public class testmode extends OpMode
