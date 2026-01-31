@@ -4,7 +4,7 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-@TeleOp(name = "Competition TeleOp")
+@TeleOp(name = "Competition TeleOp BLUE")
 public class CompOp extends OpMode {
 
     private SwerveSubsystem swerve;
@@ -82,14 +82,14 @@ public class CompOp extends OpMode {
 
         if (gamepad1.right_trigger > 0.5)
         {
-            shooter.decideManualOrTx(-1);
+            shooter.decideManualOrTxBLUE(-1);
         }
         else if (gamepad1.left_trigger > 0.5)
         {
-            shooter.decideManualOrTx(1);
+            shooter.decideManualOrTxBLUE(1);
         }
         else {
-            shooter.decideManualOrTx(0);
+            shooter.decideManualOrTxBLUE(0);
         }
 //        shooter.trackTargetHybrid();
 
@@ -111,6 +111,9 @@ public class CompOp extends OpMode {
         telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
                 swerve.getFLAngle(), swerve.getFRAngle(),
                 swerve.getBLAngle(), swerve.getBRAngle());
+        telemetry.addData("RawServoAngle, (FL/FR/BL/BR", "%.0f° %.0f° %.0f° %.0f°",
+                swerve.getFLRawAngle(), swerve.getFRRawAngle(),
+                swerve.getBLRawAngle(), swerve.getBRRawAngle());
         telemetry.addData("", "");
         telemetry.addData("=== SHOOTER ===", "");
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());

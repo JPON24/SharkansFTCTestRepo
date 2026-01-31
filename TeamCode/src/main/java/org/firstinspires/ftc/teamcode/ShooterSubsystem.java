@@ -81,7 +81,8 @@ public class ShooterSubsystem {
     private double savedOtosHeading = 0;   // OTOS heading when calibrated
     private double savedTurretAngle = 0;   // Turret angle when calibrated
     private boolean offsetCalibrated = false;
-    private int targetAprilTagId = 20;
+    private int targetAprilTagIdBLUE = 20;
+    private int targetAprilTagIdRED = 24;
     private double searchAngle = 0;  // Default angle to search for AprilTag when lost
 
     // Field-centric tracking - target tower coordinates (tune these!)
@@ -179,9 +180,23 @@ public class ShooterSubsystem {
         updateHood();
     }
 
-    public void decideManualOrTx(double input)
+    public void decideManualOrTxBLUE(double input)
     {
-        if (limeLight.GetLimelightId() != targetAprilTagId)
+        if (limeLight.GetLimelightId() != targetAprilTagIdBLUE)
+        {
+            turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
+        }
+        else
+        {
+            AggresiveTxTracking();
+        }
+
+        dt.reset();
+    }
+
+    public void decideManualOrTxRED(double input)
+    {
+        if (limeLight.GetLimelightId() != targetAprilTagIdRED)
         {
             turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
         }
@@ -281,7 +296,7 @@ public class ShooterSubsystem {
         turretMotor.setPower(output * turretAutoSpeed);
     }
 
-    public void trackTargetHybrid() {
+    public void trackTargetHybridBLUE() {
         // Handle unwinding first
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
@@ -296,7 +311,7 @@ public class ShooterSubsystem {
         }
 
         // No AprilTag? If calibrated, use OTOS prediction. If not, stop.
-        if (limeLight.GetLimelightId() != targetAprilTagId) {
+        if (limeLight.GetLimelightId() != targetAprilTagIdBLUE) {
             if (offsetCalibrated) {
                 // PREDICTIVE: Use OTOS heading to track even without vision
                 double currentHeading = Math.toDegrees(-otos.getPosition().h); // flipping for coordinate systems
@@ -449,7 +464,7 @@ public class ShooterSubsystem {
     }
 
     public void setTargetAprilTagId(int aprilTagId) {
-        this.targetAprilTagId = aprilTagId;
+        this.targetAprilTagIdBLUE = aprilTagId;
     }
 
     public void setTargetTowerPosition(double x, double y) {
@@ -497,7 +512,7 @@ public class ShooterSubsystem {
         lastCalculatedTargetAngle = turretTargetAngle;
 
         // If we see the AprilTag, use tx for fine correction
-        if (limeLight.GetLimelightId() == targetAprilTagId) {
+        if (limeLight.GetLimelightId() == targetAprilTagIdBLUE) {
             double tx = limeLight.GetTX();
             lastTX = tx;
             // Blend vision correction with odometry
