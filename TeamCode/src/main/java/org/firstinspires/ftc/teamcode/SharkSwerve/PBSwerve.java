@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.SharkSwerve;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -10,82 +10,67 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+
 @TeleOp
-public class SwerveFinal extends OpMode {
+public class PBSwerve extends OpMode{
 
-    // Robot dimensions lowkey in a ratio...
-    final double L = 0.98;
-    final double W = 1.00;
+    private final double L = 0.98;
+    private final double W = 1.00;
 
-    // Hardware
-    DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
-    CRServo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
-    AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
+    private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
+    private CRServo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
+    private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
+    private SparkFunOTOS otos;
 
-    // PID Controllers for each module
-    PIDController flPID, frPID, rlPID, rrPID;
-    ElapsedTime pidTimer = new ElapsedTime();
+    private PIDController flPID, frPID, rlPID, rrPID;
+    private ElapsedTime pidTimer = new ElapsedTime();
 
-    SparkFunOTOS otos;
+    private double FLkP = 0.0035, FLkI = 0.0001, FLkD = 0.0001;
+    private double FRkP = 0.0035, FRkI = 0.0001, FRkD = 0.0001;
+    private double BLkP = 0.0035, BLkI = 0.0001, BLkD = 0.0001;
+    private double BRkP = 0.0035, BRkI = 0.0001, BRkD = 0.0001;
+    private double minServoPower = 0.03;
+    private double ANGLE_HOLD_SPEED = 0.05;
 
-    // PID Constants
-    double FLkP = 0.003; //
-    double FLkI = 0;
-    double FLkD = 0;
+    private double FL_OFFSET = 0;
+    private double FR_OFFSET = 0;
+    private double BL_OFFSET = 0;
+    private double BR_OFFSET = 0;
 
-    double FRkP = 0.0035; //
-    double FRkI = 0;
-    double FRkD = 0;
+    private double speed = 0.80;
+    private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
+    private double flSpeed, frSpeed, blSpeed, brSpeed;
+    private double angleFL, angleFR, angleRL, angleRR;
 
-    double BLkP = 0.0035; //
-    double BLkI = 0;
-    double BLkD = 0;
-
-    double BRkP = 0.0035; //
-    double BRkI = 0;
-    double BRkD = 0;
-
-    double minServoPower = 0.03;
-
-    double ANGLE_HOLD_SPEED = 0.05;
-
-    double FL_OFFSET = -156.7 + 27;
-    double FR_OFFSET = -156.7 + 6.8;
-    double BL_OFFSET = -99.4 + 15.5 + 40;
-    double BR_OFFSET = -56.0 + 5.0;
-
-    double speed = 0.55;
-
-    double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
-
-    double flSpeed, frSpeed, blSpeed, brSpeed;
-    double angleFL, angleFR, angleRL, angleRR;
 
     @Override
     public void init() {
-        frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
-        backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
-        backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor");
-
-        frontLeftServo = hardwareMap.get(CRServo.class, "frontLeftServo");
-        frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo");
-        backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo");
-        backRightServo = hardwareMap.get(CRServo.class, "backRightServo");
-
-        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog");
-        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
-        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
-        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
 
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0,-3.74016,0));
         otos.calibrateImu();
 
-        frontLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        frontRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor"); // Ctrl h 3 None of these are correct...   ```
+        frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor"); // Exp h 1
+        backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor"); // Ctrl h 0
+        backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor"); // Exp h 2
+
+        frontLeftServo = hardwareMap.get(CRServo.class, "frontLeftServo"); // Ctrl h 1
+        frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo"); // Exp h 5
+        backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo"); // Ctrl h 2
+        backRightServo = hardwareMap.get(CRServo.class, "backRightServo"); // Exp h 4
+
+        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog"); // Ctrl h 1
+        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog"); // Exp h 1
+        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog"); // Ctrl h 2
+        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog"); // Exp h2
+
+
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         flPID = new PIDController(FLkP, FLkI, FLkD);
         frPID = new PIDController(FRkP, FRkI, FRkD);
@@ -96,39 +81,37 @@ public class SwerveFinal extends OpMode {
         lastTargetFR = getAngle(frontRightAnalog, FR_OFFSET);
         lastTargetRL = getAngle(backLeftAnalog, BL_OFFSET);
         lastTargetRR = getAngle(backRightAnalog, BR_OFFSET);
+
+
     }
 
     @Override
     public void loop() {
-        // Read joystick inpus
+
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = -gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;
 
-        // Drive the swerb
-        swerveDrive(leftStickY, leftStickX, rightStickX);
+        drive(leftStickY, leftStickX, rightStickX);
 
-        // Telemetry
-        telemetry.addData("FL Wheel", "%.1f°", getAngle(frontLeftAnalog, FL_OFFSET));
-        telemetry.addData("FR Wheel", "%.1f°", getAngle(frontRightAnalog, FR_OFFSET));
-        telemetry.addData("BL Wheel", "%.1f°", getAngle(backLeftAnalog, BL_OFFSET));
-        telemetry.addData("BR Wheel", "%.1f°", getAngle(backRightAnalog, BR_OFFSET));
-        telemetry.addData("", "");
-        telemetry.addData("FL Speed", "%.2f", flSpeed);
-        telemetry.addData("FR Speed", "%.2f", frSpeed);
-        telemetry.addData("BL Speed", "%.2f", blSpeed);
-        telemetry.addData("BR Speed", "%.2f", brSpeed);
-        telemetry.addData("leftstickX", leftStickX);
-        telemetry.addData("leftstickY", leftStickY);
-        telemetry.addData("rightstickX", rightStickX);
-        telemetry.update();
+
     }
 
-    public void swerveDrive(double y_cmd, double x_cmd, double turn_cmd) {
+    public void drive(double y_cmd, double x_cmd, double turn_cmd) {
         if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
-            stopDrive();
+            stop();
             return;
         }
+
+
+//        if (otos != null) {
+//            double heading = otos.getPosition().h;  // OTOS outputs radians
+//            double cos = Math.cos(-heading);
+//            double sin = Math.sin(-heading);
+//            double temp = x_cmd * cos - y_cmd * sin;
+//            y_cmd = x_cmd * sin + y_cmd * cos;
+//            x_cmd = temp;
+//        }
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;
@@ -149,13 +132,10 @@ public class SwerveFinal extends OpMode {
 
         angleFL = (speed_fl < ANGLE_HOLD_SPEED) ? lastTargetFL
                 : Math.toDegrees(Math.atan2(x_fl, y_fl));
-
         angleFR = (speed_fr < ANGLE_HOLD_SPEED) ? lastTargetFR
                 : Math.toDegrees(Math.atan2(x_fr, y_fr));
-
         angleRL = (speed_rl < ANGLE_HOLD_SPEED) ? lastTargetRL
                 : Math.toDegrees(Math.atan2(x_rl, y_rl));
-
         angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
                 : Math.toDegrees(Math.atan2(x_rr, y_rr));
 
@@ -167,19 +147,16 @@ public class SwerveFinal extends OpMode {
             speed_rr /= max;
         }
 
-        // Get da currnt wheel angles
         double currentFL = getAngle(frontLeftAnalog, FL_OFFSET);
         double currentFR = getAngle(frontRightAnalog, FR_OFFSET);
         double currentRL = getAngle(backLeftAnalog, BL_OFFSET);
         double currentRR = getAngle(backRightAnalog, BR_OFFSET);
 
-        // Run through optimize
         double[] optFL = optimize(angleFL, speed_fl, currentFL);
         double[] optFR = optimize(angleFR, speed_fr, currentFR);
         double[] optRL = optimize(angleRL, speed_rl, currentRL);
         double[] optRR = optimize(angleRR, speed_rr, currentRR);
 
-        // Set motor speeds... LOWKIRKENUINLY... If it's backwards... JUST REVERSE THE OUTPUT!!
         flSpeed = optFL[1] * speed;
         frSpeed = optFR[1] * speed;
         blSpeed = optRL[1] * speed;
@@ -190,7 +167,6 @@ public class SwerveFinal extends OpMode {
         backLeftMotor.setPower(blSpeed);
         backRightMotor.setPower(brSpeed);
 
-        // Run da PID
         lastTargetFL = optFL[0];
         lastTargetFR = optFR[0];
         lastTargetRL = optRL[0];
@@ -200,19 +176,15 @@ public class SwerveFinal extends OpMode {
                 currentFL, currentFR, currentRL, currentRR);
     }
 
-    private void stopDrive() {
-        // Stop all motors
+    public void stop() {
         frontLeftMotor.setPower(0);
         frontRightMotor.setPower(0);
         backLeftMotor.setPower(0);
         backRightMotor.setPower(0);
-
-        // Stop all servos
         frontLeftServo.setPower(0);
         frontRightServo.setPower(0);
         backLeftServo.setPower(0);
         backRightServo.setPower(0);
-
         flSpeed = frSpeed = blSpeed = brSpeed = 0;
     }
 
@@ -226,52 +198,46 @@ public class SwerveFinal extends OpMode {
         double powerRL = rlPID.calculate(targetRL, currentRL, dt);
         double powerRR = rrPID.calculate(targetRR, currentRR, dt);
 
-        frontLeftServo.setPower(powerFL);
-        frontRightServo.setPower(powerFR);
-        backLeftServo.setPower(powerRL);
-        backRightServo.setPower(powerRR);
+        frontLeftServo.setPower(powerFL * 1);
+        frontRightServo.setPower(powerFR * 1);
+        backLeftServo.setPower(powerRL * 1);
+        backRightServo.setPower(powerRR * 1);
 
         pidTimer.reset();
     }
 
-    /**
-     * absolute encoder gng
-     */
     private double getAngle(AnalogInput sensor, double offset) {
         double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
         double adjustedAngle = rawAngle - offset;
         return normalizeAngle(adjustedAngle);
     }
 
-    /**
-     * Regular poo poo normalized angle
-     */
     private double normalizeAngle(double angle) {
         angle = (angle + 180.0) % 360.0;
         if (angle < 0) angle += 360.0;
         return angle - 180.0;
     }
 
-    /**
-     * Fack You..
-     */
     private double[] optimize(double target, double speed, double current) {
         double delta = normalizeAngle(target - current);
-
         if (Math.abs(delta) > 90) {
             target = normalizeAngle(target + 180);
             speed *= -1;
         }
-
         return new double[]{target, speed};
     }
 
-    /**
-     * Shrimple PID controller
-     */
+    // telemetry getters... Brah
+    public double getFLAngle() { return getAngle(frontLeftAnalog, FL_OFFSET); }
+    public double getFRAngle() { return getAngle(frontRightAnalog, FR_OFFSET); }
+    public double getBLAngle() { return getAngle(backLeftAnalog, BL_OFFSET); }
+    public double getBRAngle() { return getAngle(backRightAnalog, BR_OFFSET); }
+
     public class PIDController {
         private double kP, kI, kD;
         private double lastError = 0;
+        private double integralSum = 0;
+        private double maxIntegral = 0.5;  // Anti-windup clamp
 
         public PIDController(double kP, double kI, double kD) {
             this.kP = kP;
@@ -283,20 +249,30 @@ public class SwerveFinal extends OpMode {
             double error = normalizeAngle(target - current);
 
             double pTerm = error * kP;
+
+            integralSum += error * dt;
+            integralSum = Range.clip(integralSum, -maxIntegral, maxIntegral);
+            double iTerm = integralSum * kI;
+
             double derivative = (error - lastError) / dt;
             double dTerm = derivative * kD;
 
             lastError = error;
 
-            double output = pTerm + dTerm;
+            double output = pTerm + iTerm + dTerm;
 
-            if (Math.abs(error) > 2.0) {
+            if (Math.abs(error) > 1.25) {
                 output += Math.signum(output) * minServoPower;
             } else {
                 output = 0;
+                integralSum = 0;  // Reset integral when at target
             }
 
             return Range.clip(output, -1.0, 1.0);
+        }
+
+        public void resetIntegral() {
+            integralSum = 0;
         }
     }
 }

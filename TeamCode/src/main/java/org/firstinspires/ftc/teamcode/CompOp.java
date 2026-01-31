@@ -4,6 +4,8 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.SharkSwerve.SwerveSubsystem;
+
 @TeleOp(name = "Competition TeleOp BLUE")
 public class CompOp extends OpMode {
 
