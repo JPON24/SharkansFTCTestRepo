@@ -36,15 +36,27 @@ public class testmode extends OpMode
         frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo"); // Exp h 5
         backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo"); // Ctrl h 2
         backRightServo = hardwareMap.get(CRServo.class, "backRightServo"); // Exp h 4
+
+        frontLeftServo.setPower(0);
+        backLeftServo.setPower(0);
+        frontRightServo.setPower(0);
+        backRightServo.setPower(0);
     }
 
     @Override
     public void loop()
     {
+        // 108 forward
+        //
         if (gamepad1.a)
         {
-            frontLeftMotor.setPower(0.2);
-            frontLeftServo.setPower(0.2);
+            frontLeftMotor.setPower(0.6);
+            frontLeftServo.setPower(1);
+        }
+        else
+        {
+            frontLeftMotor.setPower(0);
+            frontLeftServo.setPower(0);
         }
         if (gamepad1.b)
         {
@@ -53,8 +65,13 @@ public class testmode extends OpMode
         }
         if (gamepad1.x)
         {
-            backLeftMotor.setPower(0.2);
-            backLeftServo.setPower(0.2);
+            backLeftMotor.setPower(0.6);
+            backLeftServo.setPower(1);
+        }
+        else
+        {
+            backLeftMotor.setPower(0);
+            backLeftServo.setPower(0);
         }
         if (gamepad1.y)
         {

@@ -218,8 +218,18 @@ public class ShooterSubsystem {
             currentHoodState = ShootState.NO_SHOT;
         }
 
-        setHoodPosition(0.45);
-        setTargetRPM((int)(f(currentDistance)));
+
+        if (currentDistance == 0)
+        {
+            setHoodPosition(0.45);
+            setTargetRPM(0);
+
+        }
+        else
+        {
+            setHoodPosition(0.45);
+            setTargetRPM((int)(f(currentDistance)));
+        }
 //        updateHood();
     }
 

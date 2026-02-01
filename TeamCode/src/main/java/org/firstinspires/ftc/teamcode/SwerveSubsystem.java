@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -28,19 +29,22 @@ public class SwerveSubsystem {
 
     private ElapsedTime pidTimer = new ElapsedTime();
 
-    private double FLkP = 0.003, FLkI = 0.0, FLkD = 0.0001;
-    private double FRkP = 0.003, FRkI = 0.0, FRkD = 0.0001;
-    private double BLkP = 0.003, BLkI = 0.0, BLkD = 0.0001;
-    private double BRkP = 0.003, BRkI = 0.0, BRkD = 0.0001;
+    // 0.003 0.0001
+    private double FLkP = 0.004, FLkI = 0.0, FLkD = 0.00015;
+    private double FRkP = 0.004, FRkI = 0.0, FRkD = 0.00015;
+    private double BLkP = 0.004, BLkI = 0.0, BLkD = 0.0003; // 0.0002
+    private double BRkP = 0.004, BRkI = 0.0, BRkD = 0.00015;
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
 
-    private double FL_OFFSET = -81 - 2 - 11;
-    private double FR_OFFSET = 150 + 4 - 4;
-    private double BL_OFFSET = 76 - 8 + 18 - 49;
-    private double BR_OFFSET = -20 + 2 + 8 + 4;
+    private double FL_OFFSET = -274;
+    private double FR_OFFSET = -31;
+    private double BL_OFFSET = 67;
+    private double BR_OFFSET = -186;
 
-    private double speed = 0.80;
+    private double deltaMax = 25;
+
+    private double speed = 0;
     private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     private double angleFL, angleFR, angleRL, angleRR;
@@ -72,6 +76,11 @@ public class SwerveSubsystem {
         frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
+
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         flPID = new PIDController(FLkP, FLkI, FLkD);
         frPID = new PIDController(FRkP, FRkI, FRkD);
@@ -233,7 +242,19 @@ public class SwerveSubsystem {
 
     public double getFLAngle() { return getAngle(frontLeftAnalog, FL_OFFSET, flFilter); }
     public double getFRAngle() { return getAngle(frontRightAnalog, FR_OFFSET, frFilter); }
-    public double getBLAngle() { return getAngle(backLeftAnalog, BL_OFFSET, blFilter); }
+    public double getBLAngle()
+    {
+        double angle = getAngle(backLeftAnalog, BL_OFFSET, blFilter);
+
+        double avg = (getFLAngle() + getFRAngle() + getBRAngle()) / 3;
+
+        if (Math.abs(angle - avg) > deltaMax)
+        {
+            angle -= deltaMax;
+        }
+
+        return angle;
+    }
     public double getBRAngle() { return getAngle(backRightAnalog, BR_OFFSET, brFilter); }
 
     public double getFLRawAngle() { return (frontLeftAnalog.getVoltage() / 3.3) * 360.0; }

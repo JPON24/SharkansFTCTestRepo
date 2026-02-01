@@ -23,11 +23,9 @@ public class CompOp extends OpMode {
 
     public double hoodAdjust = 0;
 
-    private boolean isAutoAdjust = true;
+    private boolean isAutoAdjust = false;
 
     private boolean lastSwapAuto = false;
-
-
 
     @Override
     public void init() {
@@ -51,22 +49,22 @@ public class CompOp extends OpMode {
 
     @Override
     public void loop() {
-        double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = -gamepad1.left_stick_y;
-        double rightStickX = -gamepad1.right_stick_x;
+        double leftStickX = -gamepad1.left_stick_x;
+        double leftStickY = gamepad1.left_stick_y;
+        double rightStickX = gamepad1.right_stick_x;
 
         swerve.drive(leftStickY, leftStickX, rightStickX);
 
-        boolean rightBumperPressed = gamepad2.right_bumper;
-        boolean leftBumperPressed = gamepad2.left_bumper;
+        boolean rightBumperPressed = gamepad1.right_bumper;
+        boolean leftBumperPressed = gamepad1.left_bumper;
 
-        boolean hoodUp = gamepad2.y;
-        boolean hoodDown = gamepad2.x;
+        boolean hoodUp = gamepad1.y;
+        boolean hoodDown = gamepad1.x;
 
         boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
         boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
 
-        boolean swapToAuto = gamepad2.a;
+        boolean swapToAuto = gamepad1.a;
 
         if (swapToAuto && !lastSwapAuto) {
             isAutoAdjust = !isAutoAdjust;
@@ -121,11 +119,11 @@ public class CompOp extends OpMode {
 //            shooter.requestCalibration();
 //        }
 
-        if (gamepad2.right_trigger > 0.5)
+        if (gamepad1.right_trigger > 0.5)
         {
             shooter.decideManualOrTxBLUE(-1);
         }
-        else if (gamepad2.left_trigger > 0.5)
+        else if (gamepad1.left_trigger > 0.5)
         {
             shooter.decideManualOrTxBLUE(1);
         }
@@ -134,9 +132,9 @@ public class CompOp extends OpMode {
         }
 //        shooter.trackTargetHybrid();
 
-        if (gamepad2.dpad_left) {
+        if (gamepad1.dpad_left) {
             intake.intake(true);
-        } else if (gamepad2.dpad_right) {
+        } else if (gamepad1.dpad_right) {
             intake.outtake(true);
         } else {
             intake.intake(false);
