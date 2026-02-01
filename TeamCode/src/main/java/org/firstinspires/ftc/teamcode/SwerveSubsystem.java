@@ -29,22 +29,25 @@ public class SwerveSubsystem {
 
     private ElapsedTime pidTimer = new ElapsedTime();
 
-    // 0.003 0.0001
-    private double FLkP = 0.004, FLkI = 0.0, FLkD = 0.00015;
-    private double FRkP = 0.004, FRkI = 0.0, FRkD = 0.00015;
-    private double BLkP = 0.004, BLkI = 0.0, BLkD = 0.0003; // 0.0002
-    private double BRkP = 0.004, BRkI = 0.0, BRkD = 0.00015;
+    // 0.004 0.0001 0.0003
+    // 1.68 0.98 0.08
+    // 0.168 0.119 0.007
+    private double FLkP = 0.004, FLkI = 0.0001, FLkD = 0.0003;
+    private double FRkP = 0.004, FRkI = 0.0001, FRkD = 0.0003;
+    private double BLkP = 0.004, BLkI = 0.0001, BLkD = 0.0003; // 0.0002
+    private double BRkP = 0.004, BRkI = 0.0001, BRkD = 0.0003;
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
 
     private double FL_OFFSET = -274;
     private double FR_OFFSET = -31;
-    private double BL_OFFSET = 67;
+    private double BL_OFFSET = 67 - 141;
     private double BR_OFFSET = -186;
 
+    ElapsedTime offTimer = new ElapsedTime();
     private double deltaMax = 25;
 
-    private double speed = 0;
+    private double speed = 0.8;
     private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     private double angleFL, angleFR, angleRL, angleRR;
@@ -186,6 +189,8 @@ public class SwerveSubsystem {
         flSpeed = frSpeed = blSpeed = brSpeed = 0;
     }
 
+    private final double offsetTimer = 0.6;
+
     private void runPID(double targetFL, double targetFR, double targetRL, double targetRR,
                         double currentFL, double currentFR, double currentRL, double currentRR) {
         double dt = pidTimer.seconds();
@@ -193,6 +198,7 @@ public class SwerveSubsystem {
 
         double powerFL = flPID.calculate(targetFL, currentFL, dt);
         double powerFR = frPID.calculate(targetFR, currentFR, dt);
+
         double powerRL = rlPID.calculate(targetRL, currentRL, dt);
         double powerRR = rrPID.calculate(targetRR, currentRR, dt);
 
@@ -245,16 +251,20 @@ public class SwerveSubsystem {
     public double getBLAngle()
     {
         double angle = getAngle(backLeftAnalog, BL_OFFSET, blFilter);
-
-        double avg = (getFLAngle() + getFRAngle() + getBRAngle()) / 3;
-
-        if (Math.abs(angle - avg) > deltaMax)
-        {
-            angle -= deltaMax;
-        }
+//        double avg = (getFLAngle() + getFRAngle() + getBRAngle()) / 3;
+//
+//        if (Math.abs(angle - avg) > deltaMax)
+//        {
+//            angle += 20;
+//        }
+//        else
+//        {
+//            offTimer.reset();
+//        }
 
         return angle;
     }
+
     public double getBRAngle() { return getAngle(backRightAnalog, BR_OFFSET, brFilter); }
 
     public double getFLRawAngle() { return (frontLeftAnalog.getVoltage() / 3.3) * 360.0; }
@@ -266,7 +276,7 @@ public class SwerveSubsystem {
         private double kP, kI, kD;
         private double lastError = 0;
         private double integralSum = 0;
-        private double maxIntegral = 0.5;
+        private double maxIntegral = 0;
 
         public PIDController(double kP, double kI, double kD) {
             this.kP = kP;
@@ -275,6 +285,8 @@ public class SwerveSubsystem {
         }
 
         public double calculate(double target, double current, double dt) {
+            target *= 1.0;
+            current *= 1.0;
             double error = normalizeAngle(target - current);
 
             double pTerm = error * kP;
@@ -287,6 +299,11 @@ public class SwerveSubsystem {
             double dTerm = derivative * kD;
 
             lastError = error;
+
+            if (error * lastError < 0)
+            {
+                integralSum = 0;
+            }
 
             double output = pTerm + iTerm + dTerm;
 

@@ -58,8 +58,8 @@ public class CompOp extends OpMode {
         boolean rightBumperPressed = gamepad1.right_bumper;
         boolean leftBumperPressed = gamepad1.left_bumper;
 
-        boolean hoodUp = gamepad1.y;
-        boolean hoodDown = gamepad1.x;
+        boolean hoodUp = gamepad1.dpad_right;
+        boolean hoodDown = gamepad1.dpad_left;
 
         boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
         boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
@@ -132,9 +132,9 @@ public class CompOp extends OpMode {
         }
 //        shooter.trackTargetHybrid();
 
-        if (gamepad1.dpad_left) {
+        if (gamepad1.x) {
             intake.intake(true);
-        } else if (gamepad1.dpad_right) {
+        } else if (gamepad1.y) {
             intake.outtake(true);
         } else {
             intake.intake(false);
