@@ -12,6 +12,44 @@ public class ShooterSubsystem {
 
     // 4200 + max hood angle for far zone shot
 
+    /*
+    CLOSE TRIPLE
+    0.65 hood
+    3300 rpm
+    38.5 inches
+
+    MEDIUM TRIPLE
+    0.45 hood
+    3400 rpm
+    56 inches
+
+    LONG TRIPLE
+    0.45 hood
+    3700 rpm
+    85 inches
+
+    FAR ZONE
+    x hood :)
+    4600 rpm
+     */
+
+    /*
+    constant 0.45 hood
+    38.5 in -> 3400
+    43.5 in -> 3400
+    48.5 in -> 3300
+    53.5 in -> 3300
+    58.5 in -> 3300
+    63.5 in -> 3400
+    68.5 in -> 3450
+    73.5 in -> 3500
+    78.5 in -> 3650
+    83.5 in -> 3700
+
+    129 in (far zone) -> 0, 43001
+
+     */
+
     public enum ShootState {
         FAR_LOB_SHOT,
         FAR_HARD_SHOT,
@@ -109,6 +147,7 @@ public class ShooterSubsystem {
                 new PIDFCoefficients(100,1,0,0));
 
         leftHood = hardwareMap.get(Servo.class, "leftHood"); //
+        leftHood.setDirection(Servo.Direction.REVERSE);
         rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
         timer.reset();
@@ -154,25 +193,17 @@ public class ShooterSubsystem {
         }
     }
 
-    public void update(boolean isShootButtonPressed, boolean isHardShotPressed) {
+    public void update() {
         double currentDistance = limeLight.GetDistance();
-        final double CLOSE_LIMIT = 40.0;
-        final double MEDIUM_LIMIT = 55.0;
+        final double CLOSE_LIMIT = 38.5;
+        final double MEDIUM_LIMIT = 56;
 
-        if (isShootButtonPressed) {
-            if (currentDistance > 0 && currentDistance < CLOSE_LIMIT) {
-                currentHoodState = ShootState.CLOSE_SHOT;
-            } else if (currentDistance >= CLOSE_LIMIT && currentDistance < MEDIUM_LIMIT) {
-                currentHoodState = ShootState.MEDIUM_SHOT;
-            } else if (currentDistance >= MEDIUM_LIMIT) {
-                if (isHardShotPressed) {
-                    currentHoodState = ShootState.FAR_HARD_SHOT;
-                } else {
-                    currentHoodState = ShootState.FAR_LOB_SHOT;
-                }
-            } else {
-                currentHoodState = ShootState.NO_SHOT;
-            }
+        if (currentDistance > 0 && currentDistance < CLOSE_LIMIT) {
+            currentHoodState = ShootState.CLOSE_SHOT;
+        } else if (currentDistance >= CLOSE_LIMIT && currentDistance < MEDIUM_LIMIT) {
+            currentHoodState = ShootState.MEDIUM_SHOT;
+        } else if (currentDistance >= MEDIUM_LIMIT) {
+            currentHoodState = ShootState.FAR_HARD_SHOT;
         } else {
             currentHoodState = ShootState.NO_SHOT;
         }
@@ -662,21 +693,21 @@ public class ShooterSubsystem {
 
     private void updateHood() {
         switch(currentHoodState) {
-            case FAR_LOB_SHOT:
-                setHoodPosition(0.40);
-                setTargetRPM(3500); // not actual speed, rn the logic is broken
-                break;
+//            case FAR_LOB_SHOT:
+//                setHoodPosition(0.40);
+//                setTargetRPM(3500); // not actual speed, rn the logic is broken
+//                break;
             case FAR_HARD_SHOT:
-                setHoodPosition(1);
-                setTargetRPM(4500);
+                setHoodPosition(0.45);
+                setTargetRPM(3700);
                 break;
             case MEDIUM_SHOT:
-                setHoodPosition(0.30);
-                setTargetRPM(3300);
+                setHoodPosition(0.45);
+                setTargetRPM(3400);
                 break;
             case CLOSE_SHOT:
-                setHoodPosition(0.40);
-                setTargetRPM(3200);
+                setHoodPosition(0.65);
+                setTargetRPM(3300);
                 break;
             case NO_SHOT:
                 setHoodPosition(0.30);
@@ -685,7 +716,7 @@ public class ShooterSubsystem {
     }
 
     public void setHoodPosition(double value) {
-        leftHood.setPosition(-value);
+        leftHood.setPosition(value);
         rightHood.setPosition(value);
     }
 

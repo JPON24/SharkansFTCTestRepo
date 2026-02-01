@@ -37,8 +37,8 @@ public class SwerveSubsystem {
 
     private double FL_OFFSET = -81 - 2 - 11;
     private double FR_OFFSET = 150 + 4 - 4;
-    private double BL_OFFSET = 76 - 8 + 18;
-    private double BR_OFFSET = -20 + 2 + 8;
+    private double BL_OFFSET = 76 - 8 + 18 - 49;
+    private double BR_OFFSET = -20 + 2 + 8 + 4;
 
     private double speed = 0.80;
     private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;

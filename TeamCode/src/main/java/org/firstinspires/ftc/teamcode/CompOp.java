@@ -18,7 +18,14 @@ public class CompOp extends OpMode {
     private boolean lastRightBumperState = false;
     private boolean lastLeftBumperState = false;
 
+    private boolean lastHoodUp = false;
+    private boolean lastHoodDown = false;
+
     public double hoodAdjust = 0;
+
+    private boolean isAutoAdjust = true;
+
+
 
     @Override
     public void init() {
@@ -44,12 +51,10 @@ public class CompOp extends OpMode {
     public void loop() {
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = -gamepad1.left_stick_y;
-        double rightStickX = gamepad1.right_stick_x;
+        double rightStickX = -gamepad1.right_stick_x;
 
         swerve.drive(leftStickY, leftStickX, rightStickX);
 
-        boolean shootButtonPressed = gamepad2.a;
-        boolean hardShotPressed = gamepad2.b;
         boolean rightBumperPressed = gamepad2.right_bumper;
         boolean leftBumperPressed = gamepad2.left_bumper;
 
@@ -58,25 +63,34 @@ public class CompOp extends OpMode {
 
         boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
         boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
-        
-        if (willIncrement) {
-            if (shooter.getTargetRPM() + 100 < 6000) {
-                shooter.setTargetRPM(shooter.getTargetRPM() + 100);
-                shooter.BangBang();
-            }
-        } else if (willDecrement) {
-            if (shooter.getTargetRPM() - 100 >= 0) {
-                shooter.setTargetRPM(shooter.getTargetRPM() - 100);
+
+        if (isAutoAdjust)
+        {
+            shooter.update();
+        }
+        else
+        {
+            shooter.setHoodPosition(hoodAdjust);
+
+            if (willIncrement) {
+                if (shooter.getTargetRPM() + 100 < 6000) {
+                    shooter.setTargetRPM(shooter.getTargetRPM() + 100);
+                    shooter.BangBang();
+                }
+            } else if (willDecrement) {
+                if (shooter.getTargetRPM() - 100 >= 0) {
+                    shooter.setTargetRPM(shooter.getTargetRPM() - 100);
+                }
             }
         }
 
-        if (hoodUp) {
-            hoodAdjust = hoodAdjust + 0.1;
-        } else if (hoodDown){
-            hoodAdjust -= 0.1;
+        if (hoodUp && !lastHoodUp && hoodAdjust + 0.05 <= 0.65) {
+            hoodAdjust = hoodAdjust + 0.05;
+        } else if (hoodDown && !lastHoodDown && hoodAdjust - 0.05 >= 0){
+            hoodAdjust -= 0.05;
         }
 
-        shooter.setHoodPosition(hoodAdjust);
+        telemetry.addData("hood position", hoodAdjust);
 
 //        if (shooter.getCurrentRPM() > 0) {
 ////            shooter.setLEDLight();
@@ -86,9 +100,11 @@ public class CompOp extends OpMode {
         lastRightBumperState = rightBumperPressed;
         lastLeftBumperState = leftBumperPressed;
 
+        lastHoodUp = hoodUp;
+        lastHoodDown = hoodDown;
+
 //        shooter.setTargetRPM(shooter.getTargetRPM());
 
-        shooter.update(shootButtonPressed, hardShotPressed);
 
         // Press Y to calibrate and switch to predictive mode
 //        if (gamepad1.y) {

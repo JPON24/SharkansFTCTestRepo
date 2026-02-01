@@ -146,7 +146,7 @@ public class PBSwerve extends OpMode{
 
 //        shooter.setTargetRPM(shooter.getTargetRPM());
 
-        shooter.update(shootButtonPressed, hardShotPressed);
+        shooter.update();
 
         // Press Y to calibrate and switch to predictive mode
 //        if (gamepad1.y) {
