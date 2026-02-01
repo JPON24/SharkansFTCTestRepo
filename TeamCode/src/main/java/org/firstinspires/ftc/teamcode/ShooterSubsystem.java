@@ -46,8 +46,9 @@ public class ShooterSubsystem {
     78.5 in -> 3650
     83.5 in -> 3700
 
-    129 in (far zone) -> 0, 43001
+    129 in (far zone) -> 0, 430
 
+    f(x) = 0.001(x-53)^4 + 3300
      */
 
     public enum ShootState {
@@ -183,11 +184,20 @@ public class ShooterSubsystem {
         }
     }
 
+    private final double limelightDistConst = 3;
+    private double f(double x)
+    {
+        x -= limelightDistConst;
+        return (0.001 * Math.pow((x-53),4)) + 3300;
+    }
+
+    private double bangBangCoef = 1.2;
+
     public void BangBang() {
         double error = getTargetRPM() - getCurrentRPM();
         double ticksPerSecond = (getTargetRPM() / 60.0) * COUNTS_PER_WHEEL_REV;
         if (error > 0) {
-            rightShooter.setVelocity(ticksPerSecond * 1.1);
+            rightShooter.setVelocity(ticksPerSecond * bangBangCoef);
         } else {
             rightShooter.setVelocity(ticksPerSecond);
         }
@@ -208,7 +218,9 @@ public class ShooterSubsystem {
             currentHoodState = ShootState.NO_SHOT;
         }
 
-        updateHood();
+        setHoodPosition(0.45);
+        setTargetRPM((int)(f(currentDistance)));
+//        updateHood();
     }
 
     public void decideManualOrTxBLUE(double input)
@@ -722,6 +734,8 @@ public class ShooterSubsystem {
 
     // Public getters for telemetry
     public double getTargetRPM() { return targetRPM; }
+
+    public double getDistance() { return limeLight.GetDistance();}
     public double getCurrentRPM() {
         return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
     }

@@ -19,7 +19,7 @@ public class AprilTagLimelight
     private final double LIMELIGHTANGLECONST_D = 21;
 
     private final double APRILTAGH_M = 749.3;
-    private final double LIMELIGHTDISTBOTTOM_M = 245.7;
+    private final double LIMELIGHTDISTBOTTOM_M = 436.42;
     private final double LIMELIGHTDISTCONST_M = APRILTAGH_M - LIMELIGHTDISTBOTTOM_M;
 
     private final int POLLING_RATE = 50;
@@ -46,6 +46,8 @@ public class AprilTagLimelight
         return llresult;
     }
 
+    private final double manIdkConst = 9;
+
     public double GetDistance()
     {
         LLResult llresult = GetResult();
@@ -60,7 +62,7 @@ public class AprilTagLimelight
             double DIST_M = LIMELIGHTDISTCONST_M / Math.tan(theta);
             double DIST_I = DIST_M / 25.4;
 
-            return DIST_I;
+            return DIST_I + manIdkConst;
         }
         return -1;
     }

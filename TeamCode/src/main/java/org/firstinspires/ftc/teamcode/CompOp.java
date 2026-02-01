@@ -25,6 +25,8 @@ public class CompOp extends OpMode {
 
     private boolean isAutoAdjust = true;
 
+    private boolean lastSwapAuto = false;
+
 
 
     @Override
@@ -63,6 +65,14 @@ public class CompOp extends OpMode {
 
         boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
         boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
+
+        boolean swapToAuto = gamepad2.a;
+
+        if (swapToAuto && !lastSwapAuto) {
+            isAutoAdjust = !isAutoAdjust;
+        }
+
+        lastSwapAuto = swapToAuto;
 
         if (isAutoAdjust)
         {
@@ -163,6 +173,8 @@ public class CompOp extends OpMode {
             telemetry.addData("DEBUG TX Error", "%.2f°", shooter.getLastTX());
             telemetry.addData("DEBUG Deadband", "%.1f°", shooter.getDeadband());
         }
+
+        telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();
     }
 }
