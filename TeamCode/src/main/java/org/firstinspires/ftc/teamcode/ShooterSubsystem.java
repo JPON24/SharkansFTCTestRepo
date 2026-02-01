@@ -46,7 +46,7 @@ public class ShooterSubsystem {
     78.5 in -> 3650
     83.5 in -> 3700
 
-    129 in (far zone) -> 0, 430
+    129 in (far zone) -> 0, 4300
 
     f(x) = 0.001(x-53)^4 + 3300
      */
