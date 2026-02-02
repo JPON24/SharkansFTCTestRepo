@@ -195,10 +195,33 @@ public class ShooterSubsystem {
     }
 
     private final double limelightDistConst = 3;
-    private double f(double x)
+//    private double f(double x)
+//    {
+//        x -= limelightDistConst;
+//        return (0.001 * Math.pow((x-53),4)) + 3300;
+//    }
+
+    // rpm as a function of x
+    private double r(double x)
     {
-        x -= limelightDistConst;
-        return (0.001 * Math.pow((x-53),4)) + 3300;
+        if (x == 0) {return 0;} // for if it doesnt see anything stop the motah
+
+        return -0.0002 * Math.pow(x,5) + 0.0483 * Math.pow(x,4) -
+                5.2488 * Math.pow(x,3) + 280.38 * Math.pow(x,2) - 7354.3 * x
+                + 78852;
+    }
+
+    // hood as a function of x
+    private double h(double x)
+    {
+        // restrictions YAY
+        if (x == 0) { return 0; }
+        if (x > 72) { return 0.15; }
+
+        return Math.pow(9,-9) * Math.pow(x,6) -
+                Math.pow(3,-6) * Math.pow(x,5) +
+                0.0004 * Math.pow(x,4) - 0.0271 * Math.pow(x,3) +
+                1.056 * Math.pow(x,2) - 21.712 * x + 184.28;
     }
 
     private double bangBangCoef = 1.2;
@@ -244,8 +267,9 @@ public class ShooterSubsystem {
         }
         else
         {
-            setHoodPosition(0.45);
-            setTargetRPM((int)(f(currentDistance)));
+            // double curve yay
+            setHoodPosition(h(currentDistance));
+            setTargetRPM((int)(r(currentDistance)));
         }
 //        updateHood();
     }
