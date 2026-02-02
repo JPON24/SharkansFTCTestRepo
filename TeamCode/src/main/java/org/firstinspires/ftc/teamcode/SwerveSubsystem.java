@@ -141,6 +141,11 @@ public class SwerveSubsystem {
         angleRL = Clamp360(angleRL - 22.5) - (BL_OFFSET * 315);
         angleRR = Clamp360(angleRR - 22.5) - (BR_OFFSET * 315);
 
+        angleFL = Clamp360(angleFL);
+        angleFR = Clamp360(angleFR);
+        angleRL = Clamp360(angleRL);
+        angleRR = Clamp360(angleRR);
+
         double max = Math.max(Math.max(speed_fr, speed_fl), Math.max(speed_rl, speed_rr));
         if (max > 1.0) {
             speed_fr /= max;
@@ -164,10 +169,10 @@ public class SwerveSubsystem {
         double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
         double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
 
-        optFL = CorrectOutOfRange(tgtPosFL, optFL[1]);
-        optFR = CorrectOutOfRange(tgtPosFR, optFR[1]);
-        optBL = CorrectOutOfRange(tgtPosRL, optBL[1]);
-        optBR = CorrectOutOfRange(tgtPosRR, optBR[1]);
+        optFL = CorrectOutOfRange(tgtPosFL + (BR_OFFSET-FL_OFFSET), optFL[1], 0);
+        optFR = CorrectOutOfRange(tgtPosFR + (BR_OFFSET-FR_OFFSET), optFR[1], 0);
+        optBL = CorrectOutOfRange(tgtPosRL + (BR_OFFSET-BL_OFFSET), optBL[1], 0);
+        optBR = CorrectOutOfRange(tgtPosRR, optBR[1], 0);
 
         frontLeftMotor.setPower(optFL[1]);
         frontRightMotor.setPower(optFR[1]);
@@ -219,7 +224,7 @@ public class SwerveSubsystem {
         return position;
     }
 
-    public double[] CorrectOutOfRange(double tgt, double motor)
+    public double[] CorrectOutOfRange(double tgt, double motor, double offset)
     {
         double[] output = new double[2];
 
