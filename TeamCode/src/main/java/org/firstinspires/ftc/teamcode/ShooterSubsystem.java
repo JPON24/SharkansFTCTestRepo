@@ -96,7 +96,7 @@ public class ShooterSubsystem {
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
     private double turretMinSpeed = 0.1;
-    private double turretManualSpeed = 360; // deg/s
+    private double turretManualSpeed = 120; // deg/s
     private double lastFilteredTx = 0;
     private double lastOutput = 0;
 
@@ -242,8 +242,12 @@ public class ShooterSubsystem {
 //        updateHood();
     }
 
+    ElapsedTime dx = new ElapsedTime();
+
     public void decideManualOrTxBLUE(double input)
     {
+//        turnToAngle(getTurretAngle() + (input * dx.seconds() * turretManualSpeed), false);
+
         if (limeLight.GetLimelightId() != targetAprilTagIdBLUE)
         {
             turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
@@ -253,7 +257,7 @@ public class ShooterSubsystem {
             AggresiveTxTracking();
         }
 
-        dt.reset();
+        dx.reset();
     }
 
     public void decideManualOrTxRED(double input)
@@ -670,6 +674,12 @@ public class ShooterSubsystem {
     private void turnToAngle(double targetAngle, boolean negateOutput) {
         double currentAngle = getTurretAngle();
         double error = targetAngle - currentAngle;
+
+        if (Math.abs(error) < 5)
+        {
+            turretMotor.setPower(0);
+            return;
+        }
 
         double dtSeconds = timer.seconds();
         timer.reset();

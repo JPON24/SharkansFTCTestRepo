@@ -48,7 +48,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0.3;
+    private double speed = 0.8;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -72,7 +72,7 @@ public class SwerveSubsystem {
         backRightServo = hardwareMap.get(Servo.class, "backRightServo");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -110,16 +110,16 @@ public class SwerveSubsystem {
         }
         */
 
-        double y_fr = y_cmd - turn_cmd * L;
-        double x_fr = x_cmd - turn_cmd * W;
+        double y_fr = y_cmd + turn_cmd * L;
+        double x_fr = x_cmd + turn_cmd * W;
 
-        double y_fl = y_cmd + turn_cmd * L;
+        double y_fl = y_cmd - turn_cmd * L;
         double x_fl = x_cmd + turn_cmd * W;
 
-        double y_rl = y_cmd + turn_cmd * L;
+        double y_rl = y_cmd - turn_cmd * L;
         double x_rl = x_cmd - turn_cmd * W;
 
-        double y_rr = y_cmd - turn_cmd * L;
+        double y_rr = y_cmd + turn_cmd * L;
         double x_rr = x_cmd - turn_cmd * W;
 
         double speed_fr = Math.hypot(x_fr, y_fr);
@@ -169,9 +169,9 @@ public class SwerveSubsystem {
         double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
         double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
 
-        optFL = CorrectOutOfRange(tgtPosFL + (BR_OFFSET-FL_OFFSET), optFL[1], 0);
-        optFR = CorrectOutOfRange(tgtPosFR + (BR_OFFSET-FR_OFFSET), optFR[1], 0);
-        optBL = CorrectOutOfRange(tgtPosRL + (BR_OFFSET-BL_OFFSET), optBL[1], 0);
+        optFL = CorrectOutOfRange(tgtPosFL, optFL[1], (BR_OFFSET-FL_OFFSET));
+        optFR = CorrectOutOfRange(tgtPosFR, optFR[1], (BR_OFFSET-FR_OFFSET));
+        optBL = CorrectOutOfRange(tgtPosRL, optBL[1], (BR_OFFSET-BL_OFFSET));
         optBR = CorrectOutOfRange(tgtPosRR, optBR[1], 0);
 
         frontLeftMotor.setPower(optFL[1]);
@@ -234,7 +234,7 @@ public class SwerveSubsystem {
             motor *= -1;
         }
 
-        output[0] = tgt;
+        output[0] = tgt + offset;
         output[1] = motor;
 
         return output;
