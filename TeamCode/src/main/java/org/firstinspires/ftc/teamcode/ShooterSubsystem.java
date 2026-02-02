@@ -139,7 +139,19 @@ public class ShooterSubsystem {
 
     private double turretAutoSpeed = 0.4;
 
+    private int tgtAprilTagId = 0;
+
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
+        initSystem(hardwareMap, otosRef);
+    }
+
+    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, int targetAprilTagId) {
+        this.tgtAprilTagId = targetAprilTagId;
+        initSystem(hardwareMap, otosRef);
+    }
+
+    private void initSystem(HardwareMap hardwareMap, SparkFunOTOS otosRef)
+    {
         limeLight.init(hardwareMap);
         this.otos = otosRef;
 //        ledLight = hardwareMap.get(Servo.class, "RPM_Light");
@@ -163,20 +175,6 @@ public class ShooterSubsystem {
 
         timer.reset();
     }
-
-//    public void setLEDLight() {
-//        if (Math.abs(getCurrentRPM() - getTargetRPM()) < 150 && getCurrentRPM() != 0) {
-//            ledLight.setPosition(0.500);
-//        }
-//        else if (Math.abs(getCurrentRPM() - getTargetRPM()) > 150)
-//        {
-//            ledLight.setPosition(0.275);
-//        }
-//        else
-//        {
-//            ledLight.setPosition(0.0);
-//        }
-//    }
     
     // Nathans request
     private double normalP = 100;
@@ -195,11 +193,6 @@ public class ShooterSubsystem {
     }
 
     private final double limelightDistConst = 3;
-//    private double f(double x)
-//    {
-//        x -= limelightDistConst;
-//        return (0.001 * Math.pow((x-53),4)) + 3300;
-//    }
 
     // rpm as a function of x
     private double r(double x)
@@ -286,7 +279,7 @@ public class ShooterSubsystem {
         }
         else
         {
-            AggresiveTxTracking();
+            trackTargetHybrid();
         }
 
         dx.reset();
@@ -300,7 +293,7 @@ public class ShooterSubsystem {
         }
         else
         {
-            AggresiveTxTracking();
+//            AggresiveTxTracking();
         }
 
         dt.reset();
@@ -394,7 +387,8 @@ public class ShooterSubsystem {
         turretMotor.setPower(output * turretAutoSpeed);
     }
 
-    public void trackTargetHybridBLUE() {
+    // converted to blue and red, passed into the init in comp op
+    public void trackTargetHybrid() {
         // Handle unwinding first
         if (currentState == TurretState.UNWINDING) {
             double currentHeading = Math.toDegrees(otos.getPosition().h);
@@ -409,7 +403,7 @@ public class ShooterSubsystem {
         }
 
         // No AprilTag? If calibrated, use OTOS prediction. If not, stop.
-        if (limeLight.GetLimelightId() != targetAprilTagIdBLUE) {
+        if (limeLight.GetLimelightId() != tgtAprilTagId) {
             if (offsetCalibrated) {
                 // PREDICTIVE: Use OTOS heading to track even without vision
                 double currentHeading = Math.toDegrees(-otos.getPosition().h); // flipping for coordinate systems
@@ -471,9 +465,9 @@ public class ShooterSubsystem {
             lastCalculatedTargetAngle = targetAngle;
 
             // Slow drift correction using tx
-            if (Math.abs(tx) > 0.5) {
-                savedTurretAngle += tx * 0.005;
-            }
+//            if (Math.abs(tx) > 0.5) {
+//                savedTurretAngle += tx * 0.005;
+//            }
 
             // Turret limit check
             double targetTicks = targetAngle * TICKS_PER_DEGREE;

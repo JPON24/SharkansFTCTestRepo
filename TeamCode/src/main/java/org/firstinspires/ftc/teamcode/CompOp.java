@@ -38,7 +38,7 @@ public class CompOp extends OpMode {
         swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
-        shooter.init(hardwareMap, otos);
+        shooter.init(hardwareMap, otos, 20);
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
@@ -100,24 +100,13 @@ public class CompOp extends OpMode {
 
         telemetry.addData("hood position", hoodAdjust);
 
-//        if (shooter.getCurrentRPM() > 0) {
-////            shooter.setLEDLight();
         shooter.BangBang();
-//        }
 
         lastRightBumperState = rightBumperPressed;
         lastLeftBumperState = leftBumperPressed;
 
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
-
-//        shooter.setTargetRPM(shooter.getTargetRPM());
-
-
-        // Press Y to calibrate and switch to predictive mode
-//        if (gamepad1.y) {
-//            shooter.requestCalibration();
-//        }
 
         if (gamepad1.right_trigger > 0.5)
         {
