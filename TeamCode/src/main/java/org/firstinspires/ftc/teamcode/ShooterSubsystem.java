@@ -203,6 +203,13 @@ public class ShooterSubsystem {
 
     private double bangBangCoef = 1.2;
 
+
+    private final double rpmLenience = 100;
+    public boolean IsAtTgtRPM()
+    {
+        return Math.abs(targetRPM - getCurrentRPM()) < rpmLenience;
+    }
+
     public void BangBang() {
         double error = getTargetRPM() - getCurrentRPM();
         double ticksPerSecond = (getTargetRPM() / 60.0) * COUNTS_PER_WHEEL_REV;
@@ -671,10 +678,18 @@ public class ShooterSubsystem {
         double ticksPerSecond = (targetRPM / 60.0) * COUNTS_PER_WHEEL_REV;
 //        rightShooter.setVelocity(ticksPerSecond);
     }
+    public double targetTurretAngle = 0;
 
-    private void turnToAngle(double targetAngle, boolean negateOutput) {
+
+    public void stopTurret()
+    {
+        turretMotor.setPower(0);
+    }
+
+    public void turnToAngle(double targetAngle, boolean negateOutput) {
         double currentAngle = getTurretAngle();
         double error = targetAngle - currentAngle;
+        targetTurretAngle = targetAngle;
 
         if (Math.abs(error) < 5)
         {
@@ -757,6 +772,14 @@ public class ShooterSubsystem {
                 setHoodPosition(0.30);
                 break;
         }
+    }
+
+
+    private final double turretLenience = 5; // degrees
+
+    public boolean IsAtCorrectTurretPos()
+    {
+        return Math.abs(targetTurretAngle - getTurretAngle()) < turretLenience;
     }
 
     public void setHoodPosition(double value) {

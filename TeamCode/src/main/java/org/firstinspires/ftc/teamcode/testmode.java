@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -7,6 +8,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
 import java.lang.annotation.Retention;
@@ -15,7 +18,7 @@ import java.lang.annotation.Retention;
 public class testmode extends OpMode
 {
 
-
+    SparkFunOTOS odometry;
     private double flTgt, frTgt, rlTgt, rrTgt;
 //    private SwerveSubsystem swerve;
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
@@ -31,9 +34,9 @@ public class testmode extends OpMode
 //        swerve = new SwerveSubsystem();
 //        swerve.init(hardwareMap);  // Pass OTOS for field-centric
 
-        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         frontLeftServo = hardwareMap.get(Servo.class, "frontLeftServo"); // Ctrl h 1
@@ -45,6 +48,17 @@ public class testmode extends OpMode
         backLeftServo.setPosition(0);
         frontRightServo.setPosition(0);
         backRightServo.setPosition(0);
+
+        odometry = hardwareMap.get(SparkFunOTOS.class, "otos");
+        odometry.setLinearUnit(DistanceUnit.INCH);
+        odometry.setAngularUnit(AngleUnit.DEGREES);
+        odometry.calibrateImu();
+        odometry.setAngularScalar(1);
+        odometry.setLinearScalar(1);
+        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
+
+        odometry.resetTracking();
+        odometry.begin();
     }
 
     boolean lastA = false;
@@ -142,6 +156,13 @@ public class testmode extends OpMode
         telemetry.addData("fr deg: ", GetAngle(frTgt, frOffset));
         telemetry.addData("bl deg: ", GetAngle(rlTgt, blOffset));
         telemetry.addData("br deg: ", GetAngle(rrTgt, brOffset));
+
+        SparkFunOTOS.Pose2D position = odometry.getPosition();
+
+        telemetry.addData("x position: ", position.x);
+        telemetry.addData("y position: ", position.y);
+        telemetry.addData("h position: ", position.h);
+
         telemetry.update();
     }
 }
