@@ -41,7 +41,7 @@ public class SwerveSubsystem {
 
     private double FL_OFFSET = 0.22;
     private double FR_OFFSET = 0.42;
-    private double BL_OFFSET = 0.16;
+    private double BL_OFFSET = 0.5;
     private double BR_OFFSET = 0.5;
 
     ElapsedTime updateLimiter = new ElapsedTime();
@@ -73,7 +73,7 @@ public class SwerveSubsystem {
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

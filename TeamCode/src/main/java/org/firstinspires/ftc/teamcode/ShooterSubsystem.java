@@ -148,6 +148,7 @@ public class ShooterSubsystem {
         turretMotor.setTargetPosition(0);
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        turretMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(27,0,0,0));
         turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
@@ -276,7 +277,7 @@ public class ShooterSubsystem {
 
     public void AggresiveTxTracking()
     {
-        kP = 0.15;
+        kP = 0.01;
         kI = 0.0;
         kD = 0.0;
 
@@ -311,10 +312,10 @@ public class ShooterSubsystem {
         double dt = timer.seconds();
         if (dt <= 0) dt = 0.001;
 
-        double filteredTx = tx;
+        double filteredTx = tx * 0.2 + lastFilteredTx * 0.8;
         lastFilteredTx = filteredTx;
 
-        if (Math.abs(filteredTx) < deadband) {
+        if (Math.abs(tx) < deadband) {
             turretMotor.setPower(0);
             lastOutput = 0;
             integralSum = 0;
@@ -680,6 +681,8 @@ public class ShooterSubsystem {
             turretMotor.setPower(0);
             return;
         }
+
+        turretMotor.setTargetPosition((int)(targetAngle * TICKS_PER_DEGREE));
 
         double dtSeconds = timer.seconds();
         timer.reset();
