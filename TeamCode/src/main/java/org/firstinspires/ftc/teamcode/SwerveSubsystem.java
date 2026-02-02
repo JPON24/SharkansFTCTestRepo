@@ -44,13 +44,14 @@ public class SwerveSubsystem {
     private double BL_OFFSET = 0.16;
     private double BR_OFFSET = 0.5;
 
-    ElapsedTime offTimer = new ElapsedTime();
+    ElapsedTime updateLimiter = new ElapsedTime();
+    private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0;
-    private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
+    private double speed = 0.3;
+    public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
-    private double angleFL, angleFR, angleRL, angleRR;
+    public double angleFL, angleFR, angleRL, angleRR;
 
     public void init(HardwareMap hardwareMap) {
         init(hardwareMap, null);
@@ -69,11 +70,6 @@ public class SwerveSubsystem {
         frontRightServo = hardwareMap.get(Servo.class, "frontRightServo");
         backLeftServo = hardwareMap.get(Servo.class, "backLeftServo");
         backRightServo = hardwareMap.get(Servo.class, "backRightServo");
-
-//        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog");
-//        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
-//        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
-//        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
@@ -114,17 +110,17 @@ public class SwerveSubsystem {
         }
         */
 
-        double y_fr = y_cmd + turn_cmd * L;
+        double y_fr = y_cmd - turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;
 
-        double y_fl = y_cmd - turn_cmd * L;
-        double x_fl = x_cmd - turn_cmd * W;
+        double y_fl = y_cmd + turn_cmd * L;
+        double x_fl = x_cmd + turn_cmd * W;
 
-        double y_rl = y_cmd - turn_cmd * L;
-        double x_rl = x_cmd + turn_cmd * W;
+        double y_rl = y_cmd + turn_cmd * L;
+        double x_rl = x_cmd - turn_cmd * W;
 
-        double y_rr = y_cmd + turn_cmd * L;
-        double x_rr = x_cmd + turn_cmd * W;
+        double y_rr = y_cmd - turn_cmd * L;
+        double x_rr = x_cmd - turn_cmd * W;
 
         double speed_fr = Math.hypot(x_fr, y_fr);
         double speed_fl = Math.hypot(x_fl, y_fl);
@@ -140,6 +136,11 @@ public class SwerveSubsystem {
         angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
                 : Math.toDegrees(Math.atan2(x_rr, y_rr));
 
+        angleFL = Clamp360(angleFL - 22.5) - (FL_OFFSET * 315);
+        angleFR = Clamp360(angleFR - 22.5) - (FR_OFFSET * 315);
+        angleRL = Clamp360(angleRL - 22.5) - (BL_OFFSET * 315);
+        angleRR = Clamp360(angleRR - 22.5) - (BR_OFFSET * 315);
+
         double max = Math.max(Math.max(speed_fr, speed_fl), Math.max(speed_rl, speed_rr));
         if (max > 1.0) {
             speed_fr /= max;
@@ -148,43 +149,80 @@ public class SwerveSubsystem {
             speed_rr /= max;
         }
 
-        double currentFL = getFLAngle();
-        double currentFR = getFRAngle();
-        double currentRL = getBLAngle();
-        double currentRR = getBRAngle();
+        flSpeed = speed_fl * speed;
+        frSpeed = speed_fr * speed;
+        blSpeed = speed_rl * speed;
+        brSpeed = speed_rr * speed;
 
-        double[] optFL = optimize(angleFL, speed_fl, currentFL);
-        double[] optFR = optimize(angleFR, speed_fr, currentFR);
-        double[] optRL = optimize(angleRL, speed_rl, currentRL);
-        double[] optRR = optimize(angleRR, speed_rr, currentRR);
+        double[] optFL = Clamp315(angleFL, flSpeed);
+        double[] optFR = Clamp315(angleFR, frSpeed);
+        double[] optBL = Clamp315(angleRL, blSpeed);
+        double[] optBR = Clamp315(angleRR, brSpeed);
 
-        flSpeed = optFL[1] * speed;
-        frSpeed = optFR[1] * speed;
-        blSpeed = optRL[1] * speed;
-        brSpeed = optRR[1] * speed;
+        double tgtPosFL = GetPositionFromAngle(optFL[0], FL_OFFSET);
+        double tgtPosFR = GetPositionFromAngle(optFR[0], FR_OFFSET);
+        double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
+        double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
 
-        frontLeftMotor.setPower(flSpeed);
-        frontRightMotor.setPower(frSpeed);
-        backLeftMotor.setPower(blSpeed);
-        backRightMotor.setPower(brSpeed);
+        frontLeftMotor.setPower(optFL[1]);
+        frontRightMotor.setPower(optFR[1]);
+        backLeftMotor.setPower(optBL[1]);
+        backRightMotor.setPower(optBR[1]);
 
-        lastTargetFL = optFL[0];
-        lastTargetFR = optFR[0];
-        lastTargetRL = optRL[0];
-        lastTargetRR = optRR[0];
+        lastTargetFL = tgtPosFL;
+        lastTargetFR = tgtPosFR;
+        lastTargetRL = tgtPosRL;
+        lastTargetRR = tgtPosRR;
 
-        SetServoPositions(optFL[0], optFR[0], optRL[0], optRR[0]);
-
-//        runPID(optFL[0], optFR[0], optRL[0], optRR[0],
-//                currentFL, currentFR, currentRL, currentRR);
+        SetServoPositions(tgtPosFL, tgtPosFR, tgtPosRL, tgtPosRR);
     }
 
-    public void SetServoPositions(double FL, double FR, double BL, double BR)
+    private double Clamp360(double angle)
     {
-        frontLeftServo.setPosition(GetPositionFromAngle(FL, FL_OFFSET));
-        frontRightServo.setPosition(GetPositionFromAngle(FR, FR_OFFSET));
-        backLeftServo.setPosition(GetPositionFromAngle(BL, BL_OFFSET));
-        backRightServo.setPosition(GetPositionFromAngle(BR, BR_OFFSET));
+        if (angle < 0)
+        {
+            angle += 360;
+        }
+
+        return angle;
+    }
+
+    private double[] Clamp315(double angle, double motor)
+    {
+        double[] output = new double[2];
+        if (angle > 315)
+        {
+            angle -= 225;
+            motor *= -1;
+        }
+
+        output[0] = angle;
+        output[1] = motor;
+
+        return output;
+    }
+
+
+    public double GetAngle(double position, double offset) {
+        return (offset - position) * 315;
+    }
+
+    public double GetPositionFromAngle(double angle, double offset)
+    {
+        double position = offset - (angle / 315);
+
+        return position;
+    }
+
+    public void SetServoPositions(double FL, double FR, double BL, double BR) {
+        if (updateLimiter.seconds() > 1.0 / swerveUpdateHz)
+        {
+            frontLeftServo.setPosition(FL);
+            frontRightServo.setPosition(FR);
+            backLeftServo.setPosition(BL);
+            backRightServo.setPosition(BR);
+            updateLimiter.reset();
+        }
     }
 
     public void stop() {
@@ -225,26 +263,6 @@ public class SwerveSubsystem {
 //        double offsetAngle = normalizeAngle(rawAngle - offset);
 //        return filter.estimate(offsetAngle);
 //    }
-
-    public double GetAngle(double position, double offset) {
-        return (offset - position) * 315;
-    }
-
-    public double GetPositionFromAngle(double angle, double offset)
-    {
-        double position = offset - (angle / 360);
-
-        if (position < 0)
-        {
-            position += 1;
-        }
-        else if (position > 1)
-        {
-            position -= 1;
-        }
-
-        return position;
-    }
 
     private double normalizeAngle(double angle) {
         angle = (angle + 180.0) % 360.0;
