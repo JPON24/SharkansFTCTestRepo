@@ -39,8 +39,8 @@ public class SwerveSubsystem {
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
 
-    private double FL_OFFSET = 0.22;
-    private double FR_OFFSET = 0.42;
+    private double FL_OFFSET = 0.5;
+    private double FR_OFFSET = 0.5;
     private double BL_OFFSET = 0.5;
     private double BR_OFFSET = 0.5;
 
@@ -169,9 +169,9 @@ public class SwerveSubsystem {
         double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
         double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
 
-        optFL = CorrectOutOfRange(tgtPosFL, optFL[1], (BR_OFFSET-FL_OFFSET));
-        optFR = CorrectOutOfRange(tgtPosFR, optFR[1], (BR_OFFSET-FR_OFFSET));
-        optBL = CorrectOutOfRange(tgtPosRL, optBL[1], (BR_OFFSET-BL_OFFSET));
+        optFL = CorrectOutOfRange(tgtPosFL, optFL[1], 0);
+        optFR = CorrectOutOfRange(tgtPosFR, optFR[1], 0);
+        optBL = CorrectOutOfRange(tgtPosRL, optBL[1], 0);
         optBR = CorrectOutOfRange(tgtPosRR, optBR[1], 0);
 
         frontLeftMotor.setPower(optFL[1]);
