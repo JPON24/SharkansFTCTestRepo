@@ -164,17 +164,22 @@ public class SwerveSubsystem {
         double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
         double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
 
+        optFL = CorrectOutOfRange(tgtPosFL, optFL[1]);
+        optFR = CorrectOutOfRange(tgtPosFR, optFR[1]);
+        optBL = CorrectOutOfRange(tgtPosRL, optBL[1]);
+        optBR = CorrectOutOfRange(tgtPosRR, optBR[1]);
+
         frontLeftMotor.setPower(optFL[1]);
         frontRightMotor.setPower(optFR[1]);
         backLeftMotor.setPower(optBL[1]);
         backRightMotor.setPower(optBR[1]);
 
-        lastTargetFL = tgtPosFL;
-        lastTargetFR = tgtPosFR;
-        lastTargetRL = tgtPosRL;
-        lastTargetRR = tgtPosRR;
+        lastTargetFL = optFL[0];
+        lastTargetFR = optFR[0];
+        lastTargetRL = optBL[0];
+        lastTargetRR = optBR[0];
 
-        SetServoPositions(tgtPosFL, tgtPosFR, tgtPosRL, tgtPosRR);
+        SetServoPositions(optFL[0], optFR[0], optBL[0], optBR[0]);
     }
 
     private double Clamp360(double angle)
@@ -212,6 +217,22 @@ public class SwerveSubsystem {
         double position = offset - (angle / 315);
 
         return position;
+    }
+
+    public double[] CorrectOutOfRange(double tgt, double motor)
+    {
+        double[] output = new double[2];
+
+        if (tgt < 0)
+        {
+            tgt += (360.0 / 630);
+            motor *= -1;
+        }
+
+        output[0] = tgt;
+        output[1] = motor;
+
+        return output;
     }
 
     public void SetServoPositions(double FL, double FR, double BL, double BR) {
