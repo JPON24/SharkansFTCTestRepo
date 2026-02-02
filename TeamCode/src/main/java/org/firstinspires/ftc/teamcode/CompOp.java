@@ -147,12 +147,12 @@ public class CompOp extends OpMode {
         telemetry.addData("Y", "%.2f", otos.getPosition().y);
         telemetry.addData("Heading", "%.1f°", Math.toDegrees(otos.getPosition().h));
         telemetry.addData("=== SWERVE ===", "");
-        telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
-                swerve.getFLAngle(), swerve.getFRAngle(),
-                swerve.getBLAngle(), swerve.getBRAngle());
-        telemetry.addData("RawServoAngle, (FL/FR/BL/BR", "%.0f° %.0f° %.0f° %.0f°",
-                swerve.getFLRawAngle(), swerve.getFRRawAngle(),
-                swerve.getBLRawAngle(), swerve.getBRRawAngle());
+//        telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
+//                swerve.getFLAngle(), swerve.getFRAngle(),
+//                swerve.getBLAngle(), swerve.getBRAngle());
+//        telemetry.addData("RawServoAngle, (FL/FR/BL/BR", "%.0f° %.0f° %.0f° %.0f°",
+//                swerve.getFLRawAngle(), swerve.getFRRawAngle(),
+//                swerve.getBLRawAngle(), swerve.getBRRawAngle());
         telemetry.addData("", "");
         telemetry.addData("=== SHOOTER ===", "");
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());

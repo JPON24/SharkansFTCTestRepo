@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -16,7 +16,7 @@ public class SwerveSubsystem {
     private final double W = 1.00;
 
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
-    private CRServo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
+    private Servo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
     private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
     private SparkFunOTOS otos;
 
@@ -39,15 +39,15 @@ public class SwerveSubsystem {
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
 
-    private double FL_OFFSET = -274;
-    private double FR_OFFSET = -31;
-    private double BL_OFFSET = 67 - 141;
-    private double BR_OFFSET = -186;
+    private double FL_OFFSET = 0.22;
+    private double FR_OFFSET = 0.42;
+    private double BL_OFFSET = 0.16;
+    private double BR_OFFSET = 0.5;
 
     ElapsedTime offTimer = new ElapsedTime();
     private double deltaMax = 25;
 
-    private double speed = 0.8;
+    private double speed = 0;
     private double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     private double angleFL, angleFR, angleRL, angleRR;
@@ -65,15 +65,15 @@ public class SwerveSubsystem {
         backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
         backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor");
 
-        frontLeftServo = hardwareMap.get(CRServo.class, "frontLeftServo");
-        frontRightServo = hardwareMap.get(CRServo.class, "frontRightServo");
-        backLeftServo = hardwareMap.get(CRServo.class, "backLeftServo");
-        backRightServo = hardwareMap.get(CRServo.class, "backRightServo");
+        frontLeftServo = hardwareMap.get(Servo.class, "frontLeftServo");
+        frontRightServo = hardwareMap.get(Servo.class, "frontRightServo");
+        backLeftServo = hardwareMap.get(Servo.class, "backLeftServo");
+        backRightServo = hardwareMap.get(Servo.class, "backRightServo");
 
-        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog");
-        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
-        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
-        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
+//        frontLeftAnalog = hardwareMap.get(AnalogInput.class, "frontLeftAnalog");
+//        frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
+//        backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
+//        backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
@@ -173,8 +173,18 @@ public class SwerveSubsystem {
         lastTargetRL = optRL[0];
         lastTargetRR = optRR[0];
 
-        runPID(optFL[0], optFR[0], optRL[0], optRR[0],
-                currentFL, currentFR, currentRL, currentRR);
+        SetServoPositions(optFL[0], optFR[0], optRL[0], optRR[0]);
+
+//        runPID(optFL[0], optFR[0], optRL[0], optRR[0],
+//                currentFL, currentFR, currentRL, currentRR);
+    }
+
+    public void SetServoPositions(double FL, double FR, double BL, double BR)
+    {
+        frontLeftServo.setPosition(GetPositionFromAngle(FL, FL_OFFSET));
+        frontRightServo.setPosition(GetPositionFromAngle(FR, FR_OFFSET));
+        backLeftServo.setPosition(GetPositionFromAngle(BL, BL_OFFSET));
+        backRightServo.setPosition(GetPositionFromAngle(BR, BR_OFFSET));
     }
 
     public void stop() {
@@ -182,10 +192,10 @@ public class SwerveSubsystem {
         frontRightMotor.setPower(0);
         backLeftMotor.setPower(0);
         backRightMotor.setPower(0);
-        frontLeftServo.setPower(0);
-        frontRightServo.setPower(0);
-        backLeftServo.setPower(0);
-        backRightServo.setPower(0);
+//        frontLeftServo.setPosition(0);
+//        frontRightServo.setPower(0);
+//        backLeftServo.setPower(0);
+//        backRightServo.setPower(0);
         flSpeed = frSpeed = blSpeed = brSpeed = 0;
     }
 
@@ -202,18 +212,38 @@ public class SwerveSubsystem {
         double powerRL = rlPID.calculate(targetRL, currentRL, dt);
         double powerRR = rrPID.calculate(targetRR, currentRR, dt);
 
-        frontLeftServo.setPower(powerFL * 1);
-        frontRightServo.setPower(powerFR * 1);
-        backLeftServo.setPower(powerRL * 1);
-        backRightServo.setPower(powerRR * 1);
+//        frontLeftServo.setPower(powerFL * 1);
+//        frontRightServo.setPower(powerFR * 1);
+//        backLeftServo.setPower(powerRL * 1);
+//        backRightServo.setPower(powerRR * 1);
 
         pidTimer.reset();
     }
 
-    private double getAngle(AnalogInput sensor, double offset, AxonAnalogFilter filter) {
-        double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
-        double offsetAngle = normalizeAngle(rawAngle - offset);
-        return filter.estimate(offsetAngle);
+//    private double getAngle(AnalogInput sensor, double offset, AxonAnalogFilter filter) {
+//        double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
+//        double offsetAngle = normalizeAngle(rawAngle - offset);
+//        return filter.estimate(offsetAngle);
+//    }
+
+    public double GetAngle(double position, double offset) {
+        return (offset - position) * 315;
+    }
+
+    public double GetPositionFromAngle(double angle, double offset)
+    {
+        double position = offset - (angle / 360);
+
+        if (position < 0)
+        {
+            position += 1;
+        }
+        else if (position > 1)
+        {
+            position -= 1;
+        }
+
+        return position;
     }
 
     private double normalizeAngle(double angle) {
@@ -240,32 +270,20 @@ public class SwerveSubsystem {
 
     public void alignWithWall() {
 
-        frontLeftServo.setPower(0);
-        frontRightServo.setPower(0);
-        backLeftServo.setPower(0);
-        backRightServo.setPower(0);
+//        frontLeftServo.setPower(0);
+//        frontRightServo.setPower(0);
+//        backLeftServo.setPower(0);
+//        backRightServo.setPower(0);
     }
 
-    public double getFLAngle() { return getAngle(frontLeftAnalog, FL_OFFSET, flFilter); }
-    public double getFRAngle() { return getAngle(frontRightAnalog, FR_OFFSET, frFilter); }
+    public double getFLAngle() { return GetAngle(frontLeftServo.getPosition(), FL_OFFSET);  }
+    public double getFRAngle() { return GetAngle(frontRightServo.getPosition(), FR_OFFSET);  }
     public double getBLAngle()
     {
-        double angle = getAngle(backLeftAnalog, BL_OFFSET, blFilter);
-//        double avg = (getFLAngle() + getFRAngle() + getBRAngle()) / 3;
-//
-//        if (Math.abs(angle - avg) > deltaMax)
-//        {
-//            angle += 20;
-//        }
-//        else
-//        {
-//            offTimer.reset();
-//        }
-
-        return angle;
+        return GetAngle(backLeftServo.getPosition(), BL_OFFSET);
     }
 
-    public double getBRAngle() { return getAngle(backRightAnalog, BR_OFFSET, brFilter); }
+    public double getBRAngle() { return GetAngle(backRightServo.getPosition(), BR_OFFSET); }
 
     public double getFLRawAngle() { return (frontLeftAnalog.getVoltage() / 3.3) * 360.0; }
     public double getFRRawAngle() { return (frontRightAnalog.getVoltage() / 3.3) * 360.0; }

@@ -9,10 +9,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
+import java.lang.annotation.Retention;
+
 @TeleOp
 public class testmode extends OpMode
 {
 
+
+    private double flTgt, frTgt, rlTgt, rrTgt;
 //    private SwerveSubsystem swerve;
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
     private Servo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
@@ -43,98 +47,101 @@ public class testmode extends OpMode
         backRightServo.setPosition(0);
     }
 
+    boolean lastA = false;
+    boolean lastX = false;
+    boolean lastY = false;
+    boolean lastB = false;
+    /*
+    fl -> 0.22 - 69.3 degrees right - 245.7 degrees right
+    fr -> 0.42 - 132.3 degrees right - 182.7 degres left
+    bl -> 0.16 - 50.4 degrees right, 264.4 degrees left
+    br -> 0.5 - 157.5 deg each way
+
+    max angle = 315 degrees
+     */
+
+    double flOffset = 0.22;
+    double frOffset = 0.42;
+    double blOffset = 0.16;
+    double brOffset = 0.5;
+
+
+    public double GetAngle(double position, double offset)
+    {
+        return (offset - position) * 315;
+    }
+
     @Override
     public void loop()
     {
-        // 108 forward
-        //
+        // 315 degree range
+        if (gamepad1.a && !lastA) {
+            flTgt += 0.02;
 
-        if (gamepad1.a)
-        {
-            frontLeftServo.setPosition(1);
-        }
-        else
-        {
-            frontLeftServo.setPosition(0);
-        }
-
-        if (gamepad1.x)
-        {
-            frontRightServo.setPosition(1);
-        }
-        else
-        {
-            frontRightServo.setPosition(0);
+            if (flTgt > 1)
+            {
+                flTgt = 0;
+            }
+            frontLeftServo.setPosition(flTgt);
         }
 
-        if (gamepad1.y)
+        if (gamepad1.x && !lastX)
         {
-            backRightServo.setPosition(1);
-        }
-        else
-        {
-            backRightServo.setPosition(0);
+            frTgt += 0.02;
+
+            if (frTgt > 1)
+            {
+                frTgt = 0;
+            }
+            frontRightServo.setPosition(frTgt);
         }
 
-        if (gamepad1.b)
-        {
-            backLeftServo.setPosition(1);
-        }
-        else
-        {
-            backLeftServo.setPosition(0);
+        if (gamepad1.y && !lastY) {
+            rrTgt += 0.02;
+
+            if (rrTgt > 1)
+            {
+                rrTgt = 0;
+            }
+            backRightServo.setPosition(rrTgt);
         }
 
-//        if (gamepad1.a)
-//        {
-//            frontLeftMotor.setPower(0.6);
-//            frontLeftServo.setPower(1);
-//        }
-//        else
-//        {
-//            frontLeftMotor.setPower(0);
-//            frontLeftServo.setPower(0);
-//        }
-//        if (gamepad1.b)
-//        {
-//            frontRightMotor.setPower(0.2);
-//            frontRightServo.setPower(0.2);
-//        }
-//        if (gamepad1.x)
-//        {
-//            backLeftMotor.setPower(0.6);
-//            backLeftServo.setPower(1);
-//        }
-//        else
-//        {
-//            backLeftMotor.setPower(0);
-//            backLeftServo.setPower(0);
-//        }
-//        if (gamepad1.y)
-//        {
-//            backRightMotor.setPower(0.2);
-//            backRightServo.setPower(0.2);
-//        }
-//
-//        if (gamepad1.dpad_up) {
-//            frontLeftMotor.setPower(0.3);
-//        }
-//
-//        if (gamepad1.dpad_left) {
-//            frontRightMotor.setPower(0.3);
-//        }
-//
-//        if (gamepad1.dpad_right) {
-//            backLeftMotor.setPower(0.3);
-//        }
-//
-//        if (gamepad1.dpad_down) {
-//            backRightMotor.setPower(0.3);
-//        }
+        if (gamepad1.b && !lastB) {
+            rlTgt += 0.02;
+            if (rlTgt > 1)
+            {
+                rlTgt = 0;
+            }
+            backLeftServo.setPosition(rlTgt);
+        }
 
-//        telemetry.addData("Wheels (FL/FR/BL/BR)", "%.0f° %.0f° %.0f° %.0f°",
-//                swerve.getFLAngle(), swerve.getFRAngle(),
-//                swerve.getBLAngle(), swerve.getBRAngle());
-//        telemetry.update();
+        if (gamepad1.dpad_up)
+        {
+            flTgt = flOffset;
+            rlTgt=  blOffset;
+            rrTgt = brOffset;
+            frTgt = frOffset;
+
+            frontLeftServo.setPosition(flOffset);
+            frontRightServo.setPosition(frOffset);
+            backLeftServo.setPosition(blOffset);
+            backRightServo.setPosition(brOffset);
+        }
+
+        lastA = gamepad1.a;
+        lastX = gamepad1.x;
+        lastY = gamepad1.y;
+        lastB = gamepad1.b;
+
+        telemetry.addData("fl: ", flTgt);
+        telemetry.addData("fr: ", frTgt);
+        telemetry.addData("bl: ", rlTgt);
+        telemetry.addData("br: ", rrTgt);
+
+        telemetry.addData("fl deg: ", GetAngle(flTgt, flOffset));
+        telemetry.addData("fr deg: ", GetAngle(frTgt, frOffset));
+        telemetry.addData("bl deg: ", GetAngle(rlTgt, blOffset));
+        telemetry.addData("br deg: ", GetAngle(rrTgt, brOffset));
+        telemetry.update();
     }
 }
