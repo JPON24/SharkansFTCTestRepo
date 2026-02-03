@@ -42,5 +42,15 @@ public class floatingIntake {
         }
     }
 
+    public void outFront(boolean runOutFront) {
+        if (runOutFront) {
+            transferMotor.setPower(-transferSpeed);
+            intakeMotor.setPower(-intakeSpeed);
+        } else {
+            transferMotor.setPower(0);
+            intakeMotor.setPower(0);
+        }
+    }
+
 }
 
