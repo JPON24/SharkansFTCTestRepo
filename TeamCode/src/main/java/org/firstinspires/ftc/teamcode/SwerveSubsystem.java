@@ -22,19 +22,11 @@ public class SwerveSubsystem {
 
     private PIDController flPID, frPID, rlPID, rrPID;
 
-    private AxonAnalogFilter flFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter frFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter blFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter brFilter = new AxonAnalogFilter(0.25);
-
     private ElapsedTime pidTimer = new ElapsedTime();
 
-    // 0.004 0.0001 0.0003
-    // 1.68 0.98 0.08
-    // 0.168 0.119 0.007
     private double FLkP = 0.004, FLkI = 0.0001, FLkD = 0.0003;
     private double FRkP = 0.004, FRkI = 0.0001, FRkD = 0.0003;
-    private double BLkP = 0.004, BLkI = 0.0001, BLkD = 0.0003; // 0.0002
+    private double BLkP = 0.004, BLkI = 0.0001, BLkD = 0.0003;
     private double BRkP = 0.004, BRkI = 0.0001, BRkD = 0.0003;
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
@@ -46,7 +38,6 @@ public class SwerveSubsystem {
 
     ElapsedTime updateLimiter = new ElapsedTime();
     private final double swerveUpdateHz = 4;
-    private double deltaMax = 25;
 
     private double speed = 0.65;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
@@ -58,7 +49,6 @@ public class SwerveSubsystem {
     }
 
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
-
         this.otos = otosRef;
 
         frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
@@ -86,10 +76,12 @@ public class SwerveSubsystem {
         rlPID = new PIDController(BLkP, BLkI, BLkD);
         rrPID = new PIDController(BRkP, BRkI, BRkD);
 
-        lastTargetFL = getFLAngle();
-        lastTargetFR = getFRAngle();
-        lastTargetRL = getBLAngle();
-        lastTargetRR = getBRAngle();
+        // Initialize sensors if you have them, otherwise these are 0
+        // If you don't have encoders connected, these methods might return 0
+        lastTargetFL = 0;
+        lastTargetFR = 0;
+        lastTargetRL = 0;
+        lastTargetRR = 0;
     }
 
     public void drive(double y_cmd, double x_cmd, double turn_cmd) {
@@ -98,17 +90,15 @@ public class SwerveSubsystem {
             return;
         }
 
-        // Field Centric Code (Uncomment if needed)
-        /*
+        // Field Centric Code
         if (otos != null) {
             double heading = otos.getPosition().h;
-            double cos = Math.cos(-heading);
-            double sin = Math.sin(-heading);
+            double cos = Math.cos(Math.toRadians(-heading));
+            double sin = Math.sin(Math.toRadians(-heading));
             double temp = x_cmd * cos - y_cmd * sin;
             y_cmd = x_cmd * sin + y_cmd * cos;
             x_cmd = temp;
         }
-        */
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd + turn_cmd * W;
@@ -127,15 +117,27 @@ public class SwerveSubsystem {
         double speed_rl = Math.hypot(x_rl, y_rl);
         double speed_rr = Math.hypot(x_rr, y_rr);
 
-        angleFL = (speed_fl < ANGLE_HOLD_SPEED) ? lastTargetFL
-                : Math.toDegrees(Math.atan2(x_fl, y_fl));
-        angleFR = (speed_fr < ANGLE_HOLD_SPEED) ? lastTargetFR
-                : Math.toDegrees(Math.atan2(x_fr, y_fr));
-        angleRL = (speed_rl < ANGLE_HOLD_SPEED) ? lastTargetRL
-                : Math.toDegrees(Math.atan2(x_rl, y_rl));
-        angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
-                : Math.toDegrees(Math.atan2(x_rr, y_rr));
+        // 1. Calculate Raw Target Angles
+        double rawAngleFL = Math.toDegrees(Math.atan2(x_fl, y_fl));
+        double rawAngleFR = Math.toDegrees(Math.atan2(x_fr, y_fr));
+        double rawAngleRL = Math.toDegrees(Math.atan2(x_rl, y_rl));
+        double rawAngleRR = Math.toDegrees(Math.atan2(x_rr, y_rr));
 
+        // 2. OPTIMIZE HERE
+        // This finds the shortest path (-90 to +90) and flips speed if needed.
+        // We compare against 'lastTarget' to minimize rotation.
+        double[] optParamsFL = optimize(rawAngleFL, speed_fl, lastTargetFL);
+        double[] optParamsFR = optimize(rawAngleFR, speed_fr, lastTargetFR);
+        double[] optParamsRL = optimize(rawAngleRL, speed_rl, lastTargetRL);
+        double[] optParamsRR = optimize(rawAngleRR, speed_rr, lastTargetRR);
+
+        angleFL = (speed_fl < ANGLE_HOLD_SPEED) ? lastTargetFL : optParamsFL[0];
+        angleFR = (speed_fr < ANGLE_HOLD_SPEED) ? lastTargetFR : optParamsFR[0];
+        angleRL = (speed_rl < ANGLE_HOLD_SPEED) ? lastTargetRL : optParamsRL[0];
+        angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR : optParamsRR[0];
+
+        // 3. Continue with YOUR existing Deadspot/Clamp Logic
+        // We feed the optimized angle into your pipeline.
         angleFL = Clamp360(angleFL - 22.5) - (FL_OFFSET * 315);
         angleFR = Clamp360(angleFR - 22.5) - (FR_OFFSET * 315);
         angleRL = Clamp360(angleRL - 22.5) - (BL_OFFSET * 315);
@@ -148,16 +150,17 @@ public class SwerveSubsystem {
 
         double max = Math.max(Math.max(speed_fr, speed_fl), Math.max(speed_rl, speed_rr));
         if (max > 1.0) {
-            speed_fr /= max;
-            speed_fl /= max;
-            speed_rl /= max;
-            speed_rr /= max;
+            optParamsFL[1] /= max;
+            optParamsFR[1] /= max;
+            optParamsRL[1] /= max;
+            optParamsRR[1] /= max;
         }
 
-        flSpeed = speed_fl * speed;
-        frSpeed = speed_fr * speed;
-        blSpeed = speed_rl * speed;
-        brSpeed = speed_rr * speed;
+        // Use the optimized speeds (which may be negative)
+        flSpeed = optParamsFL[1] * speed;
+        frSpeed = optParamsFR[1] * speed;
+        blSpeed = optParamsRL[1] * speed;
+        brSpeed = optParamsRR[1] * speed;
 
         double[] optFL = Clamp315(angleFL, flSpeed);
         double[] optFR = Clamp315(angleFR, frSpeed);
@@ -179,70 +182,72 @@ public class SwerveSubsystem {
         backLeftMotor.setPower(optBL[1]);
         backRightMotor.setPower(optBR[1]);
 
-        lastTargetFL = optFL[0];
-        lastTargetFR = optFR[0];
-        lastTargetRL = optBL[0];
-        lastTargetRR = optBR[0];
+        lastTargetFL = optParamsFL[0];
+        lastTargetFR = optParamsFR[0];
+        lastTargetRL = optParamsRL[0];
+        lastTargetRR = optParamsRR[0];
 
         SetServoPositions(optFL[0], optFR[0], optBL[0], optBR[0]);
     }
 
-    private double Clamp360(double angle)
-    {
-        if (angle < 0)
-        {
+    // --- NEW HELPER FUNCTIONS ---
+
+    private double[] optimize(double target, double speed, double current) {
+        double delta = normalizeAngle(target - current);
+        if (Math.abs(delta) > 90) {
+            target = normalizeAngle(target + 180);
+            speed *= -1;
+        }
+        return new double[]{target, speed};
+    }
+
+    private double normalizeAngle(double angle) {
+        angle = (angle + 180.0) % 360.0;
+        if (angle < 0) angle += 360.0;
+        return angle - 180.0;
+    }
+
+
+    private double Clamp360(double angle) {
+        if (angle < 0) {
             angle += 360;
         }
-
         return angle;
     }
 
-    private double[] Clamp315(double angle, double motor)
-    {
+    private double[] Clamp315(double angle, double motor) {
         double[] output = new double[2];
-        if (angle > 315)
-        {
+        if (angle > 315) {
             angle -= 225;
             motor *= -1;
         }
-
         output[0] = angle;
         output[1] = motor;
-
         return output;
     }
-
 
     public double GetAngle(double position, double offset) {
         return (offset - position) * 315;
     }
 
-    public double GetPositionFromAngle(double angle, double offset)
-    {
+    public double GetPositionFromAngle(double angle, double offset) {
         double position = offset - (angle / 315);
-
         return position;
     }
 
-    public double[] CorrectOutOfRange(double tgt, double motor, double offset)
-    {
+    public double[] CorrectOutOfRange(double tgt, double motor, double offset) {
         double[] output = new double[2];
-
-        if (tgt < 0)
-        {
+        if (tgt < 0) {
             tgt += (360.0 / 630);
             motor *= -1;
         }
-
         output[0] = tgt + offset;
         output[1] = motor;
-
         return output;
     }
 
     public void SetServoPositions(double FL, double FR, double BL, double BR) {
-        if (updateLimiter.seconds() > 1.0 / swerveUpdateHz)
-        {
+        if (updateLimiter.seconds() > 1.0 / swerveUpdateHz) {
             frontLeftServo.setPosition(FL);
             frontRightServo.setPosition(FR);
             backLeftServo.setPosition(BL);
@@ -256,83 +261,8 @@ public class SwerveSubsystem {
         frontRightMotor.setPower(0);
         backLeftMotor.setPower(0);
         backRightMotor.setPower(0);
-//        frontLeftServo.setPosition(0);
-//        frontRightServo.setPower(0);
-//        backLeftServo.setPower(0);
-//        backRightServo.setPower(0);
         flSpeed = frSpeed = blSpeed = brSpeed = 0;
     }
-
-    private final double offsetTimer = 0.6;
-
-    private void runPID(double targetFL, double targetFR, double targetRL, double targetRR,
-                        double currentFL, double currentFR, double currentRL, double currentRR) {
-        double dt = pidTimer.seconds();
-        if (dt < 0.001) dt = 0.001;
-
-        double powerFL = flPID.calculate(targetFL, currentFL, dt);
-        double powerFR = frPID.calculate(targetFR, currentFR, dt);
-
-        double powerRL = rlPID.calculate(targetRL, currentRL, dt);
-        double powerRR = rrPID.calculate(targetRR, currentRR, dt);
-
-//        frontLeftServo.setPower(powerFL * 1);
-//        frontRightServo.setPower(powerFR * 1);
-//        backLeftServo.setPower(powerRL * 1);
-//        backRightServo.setPower(powerRR * 1);
-
-        pidTimer.reset();
-    }
-
-//    private double getAngle(AnalogInput sensor, double offset, AxonAnalogFilter filter) {
-//        double rawAngle = (sensor.getVoltage() / 3.3) * 360.0;
-//        double offsetAngle = normalizeAngle(rawAngle - offset);
-//        return filter.estimate(offsetAngle);
-//    }
-
-    private double normalizeAngle(double angle) {
-        angle = (angle + 180.0) % 360.0;
-        if (angle < 0) angle += 360.0;
-        return angle - 180.0;
-    }
-
-    private double[] optimize(double target, double speed, double current) {
-        double delta = normalizeAngle(target - current);
-        if (Math.abs(delta) > 90) {
-            target = normalizeAngle(target + 180);
-            speed *= -1;
-        }
-        return new double[]{target, speed};
-    }
-
-    public void reZero() {
-        FL_OFFSET = (frontLeftAnalog.getVoltage() / 3.3) * 360.0;
-        FR_OFFSET = (frontRightAnalog.getVoltage() / 3.3) * 360.0;
-        BL_OFFSET = (backLeftAnalog.getVoltage() / 3.3) * 360.0;
-        BR_OFFSET = (backRightAnalog.getVoltage() / 3.3) * 360.0;
-    }
-
-    public void alignWithWall() {
-
-//        frontLeftServo.setPower(0);
-//        frontRightServo.setPower(0);
-//        backLeftServo.setPower(0);
-//        backRightServo.setPower(0);
-    }
-
-    public double getFLAngle() { return GetAngle(frontLeftServo.getPosition(), FL_OFFSET);  }
-    public double getFRAngle() { return GetAngle(frontRightServo.getPosition(), FR_OFFSET);  }
-    public double getBLAngle()
-    {
-        return GetAngle(backLeftServo.getPosition(), BL_OFFSET);
-    }
-
-    public double getBRAngle() { return GetAngle(backRightServo.getPosition(), BR_OFFSET); }
-
-    public double getFLRawAngle() { return (frontLeftAnalog.getVoltage() / 3.3) * 360.0; }
-    public double getFRRawAngle() { return (frontRightAnalog.getVoltage() / 3.3) * 360.0; }
-    public double getBLRawAngle() { return (backLeftAnalog.getVoltage() / 3.3) * 360.0; }
-    public double getBRRawAngle() { return (backRightAnalog.getVoltage() / 3.3) * 360.0; }
 
     public class PIDController {
         private double kP, kI, kD;
@@ -350,37 +280,22 @@ public class SwerveSubsystem {
             target *= 1.0;
             current *= 1.0;
             double error = normalizeAngle(target - current);
-
             double pTerm = error * kP;
-
             integralSum += error * dt;
             integralSum = Range.clip(integralSum, -maxIntegral, maxIntegral);
             double iTerm = integralSum * kI;
-
             double derivative = (error - lastError) / dt;
             double dTerm = derivative * kD;
-
             lastError = error;
-
-            if (error * lastError < 0)
-            {
-                integralSum = 0;
-            }
-
+            if (error * lastError < 0) { integralSum = 0; }
             double output = pTerm + iTerm + dTerm;
-
             if (Math.abs(error) > 2.00) {
                 output += Math.signum(output) * minServoPower;
             } else {
                 output = 0;
                 integralSum = 0;
             }
-
             return Range.clip(output, -1.0, 1.0);
-        }
-
-        public void resetIntegral() {
-            integralSum = 0;
         }
     }
 }
