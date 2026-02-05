@@ -39,8 +39,8 @@ public class SwerveSubsystem {
     private double minServoPower = 0.03;
     private double ANGLE_HOLD_SPEED = 0.05;
 
-    private double FL_OFFSET = 0.22;
-    private double FR_OFFSET = 0.42;
+    private double FL_OFFSET = 0.5;
+    private double FR_OFFSET = 0.5;
     private double BL_OFFSET = 0.5;
     private double BR_OFFSET = 0.5;
 
@@ -48,7 +48,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0.8;
+    private double speed = 0.65;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     private double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -72,7 +72,7 @@ public class SwerveSubsystem {
         backRightServo = hardwareMap.get(Servo.class, "backRightServo");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 

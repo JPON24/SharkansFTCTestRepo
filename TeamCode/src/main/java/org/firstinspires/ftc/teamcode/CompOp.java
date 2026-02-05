@@ -70,6 +70,7 @@ public class CompOp extends OpMode {
             isAutoAdjust = !isAutoAdjust;
         }
 
+
         lastSwapAuto = swapToAuto;
 
         if (isAutoAdjust)
@@ -110,14 +111,14 @@ public class CompOp extends OpMode {
 
         if (gamepad1.right_trigger > 0.5)
         {
-            shooter.decideManualOrTxBLUE(-1);
+//            shooter.decideManualOrTxBLUE(-1);
         }
         else if (gamepad1.left_trigger > 0.5)
         {
-            shooter.decideManualOrTxBLUE(1);
+//            shooter.decideManualOrTxBLUE(1);
         }
         else {
-            shooter.decideManualOrTxBLUE(0);
+//            shooter.decideManualOrTxBLUE(0);
         }
 //        shooter.trackTargetHybrid();
 

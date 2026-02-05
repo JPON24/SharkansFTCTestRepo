@@ -236,6 +236,9 @@ public class ShooterSubsystem {
         }
     }
 
+    ElapsedTime hoodResetTimer = new ElapsedTime();
+    int hoodResetHz = 3;
+
     public void update() {
         double currentDistance = limeLight.GetDistance();
         final double CLOSE_LIMIT = 38.5;
@@ -251,8 +254,8 @@ public class ShooterSubsystem {
             currentHoodState = ShootState.NO_SHOT;
         }
 
-
-        if (currentDistance == 0)
+        // cant shoot...
+        if (currentDistance < 20 || currentDistance > 90)
         {
             setHoodPosition(0.45);
             setTargetRPM(0);
@@ -261,7 +264,12 @@ public class ShooterSubsystem {
         else
         {
             // double curve yay
-            setHoodPosition(h(currentDistance));
+
+            if (hoodResetTimer.seconds() > 1.0 / hoodResetHz)
+            {
+                setHoodPosition(h(currentDistance));
+                hoodResetTimer.reset();
+            }
             setTargetRPM((int)(r(currentDistance)));
         }
 //        updateHood();
