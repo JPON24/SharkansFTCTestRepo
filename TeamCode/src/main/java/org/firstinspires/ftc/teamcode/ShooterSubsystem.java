@@ -164,7 +164,7 @@ public class ShooterSubsystem {
         turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
-        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+        rightShooter.setDirection(DcMotorEx.Direction.FORWARD);
         rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
                 new PIDFCoefficients(100,1,0,0));
@@ -277,20 +277,23 @@ public class ShooterSubsystem {
 
     ElapsedTime dx = new ElapsedTime();
 
-    public void decideManualOrTxBLUE(double input)
-    {
-//        turnToAngle(getTurretAngle() + (input * dx.seconds() * turretManualSpeed), false);
-
-        if (limeLight.GetLimelightId() != targetAprilTagIdBLUE)
-        {
-            turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
+    public void decideManualOrTxBLUE(double input) {
+        // Zephyr had noted a confliction with turnToAngle and unwinding with manual
+        if (currentState == TurretState.UNWINDING) {
+            AggresiveTxTracking();
+            dt.reset();
+            return;
         }
-        else
-        {
+
+        if (limeLight.GetLimelightId() != targetAprilTagIdBLUE) {
+            // Tag lost: Use manual control
+            turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
+        } else {
+            // Tag seen: Track it and pack it!!
             trackTargetHybrid();
         }
 
-        dx.reset();
+        dt.reset();
     }
 
     public void decideManualOrTxRED(double input)

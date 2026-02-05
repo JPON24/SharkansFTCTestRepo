@@ -4,16 +4,17 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-/**
- * Seattle Solvers Fraudulent Code
- */
 public class ZephyrSubsystem {
 
-    private static final double AVERAGE_VELOCITY_IN_PER_SEC = 280.0; // tune pls
+    private static final double AVERAGE_VELOCITY_IN_PER_SEC = 280.0;
+
+    private static final double BLUE_BASKET_X = 72.0; // Random things btw... Pls tune based on otos from initialization.
+    private static final double BLUE_BASKET_Y = 72.0;
+    private static final double RED_BASKET_X = -72.0;
+    private static final double RED_BASKET_Y = -72.0;
 
     private static final double TURRET_MAX_DEG = 235.0;
     private static final double TURRET_MIN_DEG = -125.0;
@@ -29,32 +30,27 @@ public class ZephyrSubsystem {
 
     private enum TurretState {
         TRACKING,
-        UNWINDING,
-        IDLE
+        UNWINDING
     }
     private TurretState currentState = TurretState.TRACKING;
 
-    // Unwind State Data
     private double unwindTargetAngle = 0;
     private double unwindStartHeading = 0;
 
-    // Target Data
-    private double targetX = 0; // Field Centric X of tower
-    private double targetY = 0; // Field Centric Y of tower
-    private int targetTagID = 20; // -1 means no tag selected
+    private double targetX = BLUE_BASKET_X;
+    private double targetY = BLUE_BASKET_Y;
+    private int targetTagID = 20;
 
-    // PID Controllers
     private PIDController turretPID = new PIDController(0.002, 0.0001, 0.0);
     private ElapsedTime timer = new ElapsedTime();
 
-    // Telemetry get my balls
     private double debugVirtualDist = 0;
     private double debugVirtualX = 0;
     private double debugVirtualY = 0;
 
     public ZephyrSubsystem(HardwareMap hardwareMap, SparkFunOTOS otosRef, AprilTagLimelight limelightRef) {
         this.otos = otosRef;
-        this.limelight = limelightRef; // Pass initialized limelight if possible, or init here
+        this.limelight = limelightRef;
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -70,6 +66,18 @@ public class ZephyrSubsystem {
         leftHood.setDirection(Servo.Direction.REVERSE);
     }
 
+    public void setAlliance(boolean isBlue) {
+        if (isBlue) {
+            targetX = BLUE_BASKET_X;
+            targetY = BLUE_BASKET_Y;
+            targetTagID = 20;
+        } else {
+            targetX = RED_BASKET_X;
+            targetY = RED_BASKET_Y;
+            targetTagID = 24;
+        }
+    }
+
     public void update() {
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
@@ -80,13 +88,9 @@ public class ZephyrSubsystem {
 
         setShooterRPM(solution.rpm);
         setHoodPos(solution.hoodAngle);
-
         moveTurretToAngle(solution.turretAngle);
     }
 
-    /**
-     * Paint my balls blue
-     */
     private FiringSolution solveFiringSolution() {
         SparkFunOTOS.Pose2D pos = otos.getPosition();
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
@@ -98,7 +102,6 @@ public class ZephyrSubsystem {
 
         double virtX = targetX - (vel.x * timeOfFlight);
         double virtY = targetY - (vel.y * timeOfFlight);
-
 
         debugVirtualX = virtX;
         debugVirtualY = virtY;
@@ -123,6 +126,7 @@ public class ZephyrSubsystem {
             double visionAngle = (getTurretDegrees() - limelight.GetTX()) + leadOffset;
 
             relativeAngle = (visionAngle * 0.8) + (relativeAngle * 0.2);
+            relativeAngle = normalizeAngle(relativeAngle);
         }
 
         double rpm = calculateRPMFromCurve(virtualDist);
@@ -148,14 +152,12 @@ public class ZephyrSubsystem {
             return;
         }
 
-        // Run PID
         double power = turretPID.calculate(targetAngle, currentAngle);
         turretMotor.setPower(power);
     }
 
     private void initiateUnwind(double blockedTargetAngle) {
         currentState = TurretState.UNWINDING;
-        // Find the "other way around" (flip 360)
         double currentHeading = Math.toDegrees(otos.getPosition().h);
 
         if (blockedTargetAngle > 0) {
@@ -168,11 +170,10 @@ public class ZephyrSubsystem {
 
     private void executeUnwind() {
         double currentHeading = Math.toDegrees(otos.getPosition().h);
-        // Adjust target based on how much the robot turned while unwinding
         double headingDelta = currentHeading - unwindStartHeading;
+
         double dynamicTarget = unwindTargetAngle - headingDelta;
 
-        // Simple P-Control to get there fast
         double power = turretPID.calculate(dynamicTarget, getTurretDegrees());
         turretMotor.setPower(power);
 
@@ -181,10 +182,7 @@ public class ZephyrSubsystem {
         }
     }
 
-
     private double calculateRPMFromCurve(double dist) {
-        // Your regression equation: f(x) = 0.001(x-53)^4 + 3300
-        // Adjusted for Limelight offset constant
         double x = dist - 3.0;
         return (0.001 * Math.pow((x - 53), 4)) + 3300;
     }
@@ -195,15 +193,8 @@ public class ZephyrSubsystem {
         return angle;
     }
 
-
-    public void setTarget(double x, double y, int aprilTagID) {
-        this.targetX = x;
-        this.targetY = y;
-        this.targetTagID = aprilTagID;
-    }
-
     private void setShooterRPM(double rpm) {
-        double velocity = (rpm / 60.0) * 28.0; // 28 counts/rev for motor tune this
+        double velocity = (rpm / 60.0) * 28.0;
         shooterMotor.setVelocity(velocity);
     }
 
@@ -219,12 +210,8 @@ public class ZephyrSubsystem {
     public double getVirtualDist() { return debugVirtualDist; }
     public String getTurretState() { return currentState.toString(); }
 
-
     private static class FiringSolution {
-        public double turretAngle;
-        public double rpm;
-        public double hoodAngle;
-
+        public double turretAngle, rpm, hoodAngle;
         public FiringSolution(double angle, double rpm, double hood) {
             this.turretAngle = angle;
             this.rpm = rpm;
@@ -245,6 +232,7 @@ public class ZephyrSubsystem {
         public double calculate(double target, double current) {
             double error = target - current;
             double dt = timer.seconds();
+            if (dt > 0.2) dt = 0.02;
             timer.reset();
 
             integral += error * dt;

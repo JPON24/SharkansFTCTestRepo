@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 @TeleOp(name = "Competition TeleOp BLUE")
 public class CompOp extends OpMode {
 
+    private ZephyrSubsystem zephyr;
     private SwerveSubsystem swerve;
     private ShooterSubsystem shooter;
     private floatingIntake intake;
@@ -45,10 +46,16 @@ public class CompOp extends OpMode {
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+//
+//        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
+//        zephyr.setAlliance(true); // true for BLUE, false for RED
     }
 
     @Override
     public void loop() {
+
+//        zephyr.update();
+
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = -gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;
