@@ -72,7 +72,7 @@ public class SwerveSubsystem {
         backRightServo = hardwareMap.get(Servo.class, "backRightServo");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
         backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
