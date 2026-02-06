@@ -164,7 +164,7 @@ public class ShooterSubsystem {
         turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
-        rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+        rightShooter.setDirection(DcMotorEx.Direction.FORWARD);
         rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
                 new PIDFCoefficients(100,1,0,0));
