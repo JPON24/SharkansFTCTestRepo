@@ -92,6 +92,10 @@ public class SwerveSubsystem {
         lastTargetRR = getBRAngle();
     }
 
+    ElapsedTime driveTime = new ElapsedTime();
+    private final double decelerationTime = 1;
+    private boolean decelerating = false;
+
     public void drive(double y_cmd, double x_cmd, double turn_cmd) {
         if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
             stop();
@@ -179,10 +183,28 @@ public class SwerveSubsystem {
         optBL = CorrectOutOfRange(tgtPosRL, optParamsRL[1], (BR_OFFSET-BL_OFFSET));
         optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
-        frontLeftMotor.setPower(optFL[1]);
-        frontRightMotor.setPower(optFR[1]);
-        backLeftMotor.setPower(optBL[1]);
-        backRightMotor.setPower(optBR[1]);
+        double outputSpeed = 1.0;
+        if (x_cmd == 0 && y_cmd == 0 && !decelerating)
+        {
+            decelerating = true;
+            driveTime.reset();
+        }
+        if (decelerating)
+        {
+            if (driveTime.seconds() > decelerationTime)
+            {
+                decelerating = false;
+                outputSpeed = 0;
+            }
+            else
+            {
+                outputSpeed *= (decelerationTime - driveTime.seconds()) / decelerationTime;
+            }
+        }
+        frontLeftMotor.setPower(optFL[1] * outputSpeed);
+        frontRightMotor.setPower(optFR[1] * outputSpeed);
+        backLeftMotor.setPower(optBL[1] * outputSpeed);
+        backRightMotor.setPower(optBR[1] * outputSpeed);
 
         lastTargetFL = optFL[0];
         lastTargetFR = optFR[0];

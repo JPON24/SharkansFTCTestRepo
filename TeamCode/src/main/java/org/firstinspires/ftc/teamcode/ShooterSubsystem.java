@@ -270,7 +270,7 @@ public class ShooterSubsystem {
                 setHoodPosition(h(currentDistance));
                 hoodResetTimer.reset();
             }
-            setTargetRPM((int)(r(currentDistance)));
+            setTargetRPM(-(int)(r(currentDistance)));
         }
 //        updateHood();
     }
