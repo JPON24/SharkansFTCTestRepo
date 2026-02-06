@@ -72,9 +72,9 @@ public class SwerveSubsystem {
         backRightServo = hardwareMap.get(Servo.class, "backRightServo");
 
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        frontRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -164,15 +164,20 @@ public class SwerveSubsystem {
         double[] optBL = Clamp315(angleRL, blSpeed);
         double[] optBR = Clamp315(angleRR, brSpeed);
 
-        double tgtPosFL = GetPositionFromAngle(optFL[0], FL_OFFSET);
-        double tgtPosFR = GetPositionFromAngle(optFR[0], FR_OFFSET);
-        double tgtPosRL = GetPositionFromAngle(optBL[0], BL_OFFSET);
-        double tgtPosRR = GetPositionFromAngle(optBR[0], BR_OFFSET);
+        double[] optParamsFL = optimize(optFL[0], speed_fl, lastTargetFL);
+        double[] optParamsFR = optimize(optFR[0], speed_fr, lastTargetFR);
+        double[] optParamsRL = optimize(optBL[0], speed_rl, lastTargetRL);
+        double[] optParamsRR = optimize(optBR[0], speed_rr, lastTargetRR);
 
-        optFL = CorrectOutOfRange(tgtPosFL, optFL[1], 0);
-        optFR = CorrectOutOfRange(tgtPosFR, optFR[1], 0);
-        optBL = CorrectOutOfRange(tgtPosRL, optBL[1], 0);
-        optBR = CorrectOutOfRange(tgtPosRR, optBR[1], 0);
+        double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
+        double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
+        double tgtPosRL = GetPositionFromAngle(optParamsRL[0], BL_OFFSET);
+        double tgtPosRR = GetPositionFromAngle(optParamsRR[0], BR_OFFSET);
+
+        optFL = CorrectOutOfRange(tgtPosFL, optParamsFL[1], (BR_OFFSET-FL_OFFSET));
+        optFR = CorrectOutOfRange(tgtPosFR, optParamsFR[1], (BR_OFFSET-FR_OFFSET));
+        optBL = CorrectOutOfRange(tgtPosRL, optParamsRL[1], (BR_OFFSET-BL_OFFSET));
+        optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
         frontLeftMotor.setPower(optFL[1]);
         frontRightMotor.setPower(optFR[1]);
