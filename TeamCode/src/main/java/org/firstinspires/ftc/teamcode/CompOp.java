@@ -46,6 +46,8 @@ public class CompOp extends OpMode {
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+
+        swerve.drive(0, 0, 0);
 //
 //        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
 //        zephyr.setAlliance(true); // true for BLUE, false for RED
