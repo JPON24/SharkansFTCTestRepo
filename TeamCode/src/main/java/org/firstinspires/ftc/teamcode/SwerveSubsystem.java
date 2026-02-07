@@ -44,6 +44,15 @@ public class SwerveSubsystem {
     private double BL_OFFSET = 0.5;
     private double BR_OFFSET = 0.5;
 
+    double lastWriteFL = 0.0;
+    double lastWriteFR = 0.0;
+    double lastWriteBL = 0.0;
+    double lastWriteBR = 0.0;
+
+    double SERVO_JITTER_THRESHOLD = 0.00396825396; // The math for this is DEGREES OF JITTER / 315. This is 1.25 degrees
+
+    private double headingOffset = 0;
+
     ElapsedTime updateLimiter = new ElapsedTime();
     private final double swerveUpdateHz = 12;
     private double deltaMax = 25;
@@ -96,23 +105,30 @@ public class SwerveSubsystem {
     private final double decelerationTime = 1;
     private boolean decelerating = false;
 
+    public void resetHeading() {
+        if (otos != null) {
+            headingOffset = otos.getPosition().h;
+        }
+    }
+
     public void drive(double y_cmd, double x_cmd, double turn_cmd) {
         if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
             stop();
             return;
         }
 
-        // Field Centric Code (Uncomment if needed)
-        /*
         if (otos != null) {
-            double heading = otos.getPosition().h;
-            double cos = Math.cos(-heading);
-            double sin = Math.sin(-heading);
-            double temp = x_cmd * cos - y_cmd * sin;
-            y_cmd = x_cmd * sin + y_cmd * cos;
-            x_cmd = temp;
+            double currentHeading = otos.getPosition().h;
+
+            double botHeading = Math.toRadians(currentHeading - headingOffset);
+
+            // Rotation buh
+            double rotX = x_cmd * Math.cos(-botHeading) - y_cmd * Math.sin(-botHeading);
+            double rotY = x_cmd * Math.sin(-botHeading) + y_cmd * Math.cos(-botHeading);
+
+            x_cmd = rotX;
+            y_cmd = rotY;
         }
-        */
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd + turn_cmd * W;
@@ -270,11 +286,25 @@ public class SwerveSubsystem {
     public void SetServoPositions(double FL, double FR, double BL, double BR) {
         if (updateLimiter.seconds() > 1.0 / swerveUpdateHz)
         {
-            frontLeftServo.setPosition(FL);
-            frontRightServo.setPosition(FR);
-            backLeftServo.setPosition(BL);
-            backRightServo.setPosition(BR);
-            updateLimiter.reset();
+            if (Math.abs(FL - lastWriteFL) > SERVO_JITTER_THRESHOLD) {
+                frontLeftServo.setPosition(FL);
+                lastWriteFL = FL;
+            }
+
+            if (Math.abs(FR - lastWriteFR) > SERVO_JITTER_THRESHOLD) {
+                frontRightServo.setPosition(FR);
+                lastWriteFR = FR;
+            }
+
+            if (Math.abs(BL - lastWriteBL) > SERVO_JITTER_THRESHOLD) {
+                backLeftServo.setPosition(BL);
+                lastWriteBL = BL;
+            }
+
+            if (Math.abs(BR - lastWriteBR) > SERVO_JITTER_THRESHOLD) {
+                backRightServo.setPosition(BR);
+                lastWriteBR = BR;
+            }
         }
     }
 
