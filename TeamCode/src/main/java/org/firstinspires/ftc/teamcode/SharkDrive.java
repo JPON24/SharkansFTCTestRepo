@@ -264,7 +264,7 @@ public class SharkDrive {
         }
 
 //        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.drive(speed * output[1], speed * output[0], speed * output[2]);
+        dt.drive(speed * output[1], speed * output[0], -speed * output[2]);
     }
 
     // creates odometry fallback if the limelight stops working

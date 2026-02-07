@@ -54,12 +54,12 @@ public class SwerveSubsystem {
     private double headingOffset = 0;
 
     ElapsedTime updateLimiter = new ElapsedTime();
-    private final double swerveUpdateHz = 12;
+    private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0.65;
+    private double speed = 0.75;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
-    private double flSpeed, frSpeed, blSpeed, brSpeed;
+    public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
 
     public void init(HardwareMap hardwareMap) {
@@ -103,7 +103,7 @@ public class SwerveSubsystem {
 
     ElapsedTime driveTime = new ElapsedTime();
     private final double decelerationTime = 1;
-    private boolean decelerating = false;
+    public boolean decelerating = false;
 
     public void resetHeading() {
         if (otos != null) {
@@ -111,24 +111,44 @@ public class SwerveSubsystem {
         }
     }
 
+    public double heading()
+    {
+        return otos.getPosition().h;
+    }
+
+    public double xCmdVal = 0;
+    public double yCmdVal = 0;
+    public double rCmdVal = 0;
+    public boolean shouldDecelerate = false;
+    public boolean canDecelerate = false;
+
     public void drive(double y_cmd, double x_cmd, double turn_cmd) {
-        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
-            stop();
-            return;
+//        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
+//            stop();
+//            return;
+//        }
+
+        shouldDecelerate = Math.abs(x_cmd) < 0.03 && Math.abs(y_cmd) < 0.03 && Math.abs(turn_cmd) < 0.03 && !decelerating;
+
+        if (Math.abs(x_cmd) > 0.03 || Math.abs(y_cmd) > 0.03 || Math.abs(turn_cmd) > 0.03)
+        {
+            canDecelerate = true;
         }
 
-        if (otos != null) {
-            double currentHeading = otos.getPosition().h;
+        double currentHeading = otos.getPosition().h;
 
-            double botHeading = Math.toRadians(currentHeading - headingOffset);
+        double botHeading = Math.toRadians(currentHeading - headingOffset);
 
-            // Rotation buh
-            double rotX = x_cmd * Math.cos(-botHeading) - y_cmd * Math.sin(-botHeading);
-            double rotY = x_cmd * Math.sin(-botHeading) + y_cmd * Math.cos(-botHeading);
+        // Rotation buh
+        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
+        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
 
-            x_cmd = rotX;
-            y_cmd = rotY;
-        }
+        x_cmd = rotX;
+        y_cmd = rotY;
+
+        xCmdVal = x_cmd;
+        yCmdVal = y_cmd;
+        rCmdVal = turn_cmd;
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd + turn_cmd * W;
@@ -156,6 +176,7 @@ public class SwerveSubsystem {
         angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
                 : Math.toDegrees(Math.atan2(x_rr, y_rr));
 
+        // previously was subtracting current heading here
         angleFL = Clamp360(angleFL - 22.5) - (FL_OFFSET * 315);
         angleFR = Clamp360(angleFR - 22.5) - (FR_OFFSET * 315);
         angleRL = Clamp360(angleRL - 22.5) - (BL_OFFSET * 315);
@@ -184,10 +205,10 @@ public class SwerveSubsystem {
         double[] optBL = Clamp315(angleRL, blSpeed);
         double[] optBR = Clamp315(angleRR, brSpeed);
 
-        double[] optParamsFL = optimize(optFL[0], speed_fl, lastTargetFL);
-        double[] optParamsFR = optimize(optFR[0], speed_fr, lastTargetFR);
-        double[] optParamsRL = optimize(optBL[0], speed_rl, lastTargetRL);
-        double[] optParamsRR = optimize(optBR[0], speed_rr, lastTargetRR);
+        double[] optParamsFL = optimize(optFL[0], optFL[1], lastTargetFL);
+        double[] optParamsFR = optimize(optFR[0], optFR[1], lastTargetFR);
+        double[] optParamsRL = optimize(optBL[0], optBL[1], lastTargetRL);
+        double[] optParamsRR = optimize(optBR[0], optBR[1], lastTargetRR);
 
         double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
         double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
@@ -200,12 +221,13 @@ public class SwerveSubsystem {
         optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
         double outputSpeed = 1.0;
-        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
+        if (shouldDecelerate)
         {
             decelerating = true;
+            canDecelerate = false;
             driveTime.reset();
         }
-        if (decelerating)
+        else if (decelerating)
         {
             if (driveTime.seconds() > decelerationTime)
             {
@@ -235,6 +257,11 @@ public class SwerveSubsystem {
         if (angle < 0)
         {
             angle += 360;
+        }
+
+        if (angle > 360)
+        {
+            angle -= 360;
         }
 
         return angle;

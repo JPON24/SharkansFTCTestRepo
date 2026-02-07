@@ -7,7 +7,7 @@ public class floatingIntake {
     DcMotorSimple intakeMotor; // Exp hub port 2
     DcMotorSimple transferMotor; // Exp port 3
 
-    double transferIntakeSpeed = -0.25;
+    double transferIntakeSpeed = -0.2;
 
     double transferSpeed = -1.0;
 

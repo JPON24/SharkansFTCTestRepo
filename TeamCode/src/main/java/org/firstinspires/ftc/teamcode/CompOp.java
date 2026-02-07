@@ -59,7 +59,7 @@ public class CompOp extends OpMode {
 //        zephyr.update();
 
         double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = -gamepad1.left_stick_y;
+        double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
 
         swerve.drive(leftStickY, leftStickX, rightStickX);
@@ -182,6 +182,19 @@ public class CompOp extends OpMode {
 //        telemetry.addData("BL tgt POS: ", swerve.lastTargetRL);
 //        telemetry.addData("BR tgt POS: ", swerve.lastTargetRR);
 
+        telemetry.addData("flSpeed: ", swerve.flSpeed);
+        telemetry.addData("frSpeed: ", swerve.frSpeed);
+        telemetry.addData("blSpeed: ", swerve.blSpeed);
+        telemetry.addData("brSpeed: ", swerve.brSpeed);
+        telemetry.addData("shouldDecelerate: " , swerve.shouldDecelerate);
+        telemetry.addData("is decelerating: ", swerve.decelerating);
+        telemetry.addData("can decelerate: ", swerve.canDecelerate);
+
+        telemetry.addData("x cmd: ", swerve.xCmdVal);
+        telemetry.addData("y cmd: ", swerve.yCmdVal);
+        telemetry.addData("r cmd: ", swerve.rCmdVal);
+
+        telemetry.addData("heading: ", swerve.heading());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();

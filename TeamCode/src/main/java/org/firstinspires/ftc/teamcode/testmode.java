@@ -146,7 +146,7 @@ public class testmode extends OpMode
             backRightServo.setPosition(brOffset);
         }
 
-        turret.setPower(0.3);
+//        turret.setPower(0.3);
 
         lastA = gamepad1.a;
         lastX = gamepad1.x;
