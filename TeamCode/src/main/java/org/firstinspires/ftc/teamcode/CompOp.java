@@ -186,9 +186,7 @@ public class CompOp extends OpMode {
         telemetry.addData("frSpeed: ", swerve.frSpeed);
         telemetry.addData("blSpeed: ", swerve.blSpeed);
         telemetry.addData("brSpeed: ", swerve.brSpeed);
-        telemetry.addData("shouldDecelerate: " , swerve.shouldDecelerate);
         telemetry.addData("is decelerating: ", swerve.decelerating);
-        telemetry.addData("can decelerate: ", swerve.canDecelerate);
 
         telemetry.addData("x cmd: ", swerve.xCmdVal);
         telemetry.addData("y cmd: ", swerve.yCmdVal);

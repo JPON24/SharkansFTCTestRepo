@@ -57,7 +57,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0.75;
+    private double speed = 0.4;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -119,21 +119,12 @@ public class SwerveSubsystem {
     public double xCmdVal = 0;
     public double yCmdVal = 0;
     public double rCmdVal = 0;
-    public boolean shouldDecelerate = false;
-    public boolean canDecelerate = false;
 
     public void drive(double y_cmd, double x_cmd, double turn_cmd) {
 //        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
 //            stop();
 //            return;
 //        }
-
-        shouldDecelerate = Math.abs(x_cmd) < 0.03 && Math.abs(y_cmd) < 0.03 && Math.abs(turn_cmd) < 0.03 && !decelerating;
-
-        if (Math.abs(x_cmd) > 0.03 || Math.abs(y_cmd) > 0.03 || Math.abs(turn_cmd) > 0.03)
-        {
-            canDecelerate = true;
-        }
 
         double currentHeading = otos.getPosition().h;
 
@@ -221,10 +212,9 @@ public class SwerveSubsystem {
         optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
         double outputSpeed = 1.0;
-        if (shouldDecelerate)
+        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
         {
             decelerating = true;
-            canDecelerate = false;
             driveTime.reset();
         }
         else if (decelerating)
