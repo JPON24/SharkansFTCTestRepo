@@ -60,20 +60,22 @@ public class CompOp extends OpMode {
 
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = -gamepad1.left_stick_y;
-        double rightStickX = gamepad1.right_stick_x;
+        double rightStickX = -gamepad1.right_stick_x;
 
         swerve.drive(leftStickY, leftStickX, rightStickX);
 
-        boolean rightBumperPressed = gamepad1.right_bumper;
-        boolean leftBumperPressed = gamepad1.left_bumper;
+        boolean upDpadPressed = gamepad2.dpad_up;
+        boolean downDpadPressed = gamepad2.dpad_down;
 
-        boolean hoodUp = gamepad1.dpad_right;
-        boolean hoodDown = gamepad1.dpad_left;
+        boolean hoodUp = gamepad2.right_bumper;
+        boolean hoodDown = gamepad2.left_bumper;
 
-        boolean willIncrement = (rightBumperPressed && !lastRightBumperState);
-        boolean willDecrement = (leftBumperPressed && !lastLeftBumperState);
+        boolean willIncrement = (upDpadPressed && !lastRightBumperState);
+        boolean willDecrement = (downDpadPressed && !lastLeftBumperState);
 
-        boolean swapToAuto = gamepad1.a;
+        boolean setShooterRPMHigh = gamepad2.y;
+        boolean setShooterRPMLow = gamepad2.a;
+        boolean swapToAuto = gamepad2.b;
 
         if (swapToAuto && !lastSwapAuto) {
             isAutoAdjust = !isAutoAdjust;
@@ -102,6 +104,16 @@ public class CompOp extends OpMode {
             }
         }
 
+        if (setShooterRPMHigh)
+        {
+            shooter.setTargetRPM(3300);
+        }
+
+        if (setShooterRPMLow)
+        {
+            shooter.setTargetRPM(0);
+        }
+
         if (hoodUp && !lastHoodUp && hoodAdjust + 0.05 <= 0.65) {
             hoodAdjust = hoodAdjust + 0.05;
         } else if (hoodDown && !lastHoodDown && hoodAdjust - 0.05 >= 0){
@@ -112,28 +124,15 @@ public class CompOp extends OpMode {
 
         shooter.BangBang();
 
-        lastRightBumperState = rightBumperPressed;
-        lastLeftBumperState = leftBumperPressed;
+        lastRightBumperState = upDpadPressed;
+        lastLeftBumperState = downDpadPressed;
 
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
-        if (gamepad1.right_trigger > 0.5)
-        {
-//            shooter.decideManualOrTxBLUE(-1);
-        }
-        else if (gamepad1.left_trigger > 0.5)
-        {
-//            shooter.decideManualOrTxBLUE(1);
-        }
-        else {
-//            shooter.decideManualOrTxBLUE(0);
-        }
-//        shooter.trackTargetHybrid();
-
-        if (gamepad1.x) {
+        if (gamepad2.left_trigger > 0.3) {
             intake.intake(true);
-        } else if (gamepad1.y) {
+        } else if (gamepad2.right_trigger > 0.3) {
             intake.outtake(true);
         } else {
             intake.intake(false);

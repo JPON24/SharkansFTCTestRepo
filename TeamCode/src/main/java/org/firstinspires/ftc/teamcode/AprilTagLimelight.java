@@ -27,7 +27,7 @@ public class AprilTagLimelight
     public void init(HardwareMap hwMap) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");
 //        Imu = hwMap.get(IMU.class, "imu");
-        limeLight.pipelineSwitch(0); // ASK JACOB HOW TO FIX. IDK WHAT THIS IS. WE MIGHT NEED TWO FOR BOTH COLOR SENSING AND APRIL TAG DETECTION
+        limeLight.pipelineSwitch(0); // blue alliance
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP);

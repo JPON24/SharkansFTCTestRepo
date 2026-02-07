@@ -280,7 +280,7 @@ public class ShooterSubsystem {
     public void decideManualOrTxBLUE(double input) {
         // Zephyr had noted a confliction with turnToAngle and unwinding with manual
         if (currentState == TurretState.UNWINDING) {
-            AggresiveTxTracking();
+            txTracking();
             dt.reset();
             return;
         }
@@ -308,6 +308,29 @@ public class ShooterSubsystem {
         }
 
         dt.reset();
+    }
+
+    ElapsedTime deltaTime = new ElapsedTime();
+
+    double lastTxNew = 0;
+    public void txTracking()
+    {
+        kP = 0.03;
+        kI = 0;
+        kD = 0;
+
+        double error = limeLight.GetTX();
+        double dt = deltaTime.seconds();
+
+        double derivative = (error - lastError) / dt;
+
+        double turretPower = (kP * error);
+        turretPower = Math.max(-0.8, Math.min(0.8, turretPower));
+
+        turretMotor.setPower(turretPower);
+
+        lastTxNew = error;
+        deltaTime.reset();
     }
 
     public void AggresiveTxTracking()

@@ -11,6 +11,7 @@ public class FarBlue extends LinearOpMode
 
     private final double autonSpeed = 0.7;
 
+
     @Override
     public void runOpMode()
     {
