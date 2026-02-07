@@ -150,6 +150,11 @@ public class ShooterSubsystem {
         initSystem(hardwareMap, otosRef);
     }
 
+    public double getTx()
+    {
+        return limeLight.GetTX();
+    }
+
     private void initSystem(HardwareMap hardwareMap, SparkFunOTOS otosRef)
     {
         limeLight.init(hardwareMap);
@@ -278,19 +283,19 @@ public class ShooterSubsystem {
     ElapsedTime dx = new ElapsedTime();
 
     public void decideManualOrTxBLUE(double input) {
-        // Zephyr had noted a confliction with turnToAngle and unwinding with manual
-        if (currentState == TurretState.UNWINDING) {
-            txTracking();
-            dt.reset();
-            return;
-        }
+//        // Zephyr had noted a confliction with turnToAngle and unwinding with manual
+//        if (currentState == TurretState.UNWINDING) {
+//            txTracking();
+//            dt.reset();
+//            return;
+//        }
 
         if (limeLight.GetLimelightId() != targetAprilTagIdBLUE) {
             // Tag lost: Use manual control
             turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
         } else {
             // Tag seen: Track it and pack it!!
-            trackTargetHybrid();
+            txTracking();
         }
 
         dt.reset();
@@ -315,7 +320,7 @@ public class ShooterSubsystem {
     double lastTxNew = 0;
     public void txTracking()
     {
-        kP = 0.03;
+        kP = 0.01;
         kI = 0;
         kD = 0;
 
@@ -327,7 +332,7 @@ public class ShooterSubsystem {
         double turretPower = (kP * error);
         turretPower = Math.max(-0.8, Math.min(0.8, turretPower));
 
-        turretMotor.setPower(turretPower);
+        turretMotor.setPower(-turretPower);
 
         lastTxNew = error;
         deltaTime.reset();

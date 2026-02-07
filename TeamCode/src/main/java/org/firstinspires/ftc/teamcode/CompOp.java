@@ -104,6 +104,8 @@ public class CompOp extends OpMode {
             }
         }
 
+        shooter.txTracking();
+
         if (setShooterRPMHigh)
         {
             shooter.setTargetRPM(3300);
@@ -152,34 +154,35 @@ public class CompOp extends OpMode {
 //                swerve.getFLRawAngle(), swerve.getFRRawAngle(),
 //                swerve.getBLRawAngle(), swerve.getBRRawAngle());
 //        telemetry.addData("", "");
-        telemetry.addData("=== SHOOTER ===", "");
-        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
-        telemetry.addData("Turret", "%.1f° (%d ticks)", shooter.getTurretAngle(), shooter.getTurretTicks());
-        telemetry.addData("Mode", shooter.isCalibrationMode() ? "REACTIVE" : "PREDICTIVE");
-        telemetry.addData("Calibrated", shooter.isCalibrated() ? "YES" : "NO");
-        telemetry.addData("Saved Offset", "%.1f°", shooter.getSavedOffset());
+//        telemetry.addData("=== SHOOTER ===", "");
+//        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
+//        telemetry.addData("Turret", "%.1f° (%d ticks)", shooter.getTurretAngle(), shooter.getTurretTicks());
+//        telemetry.addData("Mode", shooter.isCalibrationMode() ? "REACTIVE" : "PREDICTIVE");
+//        telemetry.addData("Calibrated", shooter.isCalibrated() ? "YES" : "NO");
+//        telemetry.addData("Saved Offset", "%.1f°", shooter.getSavedOffset());
+//
+//        if (!shooter.isCalibrationMode()) {
+//            // Show predictive mode details
+//            telemetry.addData("LL IMU Yaw", "%.1f°", shooter.getLimelightYaw());
+//            telemetry.addData("Target Angle", "%.1f°", shooter.getLastTargetAngle());
+//            telemetry.addData("Turret Current", "%.1f°", shooter.getTurretAngle());
+//            telemetry.addData("Error", "%.1f°", shooter.getLastTargetAngle() - shooter.getTurretAngle());
+//        } else {
+//            telemetry.addData("DEBUG TX Error", "%.2f°", shooter.getLastTX());
+//            telemetry.addData("DEBUG Deadband", "%.1f°", shooter.getDeadband());
+//        }
+//
+//        telemetry.addData("FL tgt: ", swerve.angleFL);
+//        telemetry.addData("FR tgt: ", swerve.angleFR);
+//        telemetry.addData("BL tgt: ", swerve.angleRL);
+//        telemetry.addData("BR tgt: ", swerve.angleRR);
+//
+//        telemetry.addData("FL tgt POS: ", swerve.lastTargetFL);
+//        telemetry.addData("FR tgt POS: ", swerve.lastTargetFR);
+//        telemetry.addData("BL tgt POS: ", swerve.lastTargetRL);
+//        telemetry.addData("BR tgt POS: ", swerve.lastTargetRR);
 
-        if (!shooter.isCalibrationMode()) {
-            // Show predictive mode details
-            telemetry.addData("LL IMU Yaw", "%.1f°", shooter.getLimelightYaw());
-            telemetry.addData("Target Angle", "%.1f°", shooter.getLastTargetAngle());
-            telemetry.addData("Turret Current", "%.1f°", shooter.getTurretAngle());
-            telemetry.addData("Error", "%.1f°", shooter.getLastTargetAngle() - shooter.getTurretAngle());
-        } else {
-            telemetry.addData("DEBUG TX Error", "%.2f°", shooter.getLastTX());
-            telemetry.addData("DEBUG Deadband", "%.1f°", shooter.getDeadband());
-        }
-
-        telemetry.addData("FL tgt: ", swerve.angleFL);
-        telemetry.addData("FR tgt: ", swerve.angleFR);
-        telemetry.addData("BL tgt: ", swerve.angleRL);
-        telemetry.addData("BR tgt: ", swerve.angleRR);
-
-        telemetry.addData("FL tgt POS: ", swerve.lastTargetFL);
-        telemetry.addData("FR tgt POS: ", swerve.lastTargetFR);
-        telemetry.addData("BL tgt POS: ", swerve.lastTargetRL);
-        telemetry.addData("BR tgt POS: ", swerve.lastTargetRR);
-
+        telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();
     }

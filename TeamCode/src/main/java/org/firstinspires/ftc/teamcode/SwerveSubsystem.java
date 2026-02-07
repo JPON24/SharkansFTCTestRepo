@@ -45,7 +45,7 @@ public class SwerveSubsystem {
     private double BR_OFFSET = 0.5;
 
     ElapsedTime updateLimiter = new ElapsedTime();
-    private final double swerveUpdateHz = 4;
+    private final double swerveUpdateHz = 12;
     private double deltaMax = 25;
 
     private double speed = 0.65;
