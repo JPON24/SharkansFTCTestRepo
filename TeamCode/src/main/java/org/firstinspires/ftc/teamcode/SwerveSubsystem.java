@@ -184,7 +184,7 @@ public class SwerveSubsystem {
         optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
         double outputSpeed = 1.0;
-        if (x_cmd == 0 && y_cmd == 0 && !decelerating)
+        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
         {
             decelerating = true;
             driveTime.reset();
