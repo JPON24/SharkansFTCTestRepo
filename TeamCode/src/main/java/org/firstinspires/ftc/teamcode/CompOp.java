@@ -62,7 +62,16 @@ public class CompOp extends OpMode {
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
 
-        swerve.drive(leftStickY, leftStickX, rightStickX);
+        boolean plant = gamepad2.a;
+
+        if (plant)
+        {
+            swerve.plant();
+        }
+        else
+        {
+            swerve.drive(leftStickY, leftStickX, rightStickX);
+        }
 
         boolean upDpadPressed = gamepad2.dpad_up;
         boolean downDpadPressed = gamepad2.dpad_down;
@@ -74,7 +83,7 @@ public class CompOp extends OpMode {
         boolean willDecrement = (downDpadPressed && !lastLeftBumperState);
 
         boolean setShooterRPMHigh = gamepad2.y;
-        boolean setShooterRPMLow = gamepad2.a;
+        boolean setShooterRPMLow = gamepad2.x;
         boolean swapToAuto = gamepad2.b;
 
         if (swapToAuto && !lastSwapAuto) {
@@ -104,7 +113,7 @@ public class CompOp extends OpMode {
             }
         }
 
-        shooter.txTracking();
+//        shooter.txTracking();
 
         if (setShooterRPMHigh)
         {
@@ -123,6 +132,9 @@ public class CompOp extends OpMode {
         }
 
         telemetry.addData("hood position", hoodAdjust);
+        telemetry.addData("turret position: ", shooter.getTurretTicks());
+
+        shooter.txTracking();
 
         shooter.BangBang();
 
@@ -155,7 +167,7 @@ public class CompOp extends OpMode {
 //                swerve.getBLRawAngle(), swerve.getBRRawAngle());
 //        telemetry.addData("", "");
 //        telemetry.addData("=== SHOOTER ===", "");
-//        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
+        telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
 //        telemetry.addData("Turret", "%.1f° (%d ticks)", shooter.getTurretAngle(), shooter.getTurretTicks());
 //        telemetry.addData("Mode", shooter.isCalibrationMode() ? "REACTIVE" : "PREDICTIVE");
 //        telemetry.addData("Calibrated", shooter.isCalibrated() ? "YES" : "NO");

@@ -202,24 +202,32 @@ public class ShooterSubsystem {
     // rpm as a function of x
     private double r(double x)
     {
-        if (x == 0) {return 0;} // for if it doesnt see anything stop the motah
+        if (x < 20) {return 0;} // for if it doesnt see anything stop the motah
+        double output = (0.5 * (x-40)*(x-40)) + 3100;
 
-        return -0.0002 * Math.pow(x,5) + 0.0483 * Math.pow(x,4) -
-                5.2488 * Math.pow(x,3) + 280.38 * Math.pow(x,2) - 7354.3 * x
-                + 78852;
+        if (output > 3600)
+        {
+            output = 3600;
+        }
+
+        return output;
     }
 
     // hood as a function of x
     private double h(double x)
     {
         // restrictions YAY
-        if (x == 0) { return 0; }
+        if (x < 20) { return 0; }
         if (x > 72) { return 0.15; }
 
-        return Math.pow(9,-9) * Math.pow(x,6) -
-                Math.pow(3,-6) * Math.pow(x,5) +
-                0.0004 * Math.pow(x,4) - 0.0271 * Math.pow(x,3) +
-                1.056 * Math.pow(x,2) - 21.712 * x + 184.28;
+        double output = (-0.01 * x) + 0.9;
+
+        if (output < 0)
+        {
+            output = 0;
+        }
+
+        return output;
     }
 
     private double bangBangCoef = 1.2;
@@ -246,25 +254,24 @@ public class ShooterSubsystem {
 
     public void update() {
         double currentDistance = limeLight.GetDistance();
-        final double CLOSE_LIMIT = 38.5;
-        final double MEDIUM_LIMIT = 56;
-
-        if (currentDistance > 0 && currentDistance < CLOSE_LIMIT) {
-            currentHoodState = ShootState.CLOSE_SHOT;
-        } else if (currentDistance >= CLOSE_LIMIT && currentDistance < MEDIUM_LIMIT) {
-            currentHoodState = ShootState.MEDIUM_SHOT;
-        } else if (currentDistance >= MEDIUM_LIMIT) {
-            currentHoodState = ShootState.FAR_HARD_SHOT;
-        } else {
-            currentHoodState = ShootState.NO_SHOT;
-        }
+//        final double CLOSE_LIMIT = 38.5;
+//        final double MEDIUM_LIMIT = 56;
+//
+//        if (currentDistance > 0 && currentDistance < CLOSE_LIMIT) {
+//            currentHoodState = ShootState.CLOSE_SHOT;
+//        } else if (currentDistance >= CLOSE_LIMIT && currentDistance < MEDIUM_LIMIT) {
+//            currentHoodState = ShootState.MEDIUM_SHOT;
+//        } else if (currentDistance >= MEDIUM_LIMIT) {
+//            currentHoodState = ShootState.FAR_HARD_SHOT;
+//        } else {
+//            currentHoodState = ShootState.NO_SHOT;
+//        }
 
         // cant shoot...
         if (currentDistance < 20 || currentDistance > 90)
         {
             setHoodPosition(0.45);
             setTargetRPM(0);
-
         }
         else
         {
@@ -275,7 +282,7 @@ public class ShooterSubsystem {
                 setHoodPosition(h(currentDistance));
                 hoodResetTimer.reset();
             }
-            setTargetRPM(-(int)(r(currentDistance)));
+            setTargetRPM((int)(r(currentDistance)));
         }
 //        updateHood();
     }
@@ -318,6 +325,12 @@ public class ShooterSubsystem {
     ElapsedTime deltaTime = new ElapsedTime();
 
     double lastTxNew = 0;
+
+    double turretLeftMax = 0;
+    double turretRightMax = 0;
+
+    int tempTgt = 0;
+
     public void txTracking()
     {
         kP = 0.01;
@@ -332,7 +345,33 @@ public class ShooterSubsystem {
         double turretPower = (kP * error);
         turretPower = Math.max(-0.8, Math.min(0.8, turretPower));
 
-        turretMotor.setPower(-turretPower);
+        if (turretMotor.getCurrentPosition() > turretLeftMax)
+        {
+            currentState = TurretState.UNWINDING;
+            tempTgt = (int)(turretRightMax - 100);
+        }
+        else if (turretMotor.getCurrentPosition() < turretRightMax)
+        {
+            currentState = TurretState.UNWINDING;
+            tempTgt = (int)(turretLeftMax + 100);
+        }
+
+        if (getTurretState() == TurretState.TRACKING)
+        {
+            turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            turretMotor.setPower(-turretPower);
+        }
+        else if (getTurretState() == TurretState.UNWINDING)
+        {
+            turretMotor.setTargetPosition(tempTgt);
+            turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            if (Math.abs(tempTgt - turretMotor.getCurrentPosition()) < 50)
+            {
+                currentState = TurretState.TRACKING;
+            }
+        }
+
 
         lastTxNew = error;
         deltaTime.reset();

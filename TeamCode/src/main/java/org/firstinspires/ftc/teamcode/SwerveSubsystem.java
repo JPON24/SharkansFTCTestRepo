@@ -57,7 +57,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 4;
     private double deltaMax = 25;
 
-    private double speed = 0.4;
+    private double speed = 0.75;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -85,10 +85,10 @@ public class SwerveSubsystem {
         backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
-        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         flPID = new PIDController(FLkP, FLkI, FLkD);
         frPID = new PIDController(FRkP, FRkI, FRkD);
@@ -116,6 +116,18 @@ public class SwerveSubsystem {
         return otos.getPosition().h;
     }
 
+    public void plant()
+    {
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeftMotor.setPower(0);
+        frontRightMotor.setPower(0);
+        backLeftMotor.setPower(0);
+        backRightMotor.setPower(0);
+    }
+
     public double xCmdVal = 0;
     public double yCmdVal = 0;
     public double rCmdVal = 0;
@@ -125,6 +137,11 @@ public class SwerveSubsystem {
 //            stop();
 //            return;
 //        }
+
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         double currentHeading = otos.getPosition().h;
 
@@ -212,23 +229,23 @@ public class SwerveSubsystem {
         optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
 
         double outputSpeed = 1.0;
-        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
-        {
-            decelerating = true;
-            driveTime.reset();
-        }
-        else if (decelerating)
-        {
-            if (driveTime.seconds() > decelerationTime)
-            {
-                decelerating = false;
-                outputSpeed = 0;
-            }
-            else
-            {
-                outputSpeed *= (decelerationTime - driveTime.seconds()) / decelerationTime;
-            }
-        }
+//        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
+//        {
+//            decelerating = true;
+//            driveTime.reset();
+//        }
+//        else if (decelerating)
+//        {
+//            if (driveTime.seconds() > decelerationTime)
+//            {
+//                decelerating = false;
+//                outputSpeed = 0;
+//            }
+//            else
+//            {
+//                outputSpeed *= (decelerationTime - driveTime.seconds()) / decelerationTime;
+//            }
+//        }
         frontLeftMotor.setPower(optFL[1] * outputSpeed);
         frontRightMotor.setPower(optFR[1] * outputSpeed);
         backLeftMotor.setPower(optBL[1] * outputSpeed);
