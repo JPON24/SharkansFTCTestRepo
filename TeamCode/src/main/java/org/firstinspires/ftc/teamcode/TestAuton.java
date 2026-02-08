@@ -63,9 +63,8 @@ public class TestAuton extends LinearOpMode {
         swerve.robotCentric(-driveSpeed, 0, 0);
         turretMotor.setPower(0.5);
         turretMotor.setTargetPosition(40);
-        sleep(3300); // init 4000
+        sleep(2000); // init 4000
         swerve.stop();
-        sleep(500);
 
         // Spin up shooter
         leftHood.setPosition(0.45);
@@ -83,7 +82,7 @@ public class TestAuton extends LinearOpMode {
         rightShooter.setVelocity(0);
 
         swerve.robotCentric(0, driveSpeed, 0);
-        sleep(2000); // init 4000
+        sleep(1500); // init 4000
         swerve.stop();
 
         // Rotate CCW
