@@ -2,83 +2,115 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
 
-@Autonomous
-public class TestAuton extends LinearOpMode
-{
-    SharkDrive shark = new SharkDrive();
-    MoveCommand moveCmd = new MoveCommand();
 
-    private final double autonSpeed = 0.7;
+@Autonomous(name = "TestAuton")
+public class TestAuton extends LinearOpMode {
+
+    private final double driveSpeed = 0.811;
+    private final double shooterRpm = 3300.0;
+    private final double countsPerWheelRev = 28.0;
+    private final double turnPower = 0.5;
+    private final int rotateDurationMs = 600;
+    private final int forwardDurationMs = 1000;
+
+    private SwerveSubsystem swerve = new SwerveSubsystem();
+
+    private DcMotorEx rightShooter;
+    private Servo leftHood;
+    private Servo rightHood;
+    private DcMotorSimple transferMotor;
+    private DcMotorSimple intakeMotor;
+
+
+
+
 
     @Override
-    public void runOpMode()
-    {
-        shark.init(hardwareMap, true);
-        moveCmd.init(hardwareMap, true);
+    public void runOpMode() {
+
+        swerve.init(hardwareMap, null);
+
+        rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
+        rightShooter.setDirection(DcMotorEx.Direction.FORWARD);
+        rightShooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        rightShooter.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER,
+                new PIDFCoefficients(100, 1, 0, 0));
+
+        leftHood = hardwareMap.get(Servo.class, "leftHood");
+        rightHood = hardwareMap.get(Servo.class, "rightHood");
+        leftHood.setDirection(Servo.Direction.REVERSE);
+
+
+        transferMotor = hardwareMap.get(DcMotorSimple.class, "transferMotor");
+        intakeMotor = hardwareMap.get(DcMotorSimple.class, "intakeMotor");
 
         waitForStart();
-        while (opModeIsActive())
-        {
-            // move backward from goal (oriented off of OTOS)
-//            if (gamepad1.a)
-//            {
-//                Shoot(0);
-//            }
-//            if (gamepad1.b)
-//            {
-//                Outtake(0);
-//            }
-//            if (gamepad1.x)
-//            {
-//                Intake(0);
-//            }
-//            if (gamepad1.y)
-//            {
-//                Turret(0);
-//            }
-//            if (gamepad1.dpad_up)
-//            {
-//                Hood(0);
-//            }
-//            if (gamepad1.dpad_up)
-//            {
-            BasicMove(0);
-//            }
+        if (isStopRequested()) {
+            return;
         }
-    }
 
-    private void BasicMove(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 12, 0, 0, 0, 0, 0, 0, 0, false, false);
-        moveCmd.MoveToPosition(autonSpeed, 12, 12, 0, 0, 1, 0, 0, 0, false, false);
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 2, 0, 0, 0, false, false);
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 90, 0, 3, 0, 0, 0, false, false);
-    }
+        // Move backward
+        swerve.robotCentric(-driveSpeed, 0, 0);
+        sleep(3300); // init 4000
+        swerve.stop();
 
-    // offset if otos drifts heavily
-    private void Shoot(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 4, 0, 0, 3200, false, false);
-    }
+        // Spin up shooter
+        leftHood.setPosition(0.45);
+        rightHood.setPosition(0.45);
+        double ticksPerSecond = (shooterRpm / 60.0) * countsPerWheelRev;
+        rightShooter.setVelocity(ticksPerSecond);
+        sleep(3000);
 
-    private void Outtake(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 4, 0, 0, 0, false, true);
-    }
+        // Run transfer to shoot
+        transferMotor.setPower(-1.0);
+        intakeMotor.setPower(1.0);
+        sleep(1500);
+        transferMotor.setPower(0);
+        intakeMotor.setPower(0);
+        rightShooter.setVelocity(0);
 
-    private void Intake(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 4, 0, 0, 0, true, false);
-    }
+        swerve.robotCentric(0, driveSpeed, 0);
+        sleep(2000); // init 4000
+        swerve.stop();
 
-    private void Turret(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 4, 30, 0, 0, false, false);
-    }
+        // Rotate CCW
+//        swerve.robotCentric(-driveSpeed, 0, 0);
+//        sleep(2000); // init 4000
+//        swerve.stop();
+//
+//        swerve.robotCentric(0, 0, turnPower);
+//        sleep(1200);
+//        swerve.stop();
+//
+//        // Move forward
+//        swerve.robotCentric(driveSpeed, 0, 0);
+//        transferMotor.setPower(-0.16);
+//        intakeMotor.setPower(1.0);
+//        sleep(3000);
+//        transferMotor.setPower(0);
+//        intakeMotor.setPower(0);
+//        swerve.stop();
+//
+//        swerve.robotCentric(-driveSpeed, 0, 0);
+//        sleep(3500);
+//        swerve.stop();
+//
+//        swerve.robotCentric(0, 0, -turnPower);
+//        sleep(6000);
+//        swerve.stop();
+//
+//        // Run transfer to shoot
+//        transferMotor.setPower(-1.0);
+//        intakeMotor.setPower(1.0);
+//        sleep(5000);
+//        transferMotor.setPower(0);
+//        intakeMotor.setPower(0);
+//        rightShooter.setVelocity(0);
 
-    private void Hood(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 4, 0, 0.45, 0, false, false);
     }
 }
