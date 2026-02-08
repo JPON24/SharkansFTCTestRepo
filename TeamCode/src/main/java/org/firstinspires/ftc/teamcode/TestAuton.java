@@ -21,30 +21,30 @@ public class TestAuton extends LinearOpMode
         while (opModeIsActive())
         {
             // move backward from goal (oriented off of OTOS)
-            if (gamepad1.a)
-            {
-                Shoot(0);
-            }
-            if (gamepad1.b)
-            {
-                Outtake(0);
-            }
-            if (gamepad1.x)
-            {
-                Intake(0);
-            }
-            if (gamepad1.y)
-            {
-                Turret(0);
-            }
-            if (gamepad1.dpad_up)
-            {
-                Hood(0);
-            }
-            if (gamepad1.dpad_up)
-            {
-                BasicMove(0);
-            }
+//            if (gamepad1.a)
+//            {
+//                Shoot(0);
+//            }
+//            if (gamepad1.b)
+//            {
+//                Outtake(0);
+//            }
+//            if (gamepad1.x)
+//            {
+//                Intake(0);
+//            }
+//            if (gamepad1.y)
+//            {
+//                Turret(0);
+//            }
+//            if (gamepad1.dpad_up)
+//            {
+//                Hood(0);
+//            }
+//            if (gamepad1.dpad_up)
+//            {
+            BasicMove(0);
+//            }
         }
     }
 

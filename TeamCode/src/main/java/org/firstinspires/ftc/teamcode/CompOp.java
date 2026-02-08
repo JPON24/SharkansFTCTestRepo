@@ -253,7 +253,10 @@ public class CompOp extends OpMode {
         telemetry.addData("y cmd: ", swerve.yCmdVal);
         telemetry.addData("r cmd: ", swerve.rCmdVal);
 
-        telemetry.addData("heading: ", swerve.heading());
+        telemetry.addData("otos x: ", otos.getPosition().x);
+        telemetry.addData("otos y: ", otos.getPosition().y);
+        telemetry.addData("otos h: ", otos.getPosition().h);
+//        telemetry.addData("heading: ", swerve.heading());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();

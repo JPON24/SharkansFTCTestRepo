@@ -62,10 +62,6 @@ public class SwerveSubsystem {
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
 
-    public void init(HardwareMap hardwareMap) {
-        init(hardwareMap, null);
-    }
-
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
 
         this.otos = otosRef;
@@ -153,6 +149,122 @@ public class SwerveSubsystem {
 
         x_cmd = rotX;
         y_cmd = rotY;
+
+        xCmdVal = x_cmd;
+        yCmdVal = y_cmd;
+        rCmdVal = turn_cmd;
+
+        double y_fr = y_cmd + turn_cmd * L;
+        double x_fr = x_cmd + turn_cmd * W;
+
+        double y_fl = y_cmd - turn_cmd * L;
+        double x_fl = x_cmd + turn_cmd * W;
+
+        double y_rl = y_cmd - turn_cmd * L;
+        double x_rl = x_cmd - turn_cmd * W;
+
+        double y_rr = y_cmd + turn_cmd * L;
+        double x_rr = x_cmd - turn_cmd * W;
+
+        double speed_fr = Math.hypot(x_fr, y_fr);
+        double speed_fl = Math.hypot(x_fl, y_fl);
+        double speed_rl = Math.hypot(x_rl, y_rl);
+        double speed_rr = Math.hypot(x_rr, y_rr);
+
+        angleFL = (speed_fl < ANGLE_HOLD_SPEED) ? lastTargetFL
+                : Math.toDegrees(Math.atan2(x_fl, y_fl));
+        angleFR = (speed_fr < ANGLE_HOLD_SPEED) ? lastTargetFR
+                : Math.toDegrees(Math.atan2(x_fr, y_fr));
+        angleRL = (speed_rl < ANGLE_HOLD_SPEED) ? lastTargetRL
+                : Math.toDegrees(Math.atan2(x_rl, y_rl));
+        angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
+                : Math.toDegrees(Math.atan2(x_rr, y_rr));
+
+        // previously was subtracting current heading here
+        angleFL = Clamp360(angleFL - 22.5) - (FL_OFFSET * 315);
+        angleFR = Clamp360(angleFR - 22.5) - (FR_OFFSET * 315);
+        angleRL = Clamp360(angleRL - 22.5) - (BL_OFFSET * 315);
+        angleRR = Clamp360(angleRR - 22.5) - (BR_OFFSET * 315);
+
+        angleFL = Clamp360(angleFL);
+        angleFR = Clamp360(angleFR);
+        angleRL = Clamp360(angleRL);
+        angleRR = Clamp360(angleRR);
+
+        double max = Math.max(Math.max(speed_fr, speed_fl), Math.max(speed_rl, speed_rr));
+        if (max > 1.0) {
+            speed_fr /= max;
+            speed_fl /= max;
+            speed_rl /= max;
+            speed_rr /= max;
+        }
+
+        flSpeed = speed_fl * speed;
+        frSpeed = speed_fr * speed;
+        blSpeed = speed_rl * speed;
+        brSpeed = speed_rr * speed;
+
+        double[] optFL = Clamp315(angleFL, flSpeed);
+        double[] optFR = Clamp315(angleFR, frSpeed);
+        double[] optBL = Clamp315(angleRL, blSpeed);
+        double[] optBR = Clamp315(angleRR, brSpeed);
+
+        double[] optParamsFL = optimize(optFL[0], optFL[1], lastTargetFL);
+        double[] optParamsFR = optimize(optFR[0], optFR[1], lastTargetFR);
+        double[] optParamsRL = optimize(optBL[0], optBL[1], lastTargetRL);
+        double[] optParamsRR = optimize(optBR[0], optBR[1], lastTargetRR);
+
+        double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
+        double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
+        double tgtPosRL = GetPositionFromAngle(optParamsRL[0], BL_OFFSET);
+        double tgtPosRR = GetPositionFromAngle(optParamsRR[0], BR_OFFSET);
+
+        optFL = CorrectOutOfRange(tgtPosFL, optParamsFL[1], (BR_OFFSET-FL_OFFSET));
+        optFR = CorrectOutOfRange(tgtPosFR, optParamsFR[1], (BR_OFFSET-FR_OFFSET));
+        optBL = CorrectOutOfRange(tgtPosRL, optParamsRL[1], (BR_OFFSET-BL_OFFSET));
+        optBR = CorrectOutOfRange(tgtPosRR, optParamsRR[1], 0);
+
+        double outputSpeed = 1.0;
+//        if (x_cmd == 0 && y_cmd == 0 && turn_cmd == 0 && !decelerating)
+//        {
+//            decelerating = true;
+//            driveTime.reset();
+//        }
+//        else if (decelerating)
+//        {
+//            if (driveTime.seconds() > decelerationTime)
+//            {
+//                decelerating = false;
+//                outputSpeed = 0;
+//            }
+//            else
+//            {
+//                outputSpeed *= (decelerationTime - driveTime.seconds()) / decelerationTime;
+//            }
+//        }
+        frontLeftMotor.setPower(optFL[1] * outputSpeed);
+        frontRightMotor.setPower(optFR[1] * outputSpeed);
+        backLeftMotor.setPower(optBL[1] * outputSpeed);
+        backRightMotor.setPower(optBR[1] * outputSpeed);
+
+        lastTargetFL = optFL[0];
+        lastTargetFR = optFR[0];
+        lastTargetRL = optBL[0];
+        lastTargetRR = optBR[0];
+
+        SetServoPositions(optFL[0], optFR[0], optBL[0], optBR[0]);
+    }
+
+    public void robotCentric(double y_cmd, double x_cmd, double turn_cmd) {
+//        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
+//            stop();
+//            return;
+//        }
+
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         xCmdVal = x_cmd;
         yCmdVal = y_cmd;

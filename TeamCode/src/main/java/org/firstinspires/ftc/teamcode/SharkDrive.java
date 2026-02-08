@@ -62,7 +62,9 @@ public class SharkDrive {
             odometry.begin();
         }
 
-        dt.init(hwMap);
+        dt.init(hwMap, odometry);
+
+        dt.drive(0,0,0);
     }
 
     private double LowPass(double average, double newValue) {
