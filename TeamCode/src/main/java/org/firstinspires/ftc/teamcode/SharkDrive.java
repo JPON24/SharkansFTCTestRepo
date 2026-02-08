@@ -55,14 +55,16 @@ public class SharkDrive {
         odometry.calibrateImu();
         odometry.setAngularScalar(1);
         odometry.setLinearScalar(1);
-        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
+        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
 
         if (isAuton) {
             odometry.resetTracking();
             odometry.begin();
         }
 
-        dt.init(hwMap);
+        dt.init(hwMap, odometry);
+
+        dt.drive(0,0,0);
     }
 
     private double LowPass(double average, double newValue) {
@@ -264,7 +266,7 @@ public class SharkDrive {
         }
 
 //        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.drive(speed * output[1], speed * output[0], speed * output[2]);
+        dt.drive(speed * output[1], speed * output[0], -speed * output[2]);
     }
 
     // creates odometry fallback if the limelight stops working

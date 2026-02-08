@@ -7,7 +7,7 @@ public class floatingIntake {
     DcMotorSimple intakeMotor; // Exp hub port 2
     DcMotorSimple transferMotor; // Exp port 3
 
-    double transferIntakeSpeed = -0.14;
+    double transferIntakeSpeed = -0.16;
 
     double transferSpeed = -1.0;
 
@@ -44,7 +44,7 @@ public class floatingIntake {
 
     public void outFront(boolean runOutFront) {
         if (runOutFront) {
-            transferMotor.setPower(-transferSpeed);
+            transferMotor.setPower(-transferIntakeSpeed);
             intakeMotor.setPower(-intakeSpeed);
         } else {
             transferMotor.setPower(0);

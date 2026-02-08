@@ -3,12 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.SwerveSubsystem;
-
-@TeleOp(name = "Competition TeleOp BLUE")
-public class CompOp extends OpMode {
+@TeleOp(name = "Competition TeleOp RED")
+public class CompOpRed extends OpMode {
 
     private ZephyrSubsystem zephyr;
     private SwerveSubsystem swerve;
@@ -40,7 +37,7 @@ public class CompOp extends OpMode {
         swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
-        shooter.initSystem(hardwareMap, otos, 0);
+        shooter.initSystem(hardwareMap, otos, 1);
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
@@ -62,10 +59,9 @@ public class CompOp extends OpMode {
     /*
     new shooter positions
 
-     */
 
-    ElapsedTime hoodTimer = new ElapsedTime();
-    boolean canSwap = false;
+
+     */
 
     @Override
     public void loop() {
@@ -76,22 +72,15 @@ public class CompOp extends OpMode {
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
 
+        boolean plant = gamepad2.a;
 
-        double plant = gamepad1.left_trigger;
-        double reset = gamepad1.right_trigger;
-
-        if (plant > 0.4)
+        if (plant)
         {
             swerve.plant();
         }
         else
         {
             swerve.drive(leftStickY, leftStickX, rightStickX);
-        }
-
-        if (reset > 0.4)
-        {
-            swerve.resetIMU();
         }
 
         boolean upDpadPressed = gamepad2.dpad_up;
@@ -106,20 +95,21 @@ public class CompOp extends OpMode {
         boolean setShooterRPMHigh = gamepad2.y;
         boolean setShooterRPMLow = gamepad2.x;
         boolean swapToAuto = gamepad2.b;
-        boolean reverseIntake = gamepad2.a;
 
-        boolean turretPos = gamepad2.dpad_left;
-        boolean turretNeg = gamepad2.dpad_right;
+        boolean turretPos = gamepad2.dpad_right;
+        boolean turretNeg = gamepad2.dpad_left;
 
         if (swapToAuto && !lastSwapAuto) {
             isAutoAdjust = !isAutoAdjust;
         }
+
 
         lastSwapAuto = swapToAuto;
 
         if (isAutoAdjust && !outtaking)
         {
             shooter.update();
+//            shooter.setHoodPosition(hoodAdjust);
 
             if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
             {
@@ -128,7 +118,7 @@ public class CompOp extends OpMode {
         }
         else
         {
-            shooter.setHoodPosition(hoodAdjust);
+//            shooter.setHoodPosition(hoodAdjust);
 
             if (willIncrement) {
                 if (shooter.getTargetRPM() + 50 < 6000) {
@@ -183,11 +173,6 @@ public class CompOp extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
-        if (hoodTimer.seconds() > 0.1)
-        {
-            shooter.setHoodPosition(tempTgtHood);
-        }
-
         if (gamepad2.left_trigger > 0.3) {
             outtaking = false;
             intake.intake(true);
@@ -198,7 +183,6 @@ public class CompOp extends OpMode {
             {
                 tempTgtHood = shooter.currentHood;
                 tempTgtRPM = shooter.currentRpm;
-                hoodTimer.reset();
 
                 if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
                 {
@@ -206,16 +190,12 @@ public class CompOp extends OpMode {
                 }
 
                 shooter.setTargetRPM(tempTgtRPM);
-                shooter.setHoodPosition(Math.min(0, tempTgtHood - 0.1));
+                shooter.setHoodPosition(tempTgtHood);
             }
-        } else if (reverseIntake) {
-            intake.outFront(true);
-        }
-        else {
+        } else {
             outtaking = false;
             intake.intake(false);
             intake.outtake(false);
-            intake.outFront(false);
         }
 
         lastOuttaking = outtaking;
@@ -271,10 +251,7 @@ public class CompOp extends OpMode {
         telemetry.addData("y cmd: ", swerve.yCmdVal);
         telemetry.addData("r cmd: ", swerve.rCmdVal);
 
-        telemetry.addData("otos x: ", otos.getPosition().x);
-        telemetry.addData("otos y: ", otos.getPosition().y);
-        telemetry.addData("otos h: ", otos.getPosition().h);
-//        telemetry.addData("heading: ", swerve.heading());
+        telemetry.addData("heading: ", swerve.heading());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();

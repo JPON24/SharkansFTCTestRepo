@@ -24,6 +24,8 @@ public class testmode extends OpMode
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
     private Servo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
     private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
+
+    private DcMotorEx turret;
     @Override
     public void init() {
         frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor"); // Ctrl h 3
@@ -56,6 +58,8 @@ public class testmode extends OpMode
         odometry.setAngularScalar(1);
         odometry.setLinearScalar(1);
         odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
+
+        turret = hardwareMap.get(DcMotorEx.class, "turretMotor");
 
         odometry.resetTracking();
         odometry.begin();
@@ -141,6 +145,8 @@ public class testmode extends OpMode
             backLeftServo.setPosition(blOffset);
             backRightServo.setPosition(brOffset);
         }
+
+//        turret.setPower(0.3);
 
         lastA = gamepad1.a;
         lastX = gamepad1.x;

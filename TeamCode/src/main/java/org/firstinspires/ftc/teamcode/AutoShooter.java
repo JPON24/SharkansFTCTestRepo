@@ -90,7 +90,7 @@ public class AutoShooter extends OpMode
 
     @Override
     public void init() {
-        limeLight.init(hardwareMap);
+        limeLight.init(hardwareMap, 0);
 
 //        intakeObj.init(hardwareMap);
 
