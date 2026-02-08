@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
@@ -61,9 +62,10 @@ public class CompOp extends OpMode {
     /*
     new shooter positions
 
-
-
      */
+
+    ElapsedTime shooterRecorrectChange = new ElapsedTime();
+    boolean justRecorrected = false;
 
     @Override
     public void loop() {
@@ -74,15 +76,22 @@ public class CompOp extends OpMode {
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
 
-        boolean plant = gamepad2.a;
 
-        if (plant)
+        double plant = gamepad1.left_trigger;
+        double reset = gamepad1.right_trigger;
+
+        if (plant > 0.4)
         {
             swerve.plant();
         }
         else
         {
             swerve.drive(leftStickY, leftStickX, rightStickX);
+        }
+
+        if (reset > 0.4)
+        {
+            swerve.resetIMU();
         }
 
         boolean upDpadPressed = gamepad2.dpad_up;
@@ -97,21 +106,20 @@ public class CompOp extends OpMode {
         boolean setShooterRPMHigh = gamepad2.y;
         boolean setShooterRPMLow = gamepad2.x;
         boolean swapToAuto = gamepad2.b;
+        boolean reverseIntake = gamepad2.a;
 
-        boolean turretPos = gamepad2.dpad_right;
-        boolean turretNeg = gamepad2.dpad_left;
+        boolean turretPos = gamepad2.dpad_left;
+        boolean turretNeg = gamepad2.dpad_right;
 
         if (swapToAuto && !lastSwapAuto) {
             isAutoAdjust = !isAutoAdjust;
         }
-
 
         lastSwapAuto = swapToAuto;
 
         if (isAutoAdjust && !outtaking)
         {
             shooter.update();
-//            shooter.setHoodPosition(hoodAdjust);
 
             if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
             {
@@ -120,7 +128,7 @@ public class CompOp extends OpMode {
         }
         else
         {
-//            shooter.setHoodPosition(hoodAdjust);
+            shooter.setHoodPosition(hoodAdjust);
 
             if (willIncrement) {
                 if (shooter.getTargetRPM() + 50 < 6000) {
@@ -175,6 +183,12 @@ public class CompOp extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
+        if (shooterRecorrectChange.seconds() > 0.1 && !justRecorrected)
+        {
+            shooter.setTargetRPM(tempTgtRPM);
+            justRecorrected = true;
+        }
+
         if (gamepad2.left_trigger > 0.3) {
             outtaking = false;
             intake.intake(true);
@@ -183,6 +197,8 @@ public class CompOp extends OpMode {
             outtaking = true;
             if (isAutoAdjust && !lastOuttaking)
             {
+                justRecorrected = false;
+                shooterRecorrectChange.reset();
                 tempTgtHood = shooter.currentHood;
                 tempTgtRPM = shooter.currentRpm;
 
@@ -191,13 +207,17 @@ public class CompOp extends OpMode {
                     gamepad2.rumble(500);
                 }
 
-                shooter.setTargetRPM(tempTgtRPM);
+                shooter.setTargetRPM(tempTgtRPM-200);
                 shooter.setHoodPosition(tempTgtHood);
             }
-        } else {
+        } else if (reverseIntake) {
+            intake.outFront(true);
+        }
+        else {
             outtaking = false;
             intake.intake(false);
             intake.outtake(false);
+            intake.outFront(false);
         }
 
         lastOuttaking = outtaking;

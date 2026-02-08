@@ -401,6 +401,11 @@ public class SwerveSubsystem {
         return output;
     }
 
+    public void resetIMU()
+    {
+        otos.resetTracking();
+    }
+
 
     public double GetAngle(double position, double offset) {
         return (offset - position) * 315;

@@ -44,7 +44,7 @@ public class floatingIntake {
 
     public void outFront(boolean runOutFront) {
         if (runOutFront) {
-            transferMotor.setPower(-transferSpeed);
+            transferMotor.setPower(-transferIntakeSpeed);
             intakeMotor.setPower(-intakeSpeed);
         } else {
             transferMotor.setPower(0);
