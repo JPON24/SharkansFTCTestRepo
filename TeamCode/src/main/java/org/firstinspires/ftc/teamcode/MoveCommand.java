@@ -17,7 +17,7 @@ public class MoveCommand  {
     public void init(HardwareMap hwMap, boolean isAuton)
     {
         dt.init(hwMap);
-        shooter.init(hwMap, shark.odometry);
+        shooter.initSystem(hwMap, shark.odometry, 0);
         intake.init(hwMap);
         shark.init(hwMap, isAuton);
     }

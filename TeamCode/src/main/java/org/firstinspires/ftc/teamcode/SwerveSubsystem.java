@@ -54,10 +54,10 @@ public class SwerveSubsystem {
     private double headingOffset = 0;
 
     ElapsedTime updateLimiter = new ElapsedTime();
-    private final double swerveUpdateHz = 4;
+    private final double swerveUpdateHz = 6;
     private double deltaMax = 25;
 
-    private double speed = 0.75;
+    private double speed = 0.85;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;

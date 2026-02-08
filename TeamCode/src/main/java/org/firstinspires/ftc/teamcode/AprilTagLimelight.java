@@ -24,10 +24,10 @@ public class AprilTagLimelight
 
     private final int POLLING_RATE = 50;
 
-    public void init(HardwareMap hwMap) {
+    public void init(HardwareMap hwMap, int pipeline) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");
 //        Imu = hwMap.get(IMU.class, "imu");
-        limeLight.pipelineSwitch(0); // blue alliance
+        limeLight.pipelineSwitch(pipeline); // blue alliance
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP);

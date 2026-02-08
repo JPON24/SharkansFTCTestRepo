@@ -21,10 +21,39 @@ public class TestAuton extends LinearOpMode
         while (opModeIsActive())
         {
             // move backward from goal (oriented off of OTOS)
-//            Shoot(0);
-
-            break;
+            if (gamepad1.a)
+            {
+                Shoot(0);
+            }
+            if (gamepad1.b)
+            {
+                Outtake(0);
+            }
+            if (gamepad1.x)
+            {
+                Intake(0);
+            }
+            if (gamepad1.y)
+            {
+                Turret(0);
+            }
+            if (gamepad1.dpad_up)
+            {
+                Hood(0);
+            }
+            if (gamepad1.dpad_up)
+            {
+                BasicMove(0);
+            }
         }
+    }
+
+    private void BasicMove(double offset)
+    {
+        moveCmd.MoveToPosition(autonSpeed, 12, 0, 0, 0, 0, 0, 0, 0, false, false);
+        moveCmd.MoveToPosition(autonSpeed, 12, 12, 0, 0, 1, 0, 0, 0, false, false);
+        moveCmd.MoveToPosition(autonSpeed, 0, 0, 0, 0, 2, 0, 0, 0, false, false);
+        moveCmd.MoveToPosition(autonSpeed, 0, 0, 90, 0, 3, 0, 0, 0, false, false);
     }
 
     // offset if otos drifts heavily

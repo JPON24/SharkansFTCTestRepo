@@ -4,10 +4,8 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.SwerveSubsystem;
-
-@TeleOp(name = "Competition TeleOp BLUE")
-public class CompOp extends OpMode {
+@TeleOp(name = "Competition TeleOp RED")
+public class CompOpRed extends OpMode {
 
     private ZephyrSubsystem zephyr;
     private SwerveSubsystem swerve;
@@ -39,7 +37,7 @@ public class CompOp extends OpMode {
         swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
-        shooter.initSystem(hardwareMap, otos, 0);
+        shooter.initSystem(hardwareMap, otos, 1);
 
         intake = new floatingIntake();
         intake.init(hardwareMap);

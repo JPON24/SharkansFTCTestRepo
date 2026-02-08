@@ -141,23 +141,23 @@ public class ShooterSubsystem {
 
     private int tgtAprilTagId = 0;
 
-    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
-        initSystem(hardwareMap, otosRef);
-    }
+//    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
+//        initSystem(hardwareMap, otosRef);
+//    }
 
-    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, int targetAprilTagId) {
-        this.tgtAprilTagId = targetAprilTagId;
-        initSystem(hardwareMap, otosRef);
-    }
+//    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, int targetAprilTagId) {
+//        this.tgtAprilTagId = targetAprilTagId;
+//        initSystem(hardwareMap, otosRef);
+//    }
 
     public double getTx()
     {
         return limeLight.GetTX();
     }
 
-    private void initSystem(HardwareMap hardwareMap, SparkFunOTOS otosRef)
+    public void initSystem(HardwareMap hardwareMap, SparkFunOTOS otosRef, int pipelineIndex)
     {
-        limeLight.init(hardwareMap);
+        limeLight.init(hardwareMap, pipelineIndex);
         this.otos = otosRef;
 //        ledLight = hardwareMap.get(Servo.class, "RPM_Light");
 
@@ -202,32 +202,68 @@ public class ShooterSubsystem {
     // rpm as a function of x
     private double r(double x)
     {
-        if (x < 20) {return 0;} // for if it doesnt see anything stop the motah
-        double output = (0.5 * (x-40)*(x-40)) + 3100;
-
-        if (output > 3600)
+        if (x < 65)
         {
-            output = 3600;
+            return 3300;
+        }
+        if (x < 73.5)
+        {
+            return 3350;
+        }
+        if (x < 77)
+        {
+            return 3400;
+        }
+        if (x < 81)
+        {
+            return 3450;
+        }
+        if (x < 85)
+        {
+            return 3700;
+        }
+        if (x < 90)
+        {
+            return 3800;
         }
 
-        return output;
+        return 3550;
     }
 
     // hood as a function of x
     private double h(double x)
     {
-        // restrictions YAY
-        if (x < 20) { return 0; }
-        if (x > 72) { return 0.15; }
-
-        double output = (-0.01 * x) + 0.9;
-
-        if (output < 0)
+        if (x < 56)
         {
-            output = 0;
+            return 0.45;
         }
 
-        return output;
+        if (x < 71)
+        {
+            return 0.5;
+        }
+
+        if (x < 77)
+        {
+            return 0.45;
+        }
+
+        if (x < 81)
+        {
+            return 0.55;
+        }
+
+        if (x < 85)
+        {
+            return 0.1;
+        }
+
+        if (x < 92)
+        {
+            return 0;
+        }
+
+        return 0.45;
     }
 
     private double bangBangCoef = 1.2;
@@ -249,43 +285,42 @@ public class ShooterSubsystem {
         }
     }
 
+    public int currentRpm = 0;
+    public double currentHood = 0;
+
     ElapsedTime hoodResetTimer = new ElapsedTime();
     int hoodResetHz = 3;
 
     public void update() {
         double currentDistance = limeLight.GetDistance();
-//        final double CLOSE_LIMIT = 38.5;
-//        final double MEDIUM_LIMIT = 56;
-//
-//        if (currentDistance > 0 && currentDistance < CLOSE_LIMIT) {
-//            currentHoodState = ShootState.CLOSE_SHOT;
-//        } else if (currentDistance >= CLOSE_LIMIT && currentDistance < MEDIUM_LIMIT) {
-//            currentHoodState = ShootState.MEDIUM_SHOT;
-//        } else if (currentDistance >= MEDIUM_LIMIT) {
-//            currentHoodState = ShootState.FAR_HARD_SHOT;
-//        } else {
-//            currentHoodState = ShootState.NO_SHOT;
-//        }
-
-        // cant shoot...
-        if (currentDistance < 20 || currentDistance > 90)
+        if (hoodResetTimer.seconds() > 1.0 / hoodResetHz)
         {
-            setHoodPosition(0.45);
-            setTargetRPM(0);
+            currentHood = h(currentDistance);
+            setHoodPosition(currentHood);
+            hoodResetTimer.reset();
         }
-        else
-        {
-            // double curve yay
 
-            if (hoodResetTimer.seconds() > 1.0 / hoodResetHz)
-            {
-                setHoodPosition(h(currentDistance));
-                hoodResetTimer.reset();
-            }
-            setTargetRPM((int)(r(currentDistance)));
-        }
-//        updateHood();
+        currentRpm = (int)(r(currentDistance));
+        setTargetRPM(currentRpm);
     }
+
+    /*
+    new testing
+    47in, 3300rpm, 0.45
+    50in, 3300rpm, 0.45
+    54in, 3300rpm, 0.45
+    58.5in, 3300rpm, 0.5
+    60.8in, 3300rpm, 0.5
+    64.4in, 3300rpm, 0.5
+    67.2in, 3350rpm, 0.5
+    70, 3350rpm, 0.5
+    72.5in, 3350rpm, 0.45
+    75.4in, 3400rpm, 0.45
+    79in, 3450rpm, 0.55
+    83in, 3700rpm, 0.1
+    88in, 3800rpm, 0
+    94in, 3550, 0.45
+     */
 
     ElapsedTime dx = new ElapsedTime();
 
@@ -302,7 +337,7 @@ public class ShooterSubsystem {
             turnToAngle(getTurretAngle() + (input * dt.seconds() * turretManualSpeed), false);
         } else {
             // Tag seen: Track it and pack it!!
-            txTracking();
+//            txTracking();
         }
 
         dt.reset();
@@ -326,12 +361,12 @@ public class ShooterSubsystem {
 
     double lastTxNew = 0;
 
-    double turretLeftMax = 0;
-    double turretRightMax = 0;
+    double turretLeftMax = 180;
+    double turretRightMax = -470;
 
     int tempTgt = 0;
 
-    public void txTracking()
+    public void txTracking(int input)
     {
         kP = 0.01;
         kI = 0;
@@ -339,6 +374,12 @@ public class ShooterSubsystem {
 
         double error = limeLight.GetTX();
         double dt = deltaTime.seconds();
+
+        if (error == 0)
+        {
+            turretMotor.setPower(input * 0.3);
+            return;
+        }
 
         double derivative = (error - lastError) / dt;
 
@@ -348,12 +389,12 @@ public class ShooterSubsystem {
         if (turretMotor.getCurrentPosition() > turretLeftMax)
         {
             currentState = TurretState.UNWINDING;
-            tempTgt = (int)(turretRightMax - 100);
+            tempTgt = (int)(turretRightMax + 125);
         }
         else if (turretMotor.getCurrentPosition() < turretRightMax)
         {
             currentState = TurretState.UNWINDING;
-            tempTgt = (int)(turretLeftMax + 100);
+            tempTgt = (int)(turretLeftMax - 125);
         }
 
         if (getTurretState() == TurretState.TRACKING)
@@ -363,11 +404,13 @@ public class ShooterSubsystem {
         }
         else if (getTurretState() == TurretState.UNWINDING)
         {
+            turretMotor.setPower(0.5);
             turretMotor.setTargetPosition(tempTgt);
             turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-            if (Math.abs(tempTgt - turretMotor.getCurrentPosition()) < 50)
+            if (Math.abs(tempTgt - turretMotor.getCurrentPosition()) < 100)
             {
+                tempTgt = 0;
                 currentState = TurretState.TRACKING;
             }
         }

@@ -55,7 +55,7 @@ public class SharkDrive {
         odometry.calibrateImu();
         odometry.setAngularScalar(1);
         odometry.setLinearScalar(1);
-        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
+        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
 
         if (isAuton) {
             odometry.resetTracking();
