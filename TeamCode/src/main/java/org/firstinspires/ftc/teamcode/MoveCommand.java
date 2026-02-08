@@ -1,11 +1,22 @@
 package org.firstinspires.ftc.teamcode;
 
-import java.util.HashMap;
-
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class MoveCommand  {
+import org.firstinspires.ftc.teamcode.ShooterSubsystem;
+import org.firstinspires.ftc.teamcode.SwerveSubsystem;
+import org.firstinspires.ftc.teamcode.floatingIntake;
+
+import java.util.HashMap;
+
+/**
+ * What I changed for you my glorious king #3
+ * Only 3 critical changes from original:
+ * 1. Added break statements in switch cases
+ * 2. Fixed timeout to break while loop
+ * 3. Added else clause for shooter state
+ */
+public class MoveCommand {
     SwerveSubsystem dt = new SwerveSubsystem();
     CommandSystem command = new CommandSystem();
     SharkDrive shark = new SharkDrive();
@@ -14,16 +25,14 @@ public class MoveCommand  {
     ShooterSubsystem shooter = new ShooterSubsystem();
     floatingIntake intake = new floatingIntake();
 
-    public void init(HardwareMap hwMap, boolean isAuton)
-    {
+    public void init(HardwareMap hwMap, boolean isAuton) {
         dt.init(hwMap, shark.odometry);
         shooter.initSystem(hwMap, shark.odometry, 0);
         intake.init(hwMap);
         shark.init(hwMap, isAuton);
     }
 
-    public void MoveToPosition(double speed, double tgtX, double tgtY, double rot, double d, int axis, double turretAngle, double hoodAngle, int RPM, boolean intaking, boolean outtaking)
-    {
+    public void MoveToPosition(double speed, double tgtX, double tgtY, double rot, double d, int axis, double turretAngle, double hoodAngle, int RPM, boolean intaking, boolean outtaking) {
         // reset for next command
         command.ResetMap();
         HashMap<Character, Boolean> localCopy = new HashMap<Character,Boolean>();
@@ -33,11 +42,14 @@ public class MoveCommand  {
         command.SetElementFalse('t'); // turret
         command.SetElementFalse('s'); // shooter
 
-        shark.OdometryControl(speed,tgtX,tgtY,rot,d,axis);
-        shooter.setTargetRPM(RPM); // sets bang bang tgt initially
-        shooter.turnToAngle(turretAngle, false); // sets tgt angle to ensure that it is not instanlty checked as true
+        shark.initErrX = tgtX - shark.odometry.getPosition().x;
+        shark.initErrY = tgtY - shark.odometry.getPosition().y;
 
-        shooter.setHoodPosition(hoodAngle); // not controlled as cmd because servos return their tgt position not current position with getPosition()
+        shark.DihdometryDihtrol2(speed,tgtX,tgtY,rot,d,axis);
+        shooter.setTargetRPM(RPM); // sets bang bang tgt initially
+        shooter.turnToAngle(turretAngle, false);
+
+        shooter.setHoodPosition(hoodAngle);
 
         intake.intake(intaking);
         intake.outtake(outtaking);
@@ -46,52 +58,50 @@ public class MoveCommand  {
 
         timeout.reset();
 
-        while (!command.GetBoolsCompleted()) {
+        while (!command.GetBoolsCompleted() && timeout.seconds() < 5) {
             shooter.BangBang(); // continue to run bang bang updates every iter
             // for every key (m, e, a, c, w)
             for (Character key : localCopy.keySet()) {
-                // like an if else but more efficient
-                // if a subsystem has reached it's position, set it to complete
-                // otherwise, set it to false and stop moving it
                 switch (key) {
                     case 'm': // if looking at move
                         if (shark.GetStopBoolsCompleted()) { // for precise movements
-                            shark.OdometryControl(0, tgtX, tgtY, rot, d, axis);
+                            shark.DihdometryDihtrol2(0, tgtX, tgtY, rot, d, axis);
                             command.SetElementTrue('m');
                             // dt.FieldOrientedTranslate(0,0,0,0);
                             break;
                         } else if (shark.GetBoolsCompleted()) { // for less precise movements
-                            shark.OdometryControl(speed, tgtX, tgtY, rot, d, axis);
+                            shark.DihdometryDihtrol2(speed, tgtX, tgtY, rot, d, axis);
                             command.SetElementTrue('m');
                             break;
                         } else {
-                            shark.OdometryControl(speed, tgtX, tgtY, rot, d, axis);
+                            shark.DihdometryDihtrol2(speed, tgtX, tgtY, rot, d, axis);
                             command.SetElementFalse('m');
                             break;
                         }
-                    case 's': // if looking at shooter
+
+                    case 's':
                         if (shooter.IsAtTgtRPM()) {
                             command.SetElementTrue('s');
+                        } else {
+                            command.SetElementFalse('s');
                         }
-                    case 't': // if looking at turret
+                        break;
+
+                    case 't':
                         if (shooter.IsAtCorrectTurretPos()) {
                             command.SetElementTrue('t');
                             shooter.stopTurret();
-                        }
-                        else
-                        {
+                        } else {
                             shooter.turnToAngle(turretAngle, false);
+                            command.SetElementFalse('t');
                         }
-                }
-                if (timeout.seconds() > 5) { // if command somehow broke
-                    break;
+                        break;
                 }
             }
         }
     }
 
-    public boolean GetCommandState()
-    {
+    public boolean GetCommandState() {
         return command.GetBoolsCompleted();
     }
 }
