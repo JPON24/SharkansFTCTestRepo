@@ -266,7 +266,7 @@ public class ShooterSubsystem {
         return 0.45;
     }
 
-    private double bangBangCoef = 1.4; // prev 1.2
+    private double bangBangCoef = 1.2; // prev 1.2
 
 
     private final double rpmLenience = 100;
