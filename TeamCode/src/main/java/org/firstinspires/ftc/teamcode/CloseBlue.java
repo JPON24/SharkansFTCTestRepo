@@ -41,22 +41,22 @@ public class CloseBlue extends LinearOpMode
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -2, -36, 30, 1, 3, 60, 0.45, 3200, false, false);
-        moveCmd.MoveToPosition(autonSpeed, -2, -36, 30, 1, 4, 60, 0.45, 3200, false, true);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 30, 1, 3, 60, 0.45, 3200, false, false);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 30, 1, 4, 60, 0.45, 3200, false, true);
         sleep(500);
     }
 
     private void ShootLeave(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -2, -36, 30, 1, 2, 60, 0.45, 3200, false, false);
-        moveCmd.MoveToPosition(autonSpeed, -2, -36, 30, 1, 4, 60, 0.45, 3200, false, true);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 30, 1, 2, 60, 0.45, 3200, false, false);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 30, 1, 4, 60, 0.45, 3200, false, true);
         sleep(500);
         moveCmd.MoveToPosition(autonSpeed, 6, -44, 30, 1, 2, 60, 0.45, 3200, false, false);
     }
 
     private void SpikeMarkOne(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -30, -37, 30, 1, 2, 60, 0.45, 3200, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -30, 4237, 30, 1, 2, 60, 0.45, 3200, true, false);
         moveCmd.MoveToPosition(autonSpeed, -38.3, -17.7, 30, 1, 2, 60, 0.45, 3200, true, false);
     }
 
