@@ -15,6 +15,20 @@ public class SwerveSubsystem {
     private final double L = 0.98;
     private final double W = 1.00;
 
+    // ===== DEADSPOT KEEP-OUT ZONE CONFIGURATION =====
+    // Mechanical deadspot is approximately 315° through 0° (wraps around)
+    // We define a forbidden zone with hysteresis to prevent commanding angles in this region
+    private final double DEADSPOT_START = 315.0;      // Start of forbidden zone (degrees)
+    private final double DEADSPOT_END_ENTER = 20.0;   // End of forbidden zone when entering (degrees, wider)
+    private final double DEADSPOT_END_EXIT = 15.0;    // End of forbidden zone when exiting (degrees, narrower)
+    private final double DEADSPOT_BOUNDARY_MARGIN = 5.0; // Safety margin from boundaries (degrees)
+
+    // Track which modules are currently in "avoiding deadspot" state for hysteresis
+    private boolean flInDeadspotAvoidance = false;
+    private boolean frInDeadspotAvoidance = false;
+    private boolean blInDeadspotAvoidance = false;
+    private boolean brInDeadspotAvoidance = false;
+
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
     private Servo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
     private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
@@ -57,7 +71,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 6;
     private double deltaMax = 25;
 
-    private double speed = 0.85;
+    private double speed = 0.50;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -209,10 +223,16 @@ public class SwerveSubsystem {
         double[] optBL = Clamp315(angleRL, blSpeed);
         double[] optBR = Clamp315(angleRR, brSpeed);
 
-        double[] optParamsFL = optimize(optFL[0], optFL[1], lastTargetFL);
-        double[] optParamsFR = optimize(optFR[0], optFR[1], lastTargetFR);
-        double[] optParamsRL = optimize(optBL[0], optBL[1], lastTargetRL);
-        double[] optParamsRR = optimize(optBR[0], optBR[1], lastTargetRR);
+        double[] optParamsFL = optimizeWithDeadspot(optFL[0], optFL[1], lastTargetFL, flInDeadspotAvoidance);
+        double[] optParamsFR = optimizeWithDeadspot(optFR[0], optFR[1], lastTargetFR, frInDeadspotAvoidance);
+        double[] optParamsRL = optimizeWithDeadspot(optBL[0], optBL[1], lastTargetRL, blInDeadspotAvoidance);
+        double[] optParamsRR = optimizeWithDeadspot(optBR[0], optBR[1], lastTargetRR, brInDeadspotAvoidance);
+
+        // Update hysteresis state for each module
+        flInDeadspotAvoidance = isInDeadspot(optParamsFL[0], DEADSPOT_END_EXIT);
+        frInDeadspotAvoidance = isInDeadspot(optParamsFR[0], DEADSPOT_END_EXIT);
+        blInDeadspotAvoidance = isInDeadspot(optParamsRL[0], DEADSPOT_END_EXIT);
+        brInDeadspotAvoidance = isInDeadspot(optParamsRR[0], DEADSPOT_END_EXIT);
 
         double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
         double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
@@ -325,10 +345,16 @@ public class SwerveSubsystem {
         double[] optBL = Clamp315(angleRL, blSpeed);
         double[] optBR = Clamp315(angleRR, brSpeed);
 
-        double[] optParamsFL = optimize(optFL[0], optFL[1], lastTargetFL);
-        double[] optParamsFR = optimize(optFR[0], optFR[1], lastTargetFR);
-        double[] optParamsRL = optimize(optBL[0], optBL[1], lastTargetRL);
-        double[] optParamsRR = optimize(optBR[0], optBR[1], lastTargetRR);
+        double[] optParamsFL = optimizeWithDeadspot(optFL[0], optFL[1], lastTargetFL, flInDeadspotAvoidance);
+        double[] optParamsFR = optimizeWithDeadspot(optFR[0], optFR[1], lastTargetFR, frInDeadspotAvoidance);
+        double[] optParamsRL = optimizeWithDeadspot(optBL[0], optBL[1], lastTargetRL, blInDeadspotAvoidance);
+        double[] optParamsRR = optimizeWithDeadspot(optBR[0], optBR[1], lastTargetRR, brInDeadspotAvoidance);
+
+        // Update hysteresis state for each module
+        flInDeadspotAvoidance = isInDeadspot(optParamsFL[0], DEADSPOT_END_EXIT);
+        frInDeadspotAvoidance = isInDeadspot(optParamsFR[0], DEADSPOT_END_EXIT);
+        blInDeadspotAvoidance = isInDeadspot(optParamsRL[0], DEADSPOT_END_EXIT);
+        brInDeadspotAvoidance = isInDeadspot(optParamsRR[0], DEADSPOT_END_EXIT);
 
         double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
         double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
@@ -504,13 +530,129 @@ public class SwerveSubsystem {
         return angle - 180.0;
     }
 
-    private double[] optimize(double target, double speed, double current) {
-        double delta = normalizeAngle(target - current);
-        if (Math.abs(delta) > 90) {
-            target = normalizeAngle(target + 180);
-            speed *= -1;
+    /**
+     * Check if an angle falls within the forbidden deadspot zone.
+     * Deadspot wraps around 360° (e.g., 315° through 20° means [315,360) ∪ [0,20]).
+     *
+     * @param angle Angle in degrees (0-360)
+     * @param endThreshold Use DEADSPOT_END_ENTER or DEADSPOT_END_EXIT for hysteresis
+     * @return true if angle is in forbidden zone
+     */
+    private boolean isInDeadspot(double angle, double endThreshold) {
+        angle = Clamp360(angle);
+
+        // Deadspot wraps around 0: check if angle >= start OR angle <= end
+        if (angle >= DEADSPOT_START || angle <= endThreshold) {
+            return true;
         }
-        return new double[]{target, speed};
+        return false;
+    }
+
+    /**
+     * Find the nearest allowed angle outside the deadspot.
+     * If angle is in deadspot, clamp to the closest valid boundary.
+     *
+     * @param angle Target angle in degrees
+     * @param inAvoidance Current hysteresis state for this module
+     * @return Corrected angle outside deadspot
+     */
+    private double avoidDeadspot(double angle, boolean inAvoidance) {
+        angle = Clamp360(angle);
+
+        // Determine which threshold to use (hysteresis)
+        double endThreshold = inAvoidance ? DEADSPOT_END_EXIT : DEADSPOT_END_ENTER;
+
+        if (!isInDeadspot(angle, endThreshold)) {
+            return angle; // Already safe
+        }
+
+        // Angle is in deadspot - find nearest boundary
+        // Option 1: Clamp to endThreshold + margin (e.g., 20° or 15°)
+        // Option 2: Clamp to DEADSPOT_START - margin (e.g., 310°)
+
+        double distToLowBoundary = angle; // Distance to 0° side
+        if (angle > 180) {
+            distToLowBoundary = 360 - angle; // Wrap-around distance
+        }
+
+        double distToHighBoundary = DEADSPOT_START - angle;
+        if (distToHighBoundary < 0) {
+            distToHighBoundary += 360;
+        }
+
+        // Choose closer boundary and add safety margin
+        if (distToLowBoundary < distToHighBoundary) {
+            return endThreshold + DEADSPOT_BOUNDARY_MARGIN; // Exit on low side (~20-25°)
+        } else {
+            return DEADSPOT_START - DEADSPOT_BOUNDARY_MARGIN; // Exit on high side (~310°)
+        }
+    }
+
+    /**
+     * Optimize module steering to minimize rotation while AVOIDING DEADSPOT.
+     * Standard swerve optimization: if angle delta > 90°, flip 180° and reverse motor.
+     * DEADSPOT-AWARE: Reject any target that falls in forbidden zone, choose valid alternative.
+     *
+     * @param target Desired steering angle (degrees, 0-360)
+     * @param speed Desired drive speed (-1 to 1)
+     * @param current Current steering angle (degrees, 0-360)
+     * @param inAvoidance Hysteresis state for this module
+     * @return [optimized_angle, optimized_speed] - guaranteed outside deadspot
+     */
+    private double[] optimizeWithDeadspot(double target, double speed, double current, boolean inAvoidance) {
+        target = Clamp360(target);
+        current = Clamp360(current);
+
+        // Generate two candidate solutions:
+        // Candidate A: steer to target, drive at +speed
+        // Candidate B: steer to target+180°, drive at -speed
+        double candidateA_angle = target;
+        double candidateA_speed = speed;
+
+        double candidateB_angle = Clamp360(target + 180);
+        double candidateB_speed = -speed;
+
+        // Determine which threshold to use for deadspot check (hysteresis)
+        double endThreshold = inAvoidance ? DEADSPOT_END_EXIT : DEADSPOT_END_ENTER;
+
+        // Check if each candidate is valid (outside deadspot)
+        boolean aValid = !isInDeadspot(candidateA_angle, endThreshold);
+        boolean bValid = !isInDeadspot(candidateB_angle, endThreshold);
+
+        // Calculate rotation needed for each valid candidate
+        double deltaA = Math.abs(normalizeAngle(candidateA_angle - current));
+        double deltaB = Math.abs(normalizeAngle(candidateB_angle - current));
+
+        // Decision logic:
+        // 1. If both valid: choose one requiring less rotation (standard optimization)
+        // 2. If only one valid: use that one
+        // 3. If neither valid (rare edge case): clamp to nearest boundary
+
+        if (aValid && bValid) {
+            // Both valid - pick shorter rotation
+            if (deltaA <= deltaB) {
+                return new double[]{candidateA_angle, candidateA_speed};
+            } else {
+                return new double[]{candidateB_angle, candidateB_speed};
+            }
+        } else if (aValid) {
+            // Only A is valid
+            return new double[]{candidateA_angle, candidateA_speed};
+        } else if (bValid) {
+            // Only B is valid
+            return new double[]{candidateB_angle, candidateB_speed};
+        } else {
+            // Neither valid (both in deadspot) - emergency fallback
+            // This should be rare - clamp target to nearest safe angle
+            double safeAngle = avoidDeadspot(candidateA_angle, inAvoidance);
+
+            // Determine if we should reverse speed based on which candidate was closer
+            if (deltaA <= deltaB) {
+                return new double[]{safeAngle, candidateA_speed * 0.8}; // Reduce speed slightly near boundary
+            } else {
+                return new double[]{safeAngle, candidateB_speed * 0.8};
+            }
+        }
     }
 
     public void reZero() {
