@@ -64,8 +64,8 @@ public class CompOp extends OpMode {
 
      */
 
-    ElapsedTime shooterRecorrectChange = new ElapsedTime();
-    boolean justRecorrected = false;
+    ElapsedTime hoodTimer = new ElapsedTime();
+    boolean canSwap = false;
 
     @Override
     public void loop() {
@@ -183,10 +183,9 @@ public class CompOp extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
-        if (shooterRecorrectChange.seconds() > 0.1 && !justRecorrected)
+        if (hoodTimer.seconds() > 0.1)
         {
-            shooter.setTargetRPM(tempTgtRPM);
-            justRecorrected = true;
+            shooter.setHoodPosition(tempTgtHood);
         }
 
         if (gamepad2.left_trigger > 0.3) {
@@ -197,18 +196,17 @@ public class CompOp extends OpMode {
             outtaking = true;
             if (isAutoAdjust && !lastOuttaking)
             {
-                justRecorrected = false;
-                shooterRecorrectChange.reset();
                 tempTgtHood = shooter.currentHood;
                 tempTgtRPM = shooter.currentRpm;
+                hoodTimer.reset();
 
                 if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
                 {
                     gamepad2.rumble(500);
                 }
 
-                shooter.setTargetRPM(tempTgtRPM-200);
-                shooter.setHoodPosition(tempTgtHood);
+                shooter.setTargetRPM(tempTgtRPM);
+                shooter.setHoodPosition(Math.min(0, tempTgtHood - 0.1));
             }
         } else if (reverseIntake) {
             intake.outFront(true);

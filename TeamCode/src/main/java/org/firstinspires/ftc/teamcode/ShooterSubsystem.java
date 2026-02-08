@@ -296,7 +296,7 @@ public class ShooterSubsystem {
         if (hoodResetTimer.seconds() > 1.0 / hoodResetHz)
         {
             currentHood = h(currentDistance);
-            setHoodPosition(currentHood);
+            setHoodPosition(Math.min(0, currentHood - 0.1)); // add one tick
             hoodResetTimer.reset();
         }
 
