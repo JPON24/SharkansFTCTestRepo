@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 
 @TeleOp(name = "Competition TeleOp RED")
 public class CompOpRed extends OpMode {
@@ -59,9 +62,10 @@ public class CompOpRed extends OpMode {
     /*
     new shooter positions
 
-
-
      */
+
+    ElapsedTime hoodTimer = new ElapsedTime();
+    boolean canSwap = false;
 
     @Override
     public void loop() {
@@ -72,15 +76,22 @@ public class CompOpRed extends OpMode {
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
 
-        boolean plant = gamepad2.a;
 
-        if (plant)
+        double plant = gamepad1.left_trigger;
+        double reset = gamepad1.right_trigger;
+
+        if (plant > 0.4)
         {
             swerve.plant();
         }
         else
         {
             swerve.drive(leftStickY, leftStickX, rightStickX);
+        }
+
+        if (reset > 0.4)
+        {
+            swerve.resetIMU();
         }
 
         boolean upDpadPressed = gamepad2.dpad_up;
@@ -95,21 +106,20 @@ public class CompOpRed extends OpMode {
         boolean setShooterRPMHigh = gamepad2.y;
         boolean setShooterRPMLow = gamepad2.x;
         boolean swapToAuto = gamepad2.b;
+        boolean reverseIntake = gamepad2.a;
 
-        boolean turretPos = gamepad2.dpad_right;
-        boolean turretNeg = gamepad2.dpad_left;
+        boolean turretPos = gamepad2.dpad_left;
+        boolean turretNeg = gamepad2.dpad_right;
 
         if (swapToAuto && !lastSwapAuto) {
             isAutoAdjust = !isAutoAdjust;
         }
-
 
         lastSwapAuto = swapToAuto;
 
         if (isAutoAdjust && !outtaking)
         {
             shooter.update();
-//            shooter.setHoodPosition(hoodAdjust);
 
             if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
             {
@@ -118,7 +128,7 @@ public class CompOpRed extends OpMode {
         }
         else
         {
-//            shooter.setHoodPosition(hoodAdjust);
+            shooter.setHoodPosition(hoodAdjust);
 
             if (willIncrement) {
                 if (shooter.getTargetRPM() + 50 < 6000) {
@@ -173,6 +183,11 @@ public class CompOpRed extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
+        if (hoodTimer.seconds() > 0.1)
+        {
+            shooter.setHoodPosition(tempTgtHood);
+        }
+
         if (gamepad2.left_trigger > 0.3) {
             outtaking = false;
             intake.intake(true);
@@ -183,6 +198,7 @@ public class CompOpRed extends OpMode {
             {
                 tempTgtHood = shooter.currentHood;
                 tempTgtRPM = shooter.currentRpm;
+                hoodTimer.reset();
 
                 if (shooter.IsAtTgtRPM() && shooter.getTargetRPM() != 0)
                 {
@@ -190,12 +206,16 @@ public class CompOpRed extends OpMode {
                 }
 
                 shooter.setTargetRPM(tempTgtRPM);
-                shooter.setHoodPosition(tempTgtHood);
+                shooter.setHoodPosition(Math.min(0, tempTgtHood - 0.1));
             }
-        } else {
+        } else if (reverseIntake) {
+            intake.outFront(true);
+        }
+        else {
             outtaking = false;
             intake.intake(false);
             intake.outtake(false);
+            intake.outFront(false);
         }
 
         lastOuttaking = outtaking;
@@ -251,7 +271,11 @@ public class CompOpRed extends OpMode {
         telemetry.addData("y cmd: ", swerve.yCmdVal);
         telemetry.addData("r cmd: ", swerve.rCmdVal);
 
-        telemetry.addData("heading: ", swerve.heading());
+        telemetry.addData("otos x: ", otos.getPosition().x);
+        telemetry.addData("otos y: ", otos.getPosition().y);
+        telemetry.addData("otos h: ", otos.getPosition().h);
+//        telemetry.addData("heading: ", swerve.heading());
+        telemetry.addData("ticks: ", shooter.getTurretTicks());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
         telemetry.update();

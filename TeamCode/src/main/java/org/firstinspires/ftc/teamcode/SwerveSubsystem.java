@@ -71,7 +71,7 @@ public class SwerveSubsystem {
     private final double swerveUpdateHz = 6;
     private double deltaMax = 25;
 
-    private double speed = 0.50;
+    private double speed = 0.90;
     public double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     public double flSpeed, frSpeed, blSpeed, brSpeed;
     public double angleFL, angleFR, angleRL, angleRR;
@@ -345,16 +345,21 @@ public class SwerveSubsystem {
         double[] optBL = Clamp315(angleRL, blSpeed);
         double[] optBR = Clamp315(angleRR, brSpeed);
 
-        double[] optParamsFL = optimizeWithDeadspot(optFL[0], optFL[1], lastTargetFL, flInDeadspotAvoidance);
-        double[] optParamsFR = optimizeWithDeadspot(optFR[0], optFR[1], lastTargetFR, frInDeadspotAvoidance);
-        double[] optParamsRL = optimizeWithDeadspot(optBL[0], optBL[1], lastTargetRL, blInDeadspotAvoidance);
-        double[] optParamsRR = optimizeWithDeadspot(optBR[0], optBR[1], lastTargetRR, brInDeadspotAvoidance);
+//        double[] optParamsFL = optimizeWithDeadspot(optFL[0], optFL[1], lastTargetFL, flInDeadspotAvoidance);
+//        double[] optParamsFR = optimizeWithDeadspot(optFR[0], optFR[1], lastTargetFR, frInDeadspotAvoidance);
+//        double[] optParamsRL = optimizeWithDeadspot(optBL[0], optBL[1], lastTargetRL, blInDeadspotAvoidance);
+//        double[] optParamsRR = optimizeWithDeadspot(optBR[0], optBR[1], lastTargetRR, brInDeadspotAvoidance);
+//
+//        // Update hysteresis state for each module
+//        flInDeadspotAvoidance = isInDeadspot(optParamsFL[0], DEADSPOT_END_EXIT);
+//        frInDeadspotAvoidance = isInDeadspot(optParamsFR[0], DEADSPOT_END_EXIT);
+//        blInDeadspotAvoidance = isInDeadspot(optParamsRL[0], DEADSPOT_END_EXIT);
+//        brInDeadspotAvoidance = isInDeadspot(optParamsRR[0], DEADSPOT_END_EXIT);
 
-        // Update hysteresis state for each module
-        flInDeadspotAvoidance = isInDeadspot(optParamsFL[0], DEADSPOT_END_EXIT);
-        frInDeadspotAvoidance = isInDeadspot(optParamsFR[0], DEADSPOT_END_EXIT);
-        blInDeadspotAvoidance = isInDeadspot(optParamsRL[0], DEADSPOT_END_EXIT);
-        brInDeadspotAvoidance = isInDeadspot(optParamsRR[0], DEADSPOT_END_EXIT);
+        double[] optParamsFL = optimize(optFL[0], optFL[1], lastTargetFL);
+        double[] optParamsFR = optimize(optFR[0], optFR[1], lastTargetFR);
+        double[] optParamsRL = optimize(optBL[0], optBL[1], lastTargetRL);
+        double[] optParamsRR = optimize(optBR[0], optBR[1], lastTargetRR);
 
         double tgtPosFL = GetPositionFromAngle(optParamsFL[0], FL_OFFSET);
         double tgtPosFR = GetPositionFromAngle(optParamsFR[0], FR_OFFSET);
@@ -586,6 +591,27 @@ public class SwerveSubsystem {
         } else {
             return DEADSPOT_START - DEADSPOT_BOUNDARY_MARGIN; // Exit on high side (~310°)
         }
+    }
+
+
+    private double[] optimize(double target, double speed, double current)
+    {
+        double delta = normalizeAngle(target - current);
+        if (Math.abs(target) > 315)
+        {
+            target -= 180;
+            speed *= -1;
+        }
+        if (Math.abs(delta) > 90)
+        {
+            if (normalizeAngle(target + 180) < 315)
+            {
+                target = normalizeAngle(target+180);
+                speed *= -1;
+            }
+        }
+
+        return new double[]{target,speed};
     }
 
     /**

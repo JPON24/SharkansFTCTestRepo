@@ -2,15 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 
-@Autonomous(name = "TestAuton")
-public class TestAuton extends LinearOpMode {
+@Autonomous(name = "RedLeave")
+public class CloseRedLeave extends LinearOpMode {
 
     private final double driveSpeed = 0.811;
     private final double shooterRpm = 3300.0;
@@ -27,7 +26,8 @@ public class TestAuton extends LinearOpMode {
     private DcMotorSimple transferMotor;
     private DcMotorSimple intakeMotor;
 
-    private DcMotorEx turretMotor;
+
+
 
 
     @Override
@@ -49,41 +49,14 @@ public class TestAuton extends LinearOpMode {
         transferMotor = hardwareMap.get(DcMotorSimple.class, "transferMotor");
         intakeMotor = hardwareMap.get(DcMotorSimple.class, "intakeMotor");
 
-        turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
-        turretMotor.setTargetPosition(0);
-        turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
         waitForStart();
         if (isStopRequested()) {
             return;
         }
 
         // Move backward
-        swerve.robotCentric(-driveSpeed, 0, 0);
-        turretMotor.setPower(0.5);
-        turretMotor.setTargetPosition(40);
+        swerve.robotCentric(0, -1, 0);
         sleep(3300); // init 4000
-        swerve.stop();
-        sleep(500);
-
-        // Spin up shooter
-        leftHood.setPosition(0.45);
-        rightHood.setPosition(0.45);
-        double ticksPerSecond = (shooterRpm / 60.0) * countsPerWheelRev;
-        rightShooter.setVelocity(ticksPerSecond);
-        sleep(3000);
-
-        // Run transfer to shoot
-        transferMotor.setPower(-1.0);
-        intakeMotor.setPower(1.0);
-        sleep(1500);
-        transferMotor.setPower(0);
-        intakeMotor.setPower(0);
-        rightShooter.setVelocity(0);
-
-        swerve.robotCentric(0, driveSpeed, 0);
-        sleep(2000); // init 4000
         swerve.stop();
 
         // Rotate CCW
