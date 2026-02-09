@@ -54,9 +54,11 @@ public class CloseRedLeave extends LinearOpMode {
             return;
         }
 
+        swerve.robotCentric(0.1,0,0);
+        sleep(1000);
         // Move backward
-        swerve.robotCentric(0, -1, 0);
-        sleep(3300); // init 4000
+        swerve.robotCentric(0.4, 0, 0);
+        sleep(2000); // init 4000
         swerve.stop();
 
         // Rotate CCW

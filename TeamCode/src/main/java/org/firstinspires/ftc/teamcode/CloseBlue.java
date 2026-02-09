@@ -150,6 +150,13 @@ public class CloseBlue extends LinearOpMode
 
             break;
         }
+
+
+//        telemetry.addData("x position: ", otos.getPosition().x);
+//        telemetry.addData("y position: ", otos.getPosition().y);
+//
+//        telemetry.addData("Dih error", shark.previousDihError);
+//        telemetry.update();
     }
 
     /*
