@@ -375,12 +375,6 @@ public class ShooterSubsystem {
         double error = limeLight.GetTX();
         double dt = deltaTime.seconds();
 
-        if (error == 0)
-        {
-            turretMotor.setPower(input * 0.3);
-            return;
-        }
-
         double derivative = (error - lastError) / dt;
 
         double turretPower = (kP * error);
@@ -400,6 +394,13 @@ public class ShooterSubsystem {
         if (getTurretState() == TurretState.TRACKING)
         {
             turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            if (error == 0)
+            {
+                turretMotor.setPower(input * 0.3);
+                return;
+            }
+
             turretMotor.setPower(-turretPower);
         }
         else if (getTurretState() == TurretState.UNWINDING)
