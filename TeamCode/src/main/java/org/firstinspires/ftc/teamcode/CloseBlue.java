@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 @Autonomous
-public class CloseBlue extends LinearOpMode
+public class CloseBlue extends LinearOpMode//lemme in
 {
     SharkDrive shark = new SharkDrive();
     MoveCommand moveCmd = new MoveCommand();
