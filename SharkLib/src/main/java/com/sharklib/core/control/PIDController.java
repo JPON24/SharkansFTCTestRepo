@@ -22,6 +22,7 @@ public class PIDController {
     }
     public double update(double target, double current) {
         double dt = timer.seconds();
+        if (dt < 0.001) dt = 0.001;
         timer.reset();
 
         double error = target - current;

@@ -26,7 +26,7 @@ public class SmartCRPServo {
         this.encoder = hwMap.get(AnalogInput.class, encoderName);
 
         // Initialize PID with default tuning (You MUST tune these!)
-        this.pid = new PIDController(kP, kI, kD, kI);
+        this.pid = new PIDController(kP, kI, kD, kF);
     }
 
     /**
