@@ -278,6 +278,7 @@ public class CompOp extends OpMode {
         telemetry.addData("ticks: ", shooter.getTurretTicks());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
+        telemetry.addData("Turret Encoder", shooter.getTurretAngle());
         telemetry.update();
     }
 }

@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.global.constants;
+
 public class ShooterSubsystem {
 
     // 4200 + max hood angle for far zone shot
@@ -80,6 +82,8 @@ public class ShooterSubsystem {
     private Servo rightHood = null;
 //    private Servo ledLight = null;
     private SparkFunOTOS otos;
+
+    private constants constants = new constants();
 
     private ElapsedTime timer = new ElapsedTime();
     private ElapsedTime dt = new ElapsedTime();
@@ -279,7 +283,7 @@ public class ShooterSubsystem {
         double error = getTargetRPM() - getCurrentRPM();
         double ticksPerSecond = (getTargetRPM() / 60.0) * COUNTS_PER_WHEEL_REV;
         if (error > 0) {
-            rightShooter.setVelocity(ticksPerSecond * bangBangCoef);
+            rightShooter.setVelocity(ticksPerSecond * constants.BANGBANG_COEF);
         } else {
             rightShooter.setVelocity(ticksPerSecond);
         }

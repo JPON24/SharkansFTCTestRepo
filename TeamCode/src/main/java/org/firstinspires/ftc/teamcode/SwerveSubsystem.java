@@ -16,6 +16,10 @@ public class SwerveSubsystem {
     private final double W = 1.00;
 
     // ===== DEADSPOT KEEP-OUT ZONE CONFIGURATION =====
+    /**
+     * Mr Glorious king himself #3... The judges obviously care about commenting. It's time to lock in...
+     * It's time to become master bait- I mean... master coders
+     */
     // Mechanical deadspot is approximately 315° through 0° (wraps around)
     // We define a forbidden zone with hysteresis to prevent commanding angles in this region
     private final double DEADSPOT_START = 315.0;      // Start of forbidden zone (degrees)

@@ -646,12 +646,7 @@ public class SharkDrive {
 //        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
         dt.drive(speed * Math.sin(Math.toRadians(CoolAngle)) * mag, speed * Math.cos(Math.toRadians(CoolAngle)) * mag, -speed * output[2]);
     }
-
-
-
-
-
-    public void thung(double speed, double axis, double tgtX,double  tgtY,double tgtH, double distanceLenience, double headingLenience, double speedLenience) { //suppossed to be the same thing but the x and y that are fed into the pid control are robot centric
+    public void thing(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell
         if (!odometry.isConnected()) {
             return;
         }
@@ -669,26 +664,22 @@ public class SharkDrive {
         pos = GetOdometryLocalization();
 
         if (axis == 3 || axis == 4) {
-            headingLenience = 15;
+            angleLenience = 15;
         } else {
-            headingLenience = 60;
+            angleLenience = 60;
         }
-        double forwards;
-        double left;
+
         errors[0] = tgtX - pos.x;
         errors[1] = tgtY - pos.y;
-        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtH - pos.h)));
+        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
         double errorMag = Math.hypot(errors[0], errors[1]);
+        double errorAngle = Math.toDegrees(Math.atan2(errors[1], errors[0]));
+        double angleThingy = 90 - pos.h; //does pos h do degreees????
+        double idkAngle = 90 - (errorAngle - angleThingy); //this depends again on the polarity of the heading and the odometry cordinate system to switch it around if its that way idk
+        errors[0] = errorMag * Math.cos(Math.toRadians(idkAngle));
+        errors[1] = errorMag * Math.sin(Math.toRadians(idkAngle));
 
-        double errorAngle = Math.atan2(errors[1], errors[0]);
-        double angleThingy = 90 - pos.h;
-        double idkAngle = 90 - (errorAngle - angleThingy); //This also depends on the stuffs of the heading direction and the odometry cordinate system
-        errors[0] = errorMag * Math.cos(idkAngle);
-        errors[1] = errorMag * Math.sin(idkAngle);
-
-
-
-        completedBools[2] = Math.abs(errors[2]) < headingLenience;
+        completedBools[2] = Math.abs(errors[2]) < angleLenience;
 
         errors[2] /= 10; // err crunch tunable
 
@@ -703,7 +694,7 @@ public class SharkDrive {
         // might have to add increased magnitude to error, currently between -1 and 1
         output[0] = pid(errors[0], 0, distanceLenience);
         output[1] = pid(errors[1], 1, distanceLenience);
-        output[2] = pid(errors[2], 2, headingLenience);
+        output[2] = pid(errors[2], 2, angleLenience);
 
         completedBools[0] = Math.abs(errors[0]) < distanceLenience;
         completedBools[1] = Math.abs(errors[1]) < distanceLenience;
@@ -720,7 +711,7 @@ public class SharkDrive {
             output[0] *= 0;
             completedBools[0] = true;
         }
-        if (tgtH == 1){
+        if (tgtRot == 1){
             completedBools[2] = true;
             output[2] = 0;
         }
@@ -733,15 +724,11 @@ public class SharkDrive {
             output[1] = 0;
         }
 
+//        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
+        dt.robotCentric(speed * output[1], speed * output[0], -speed * output[2]);
 
-
-        dt.robotCentric(speed * output[0], speed * output[1], speed * output[2]); //
     }
-
 }
-
-
-
 
 /*
 Congratulations!! You found this useless comment
@@ -751,7 +738,5 @@ Congratulations!! You found this useless comment
 IF YOU ARE PICKING UP THIS CODE BASE I AM GENUINELY SORRY
 PS. I strongly recommend coffee when updating this code
  */
-
-//
 
 
