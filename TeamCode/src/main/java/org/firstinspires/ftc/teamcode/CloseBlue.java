@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 public class CloseBlue extends LinearOpMode//lemme in pls
 {
     SharkDrive shark = new SharkDrive();
-    MoveCommand moveCmd = new MoveCommand();
+    MoveCommand moveCmd = new MoveCommand(); //lemme in 2
 
 
     ShooterSubsystem shooter = new ShooterSubsystem();
