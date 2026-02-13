@@ -7,13 +7,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import com.sharklib.core.util.math.LinearMath;
-import com.sharklib.core.util.math.InterpLUT;
-import com.sharklib.core.util.math.geometry.Vector2D;
-import com.sharklib.core.control.PIDController;
-import com.sharklib.core.util.math.Ballistics;
 
+import org.firstinspires.ftc.teamcode.global.Ballistics;
 import org.firstinspires.ftc.teamcode.global.constants;
+import org.firstinspires.ftc.teamcode.global.Vector2D;
+import org.firstinspires.ftc.teamcode.global.InterpLUT;
+import org.firstinspires.ftc.teamcode.global.LinearMath;
+import org.firstinspires.ftc.teamcode.global.PIDController;
+
 
 public class VirtualGoalShooter {
 
