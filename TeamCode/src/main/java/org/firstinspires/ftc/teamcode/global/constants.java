@@ -145,8 +145,8 @@ public class constants {
 
         // Zephyr Subsystem Specifics
         public static final double ZEPHYR_AVG_VELOCITY = 280.0;
-        public static final double ZEPHYR_BLUE_BASKET_X = 0.0;
-        public static final double ZEPHYR_BLUE_BASKET_Y = 0.0;
+        public static final double ZEPHYR_BLUE_BASKET_X = 12.0;
+        public static final double ZEPHYR_BLUE_BASKET_Y = 136.0;
         public static final double ZEPHYR_RED_BASKET_X = 0.0;
         public static final double ZEPHYR_RED_BASKET_Y = 0.0;
 

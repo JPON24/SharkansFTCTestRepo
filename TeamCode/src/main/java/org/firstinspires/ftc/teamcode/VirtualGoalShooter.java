@@ -54,7 +54,13 @@ public class VirtualGoalShooter {
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
     private double unwindTargetAngle = 0;
+
+    // Flywheel state - NEW
+    private boolean flywheelEnabled = false;
     private double targetRPM = 0;
+
+    // Store last firing solution - NEW
+    private FiringSolution lastSolution = null;
 
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, AprilTagLimelight limelightRef) {
         this.otos = otosRef;
@@ -77,42 +83,133 @@ public class VirtualGoalShooter {
         rightHood = hardwareMap.get(Servo.class, "rightHood");
 
         //jacob got that
-        rpmTable.add(0.0, 3100.0);
-        rpmTable.add(38.5, 3300.0);
-        rpmTable.add(48.5, 3300.0);
-        rpmTable.add(68.5, 3450.0);
-        rpmTable.add(83.5, 3700.0);
-        rpmTable.add(129.0, 4600.0);
+        rpmTable.add(65, 3300);
+        rpmTable.add(73.5, 3350);
+        rpmTable.add(77, 3400);
+        rpmTable.add(81, 3450.0);
+        rpmTable.add(85, 3700.0);
+        rpmTable.add(90, 3800);
 
-        hoodTable.add(0.0, 0.65);
-        hoodTable.add(37.0, 0.45);
-        hoodTable.add(62.0, 0.45);
-        hoodTable.add(72.0, 0.15);
-        hoodTable.add(129.0, 0.0);
+        hoodTable.add(56, 0.45);
+        hoodTable.add(71, 0.5);
+        hoodTable.add(77, 0.45);
+        hoodTable.add(81, 0.55);
+        hoodTable.add(85, 0.1);
     }
 
     public void setAlliance(boolean isBlue) {
         this.targetPos = isBlue ? BLUE_BASKET : RED_BASKET;
     }
 
+    /**
+     * Call this in your loop - it automatically tracks the turret and hood
+     * but does NOT spin the flywheel unless spinUpShooter() has been called
+     */
     public void update() {
+        // Always update shooter PIDF regardless of flywheel state
         updateShooterPIDF();
 
+        // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
+            // Still calculate solution for hood/flywheel even during unwind
+            lastSolution = solveFiringSolution();
+            if (lastSolution.validShot) {
+                setHoodPos(lastSolution.hoodAngle);
+                if (flywheelEnabled) {
+                    setShooterRPM(lastSolution.rpm);
+                }
+            }
             return;
         }
 
         FiringSolution solution = solveFiringSolution();
+        lastSolution = solution;
 
         if (solution.validShot) {
-            setShooterRPM(solution.rpm);
             setHoodPos(solution.hoodAngle);
             moveTurretToAngle(solution.turretAngle);
+
+            if (flywheelEnabled) {
+                setShooterRPM(solution.rpm);
+            } else {
+                setShooterRPM(0);
+            }
         } else {
             turretMotor.setPower(0);
             setShooterRPM(0);
         }
+    }
+
+    /**
+     * Call this to start spinning the flywheel
+     * Turret will continue to track automatically
+     */
+    public void spinUpShooter() {
+        flywheelEnabled = true;
+    }
+
+    /**
+     * Call this to stop the flywheel
+     * Turret will continue to track automatically
+     */
+    public void stopShooter() {
+        flywheelEnabled = false;
+        setShooterRPM(0);
+        targetRPM = 0;
+    }
+
+    /**
+     * Check if the shooter is ready to fire
+     * @param rpmTolerance How close to target RPM (default: 100)
+     * @return true if flywheel is at speed and shot is valid
+     */
+    public boolean isReadyToShoot(double rpmTolerance) {
+        if (!flywheelEnabled || lastSolution == null || !lastSolution.validShot) {
+            return false;
+        }
+
+        double currentRPM = getCurrentRPM();
+        double error = Math.abs(targetRPM - currentRPM);
+
+        return error < rpmTolerance && targetRPM > 0;
+    }
+
+    /**
+     * Overload with default tolerance
+     */
+    public boolean isReadyToShoot() {
+        return isReadyToShoot(100.0);
+    }
+
+    /**
+     * Check if turret is aimed at target
+     * @param angleTolerance How close to target angle in degrees (default: 2.0)
+     * @return true if turret is within tolerance
+     */
+    public boolean isTurretOnTarget(double angleTolerance) {
+        if (lastSolution == null || !lastSolution.validShot) {
+            return false;
+        }
+
+        double currentAngle = getTurretDegrees();
+        double error = Math.abs(lastSolution.turretAngle - currentAngle);
+
+        return error < angleTolerance;
+    }
+
+    /**
+     * Overload with default tolerance
+     */
+    public boolean isTurretOnTarget() {
+        return isTurretOnTarget(2.0);
+    }
+
+    /**
+     * Check if everything is ready for a shot
+     */
+    public boolean isFullyReady() {
+        return isReadyToShoot() && isTurretOnTarget();
     }
 
     private FiringSolution solveFiringSolution() {
@@ -239,7 +336,31 @@ public class VirtualGoalShooter {
         return (rightShooter.getVelocity() / TICKS_PER_REV_SHOOTER) * 60.0;
     }
 
-    public double getTargetRPM() { return targetRPM; }
+    public double getTargetRPM() {
+        return targetRPM;
+    }
+
+    /**
+     * Get the current turret target angle
+     */
+    public double getTargetTurretAngle() {
+        return lastSolution != null ? lastSolution.turretAngle : 0;
+    }
+
+    /**
+     * Get the turret error (how far off target)
+     */
+    public double getTurretError() {
+        if (lastSolution == null) return 0;
+        return lastSolution.turretAngle - getTurretDegrees();
+    }
+
+    /**
+     * Check if flywheel is currently enabled
+     */
+    public boolean isFlywheelEnabled() {
+        return flywheelEnabled;
+    }
 
     private static class FiringSolution {
         double turretAngle, rpm, hoodAngle;
