@@ -9,7 +9,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 
 public class SharkDrive {
-    SwerveSubsystem dt = new SwerveSubsystem();
+//    SwerveSubsystem dt = new SwerveSubsystem();
+    WorkingSwerve dt = new WorkingSwerve();
     AprilTagLimelight limelight = new AprilTagLimelight();
     ElapsedTime runtime = new ElapsedTime();
     ElapsedTime dxTime = new ElapsedTime();
@@ -24,7 +25,7 @@ public class SharkDrive {
     double lastValidIMUReading = 0;
     double dihP = 0.1;
     double dihI = 0;
-    double dihD = 0;
+    double dihD = 0.0145;
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;
@@ -71,9 +72,9 @@ public class SharkDrive {
             odometry.begin();
         }
 
-        dt.init(hwMap, odometry);
+        dt.init(hwMap);
 
-        dt.drive(0,0,0);
+        dt.swerveDrive(0,0,0);
     }
 
     private double LowPass(double average, double newValue) {
@@ -290,7 +291,7 @@ public class SharkDrive {
         }
 
 //        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.drive(speed * output[1], speed * output[0], -speed * output[2]);
+        dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
     }
 
     // creates odometry fallback if the limelight stops working
@@ -554,20 +555,17 @@ public class SharkDrive {
     public double initErrX = 0;
     public double initErrY = 0;
 
+    // FIXED DihdometryDihtrol2 method
+// Replace your existing method with this
+
     public void DihdometryDihtrol2(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) {
         if (!odometry.isConnected()) {
             return;
         }
-//        distanceLenience; //best value 1.75
 
         double now = runtime.milliseconds();
         deltaTime = now - last_time;
         last_time = now;
-
-//        pos = limelight.GetLimelightData(false, GetOdometryLocalization().h);
-//        pos = GetLocalization();
-
-//        pos = PoseEstimator();
 
         pos = GetOdometryLocalization();
 
@@ -577,42 +575,37 @@ public class SharkDrive {
             angleLenience = 60;
         }
 
+        // Position errors
         errors[0] = tgtX - pos.x;
         errors[1] = tgtY - pos.y;
-        double CoolAngle = Math.toDegrees(Math.atan2(initErrY, initErrX)); // you guys need to adjust this because the cordinate system of the odometry and the stuffs is probably different
-        double mag = 0;
-        double distance = Math.hypot(Math.abs(errors[0]), Math.abs(errors[1]));
 
-        errors[2] = CoolAngle - Math.toDegrees(pos.h); // idk if pos.h is in radians or degrees, could be other way around
+        // Calculate angle to target position (for driving direction)
+        double angleToTarget = Math.toDegrees(Math.atan2(errors[1], errors[0]));
+        double distance = Math.hypot(errors[0], errors[1]);
+
+        // FIX: Rotation error should use tgtRot, not angleToTarget!
+        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;
 
-        errors[2] /= 10; // err crunch tunable idk what this
+        errors[2] /= 10; // err crunch tunable
 
-//        if (new ArmLiftMotor().GetLocalNeutral() == 1250) {
-//            TuningUp();
-//        } else {
-//            TuningDown();
-//        }
-
-        // normalized against one another
-        // should create weird diagonal movement
-        // might have to add increased magnitude to error, currently between -1 and 1
-
+        // Calculate outputs
         output[0] = pid(errors[0], 0, distanceLenience);
         output[1] = pid(errors[1], 1, distanceLenience);
         output[2] = pid(errors[2], 2, angleLenience);
-        mag = pid(distance, 3, distanceLenience);
 
-        double dihlta = lastHeadinerorrthingy - errors[2];
-        if (Math.abs(dihlta) < dihband) {
+        // Magnitude control for driving
+        double mag = pid(distance, 3, distanceLenience);
 
+        // Deadband for rotation (prevent jittering)
+        double delta = lastHeadinerorrthingy - errors[2];
+        if (Math.abs(delta) < dihband) {
             errors[2] = 0;
         }
         output[2] = pid(errors[2], 2, angleLenience);
 
         lastHeadinerorrthingy = errors[2];
-
 
         completedBools[0] = Math.abs(errors[0]) < distanceLenience;
         completedBools[1] = Math.abs(errors[1]) < distanceLenience;
@@ -621,30 +614,38 @@ public class SharkDrive {
         completedStopBools[1] = Math.abs(errors[1]) < 0.6;
 
         if (axis == 0) {
-//            output[1] = output[1] / Math.abs(output[1]) * 0.2;
             output[1] *= 0;
-//            output[2] *= 0;
             completedBools[1] = true;
         } else if (axis == 1) {
             output[0] *= 0;
             completedBools[0] = true;
         }
-        if (tgtRot == 1){
+
+        if (tgtRot == 1) {
             completedBools[2] = true;
             output[2] = 0;
         }
 
-        if (axis == 4)
-        {
+        if (axis == 4) {
             completedBools[0] = true;
             completedBools[1] = true;
             output[0] = 0;
             output[1] = 0;
         }
 
+        // Drive towards target position (using angleToTarget)
+        // But rotate to tgtRot angle (using output[2])
+        double yOut = speed * Math.sin(Math.toRadians(angleToTarget)) * mag;
+        double xOut = speed * Math.cos(Math.toRadians(angleToTarget)) * mag;
 
-//        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.drive(speed * Math.sin(Math.toRadians(CoolAngle)) * mag, speed * Math.cos(Math.toRadians(CoolAngle)) * mag, -speed * output[2]);
+        double maxOut = Math.max(Math.abs(yOut), Math.abs(xOut));
+
+        if (maxOut > 0.001) {  // Prevent divide by zero
+            yOut /= maxOut;
+            xOut /= maxOut;
+        }
+
+        dt.swerveDrive(yOut, xOut, -speed * output[2]);
     }
     public void thing(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell
         if (!odometry.isConnected()) {
@@ -725,7 +726,7 @@ public class SharkDrive {
         }
 
 //        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.robotCentric(speed * output[1], speed * output[0], -speed * output[2]);
+        dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
 
     }
 }

@@ -13,7 +13,7 @@ public class CloseBlue extends LinearOpMode
 
 
     ShooterSubsystem shooter = new ShooterSubsystem();
-    SwerveSubsystem swerve = new SwerveSubsystem();
+    WorkingSwerve swerve = new WorkingSwerve();
     floatingIntake intake = new floatingIntake();
     SparkFunOTOS otos;
 
@@ -30,10 +30,10 @@ public class CloseBlue extends LinearOpMode
         otos.calibrateImu();
 
         shooter.initSystem(hardwareMap, otos, 0);
-        swerve.init(hardwareMap, otos);
+        swerve.init(hardwareMap);
         intake.init(hardwareMap);
 
-        swerve.drive(0,0,0);
+        swerve.swerveDrive(0,0,0);
 
         waitForStart();
         while (opModeIsActive())
@@ -173,8 +173,10 @@ GATE INTAKE - -49.9, -35, 10
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, 2, 42, 0, 1, 1, 60, 0.45, 3300, false, false);
-        moveCmd.MoveToPosition(autonSpeed, 2, 42, 0, 1, 4, 60, 0.45, 3300, false, true);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 0, 1, 1, 0, 0.45, 3300, false, false);
+        moveCmd.MoveToPosition(0, -2, -42, 0, 1, 4, 0, 0.45, 3300, false, false);
+        sleep(500);
+        moveCmd.MoveToPosition(autonSpeed, -2, -42, 0, 1, 4, 0, 0.45, 3300, false, true);
         sleep(500);
     }
 

@@ -29,33 +29,31 @@ public class WorkingSwerve {
     SparkFunOTOS otos;
 
     // PID Constants
-    double FLkP = 0.003; //
-    double FLkI = 0;
-    double FLkD = 0;
+    double FLkP = 0.0023;
+    double FLkI = 0.0008;
+    double FLkD = 0.00008;
 
-    double FRkP = 0.0035; //
-    double FRkI = 0;
-    double FRkD = 0;
+    double FRkP = 0.0024;
+    double FRkI = 0.0005;
+    double FRkD = 0.00008;
 
-    double BLkP = 0.0035; //
-    double BLkI = 0;
-    double BLkD = 0;
+    double BLkP = 0.0022;
+    double BLkI = 0.0007;
+    double BLkD = 0.00008;
 
-    double BRkP = 0.0035; //
-    double BRkI = 0;
-    double BRkD = 0;
-
-    double minServoPower = 0.03;
+    double BRkP = 0.0024;
+    double BRkI = 0.0005;
+    double BRkD = 0.00008;
 
     double ANGLE_HOLD_SPEED = 0.05;
 
 
     double FL_OFFSET = -179.0;
-    double FR_OFFSET = 170.0;
+    double FR_OFFSET = 170; //170
     double BL_OFFSET = -179.0;
-    double BR_OFFSET = 166.0;
+    double BR_OFFSET = 166; //166
 
-    double speed = 0.55;
+    double speed = 0.75;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 
@@ -99,10 +97,22 @@ public class WorkingSwerve {
     }
 
     public void swerveDrive(double y_cmd, double x_cmd, double turn_cmd) {
+
         if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
             stopDrive();
             return;
         }
+
+        double currentHeading = -otos.getPosition().h;
+
+        double botHeading = Math.toRadians(currentHeading);
+
+        // Rotation buh
+        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
+        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
+
+        x_cmd = rotX;
+        y_cmd = rotY;
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;
@@ -172,6 +182,11 @@ public class WorkingSwerve {
 
         runPID(optFL[0], optFR[0], optRL[0], optRR[0],
                 currentFL, currentFR, currentRL, currentRR);
+    }
+
+    public void resetOTOSTracking()
+    {
+        otos.resetTracking();
     }
 
     private void stopDrive() {
@@ -246,6 +261,10 @@ public class WorkingSwerve {
     public class PIDController {
         private double kP, kI, kD;
         private double lastError = 0;
+        private double integralSum = 0.0;
+        private double maxIntegral = 48;
+        private double minServoPower = 0.03;
+
 
         public PIDController(double kP, double kI, double kD) {
             this.kP = kP;
@@ -260,17 +279,71 @@ public class WorkingSwerve {
             double derivative = (error - lastError) / dt;
             double dTerm = derivative * kD;
 
+            if (dt > 0) {
+                integralSum += error * dt;
+                integralSum = Range.clip(integralSum, -maxIntegral, maxIntegral);
+            }
+
+            if (error * lastError < 0)
+            {
+                integralSum = 0;
+            }
+
+            double iTerm = integralSum * kI;
+
             lastError = error;
 
-            double output = pTerm + dTerm;
+            double output = pTerm + iTerm + dTerm;
 
-            if (Math.abs(error) > 2.0) {
+            if (Math.abs(error) > 0.85) {
                 output += Math.signum(output) * minServoPower;
-            } else {
-                output = 0;
             }
 
             return Range.clip(output, -1.0, 1.0);
         }
+    }
+
+    public double getFLRaw() {
+        double raw = (frontLeftAnalog.getVoltage() / 3.3) * 360.0 ;
+        return normalizeAngle(raw);
+    }
+
+    public double getFRRaw() {
+        double raw = (frontRightAnalog.getVoltage() / 3.3) * 360.0;
+        return normalizeAngle(raw);
+    }
+
+    public double getBLRaw() {
+        double raw = (backLeftAnalog.getVoltage() / 3.3) * 360.0;
+        return normalizeAngle(raw);
+    }
+
+    public double getBRRaw() {
+        double raw = (backRightAnalog.getVoltage() / 3.3) * 360.0;
+        return normalizeAngle(raw);
+    }
+
+
+    public double getFLError() {
+        return lastTargetFL - getAngle(frontLeftAnalog, FL_OFFSET);
+    }
+
+    public double getFRError() {
+        return lastTargetFR - getAngle(frontRightAnalog, FR_OFFSET);
+    }
+
+    public double getBLError() {
+        return lastTargetRL - getAngle(backLeftAnalog, BL_OFFSET);
+    }
+
+    public double getBRError() {
+        return lastTargetRR - getAngle(backRightAnalog, BR_OFFSET);
+    }
+
+    public double getMaxError() {
+        return Math.max(
+                Math.max(Math.abs(getFLError()), Math.abs(getFRError())),
+                Math.max(Math.abs(getBLError()), Math.abs(getBRError()))
+        );
     }
 }

@@ -55,11 +55,9 @@ public class VirtualGoalShooter {
     private TurretState currentState = TurretState.TRACKING;
     private double unwindTargetAngle = 0;
 
-    // Flywheel state - NEW
     private boolean flywheelEnabled = false;
     private double targetRPM = 0;
 
-    // Store last firing solution - NEW
     private FiringSolution lastSolution = null;
 
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, AprilTagLimelight limelightRef) {
@@ -287,7 +285,7 @@ public class VirtualGoalShooter {
         }
 
         double power = turretPID.update(targetAngle, currentAngle);
-        turretMotor.setPower(power);
+        turretMotor.setPower(power * 0.2);
     }
 
     private void initiateUnwind(double target) {

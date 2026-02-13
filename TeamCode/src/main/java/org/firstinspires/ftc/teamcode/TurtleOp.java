@@ -102,8 +102,9 @@ public class TurtleOp extends OpMode{
 //        double leftStickY = g1.left_stick_y();
 //        double rightStickX = -g1.right_stick_x();;
 
-        double leftStickX = -gamepad1.left_stick_x;
-        double leftStickY = gamepad1.left_stick_y;
+
+        double leftStickX = gamepad1.left_stick_x;
+        double leftStickY = -gamepad1.left_stick_y;
         double rightStickX = gamepad1.right_stick_x;;
 
 //        drive.drive(leftStickX, leftStickY, rightStickX, 0);
@@ -161,6 +162,11 @@ public class TurtleOp extends OpMode{
             intake.outFront(false);
         }
 
+        if (gamepad1.right_trigger > 0.4)
+        {
+            swerveDrive.resetOTOSTracking();
+        }
+
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
 //        telemetry.addData("FL Voltage", drive.getFLVoltage());
 //        telemetry.addData("FR Voltage", drive.getFRVoltage());
@@ -210,7 +216,19 @@ public class TurtleOp extends OpMode{
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);
         telemetry.addData("otos h: ", otos.getPosition().h);
-//        telemetry.addData("heading: ", swerve.heading());
+        telemetry.addData("FL OFFSET", swerveDrive.getFLRaw());
+        telemetry.addData("FR OFFSET", swerveDrive.getFRRaw());
+        telemetry.addData("BL OFFSET", swerveDrive.getBLRaw());
+        telemetry.addData("BR OFFSET", swerveDrive.getBRRaw());
+
+        telemetry.addData("Max Error", "%.2f°", swerveDrive.getMaxError());
+        telemetry.addData("FL Error", "%.2f°", swerveDrive.getFLError());
+        telemetry.addData("FR Error", "%.2f°", swerveDrive.getFRError());
+        telemetry.addData("BL Error", "%.2f°", swerveDrive.getBLError());
+        telemetry.addData("BR Error", "%.2f°", swerveDrive.getBRError());
+
+//")
+        //        telemetry.addData("heading: ", swerve.heading());
         telemetry.update();
     }
 }

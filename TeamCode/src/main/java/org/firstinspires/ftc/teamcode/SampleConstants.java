@@ -13,8 +13,8 @@ public class SampleConstants {
 
     public static double KPX = 0.1;
     public static double KPY = 0.1;
-    public static double KDX = 0;
-    public static double KDY = 0;
+    public static double KDX = 0.025;
+    public static double KDY = 0.025;
 
     public static double KPH = 0;
     public static double KIH = 0;
