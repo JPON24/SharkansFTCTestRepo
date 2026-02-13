@@ -5,52 +5,25 @@ public class ButtonReader {
     private boolean currentState = false;
     private boolean toggleState = false;
 
-    /**
-     * This method needs to be called every loop.
-     * It updates the state and handles the toggle logic.
-     */
+    // Standard update for booleans (A, B, X, Y, Bumpers)
     public void update(boolean isButtonDown) {
         lastState = currentState;
         currentState = isButtonDown;
 
-        // If a new press happens, flip the internal toggle switch
         if (wasJustPressed()) {
             toggleState = !toggleState;
         }
     }
 
-    /**
-     * True ONLY on the exact frame the button is clicked.
-     */
-    public boolean wasJustPressed() {
-        return currentState && !lastState;
+    // Overloaded update for Triggers (LT, RT)
+    public void update(float triggerValue) {
+        // Convert the float to a boolean using a 0.4 threshold
+        this.update(triggerValue > 0.4f);
     }
 
-    /**
-     * True ONLY on the exact frame the button is released.
-     */
-    public boolean wasJustReleased() {
-        return !currentState && lastState;
-    }
-
-    /**
-     * Returns the "Light Switch" state (On/Off).
-     */
-    public boolean getToggle() {
-        return toggleState;
-    }
-
-    /**
-     * Standard check: is the button currently held down?
-     */
-    public boolean isDown() {
-        return currentState;
-    }
-
-    /**
-     * Allows you to manually reset the toggle (e.g., force claw closed)
-     */
-    public void setToggle(boolean state) {
-        this.toggleState = state;
-    }
+    public boolean wasJustPressed() { return currentState && !lastState; }
+    public boolean wasJustReleased() { return !currentState && lastState; }
+    public boolean getToggle() { return toggleState; }
+    public boolean isDown() { return currentState; }
+    public void setToggle(boolean state) { this.toggleState = state; }
 }

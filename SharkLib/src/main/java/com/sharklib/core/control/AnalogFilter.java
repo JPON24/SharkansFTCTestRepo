@@ -1,11 +1,11 @@
-package org.firstinspires.ftc.teamcode;
+package com.sharklib.core.control;
 
-public class AxonAnalogFilter {
+public class AnalogFilter {
     private double lastEstimate = 0;
     private double alpha = 0.3;
     private boolean isInitialized = false;
 
-    public AxonAnalogFilter(double alpha) {
+    public AnalogFilter(double alpha) {
         this.alpha = alpha;
     }
 

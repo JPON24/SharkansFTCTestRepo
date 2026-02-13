@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Motor {
     private final DcMotor Motor;
     private double lastPower = 0.0;
-    private final double THRESHOLD = 0.01; // Only update if change is > 1%
+    private final double THRESHOLD = 0.001; // Only update if change is > 0.1%
 
     public Motor(HardwareMap hwMap, String name) {
         this.Motor = hwMap.get(DcMotor.class, name);

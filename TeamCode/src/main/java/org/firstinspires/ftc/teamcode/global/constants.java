@@ -27,6 +27,7 @@ public class constants {
         public static final double TURRET_KP = 0.01;
         public static final double TURRET_KI = 0;
         public static final double TURRET_KD = 0.00;
+        public static final double TURRET_KF = 0.0;
         public static final double TURRET_ADAPTIVE_KP_HIGH = 0.008;
         public static final double TURRET_ADAPTIVE_KP_MED = 0.004;
         public static final double TURRET_FILTER_STRENGTH = 0.8;
@@ -46,7 +47,7 @@ public class constants {
         public static final double SHOOTER_MIN_RPM = 0;
         public static final double SHOOTER_RPM_INCREMENT = 100;
         public static final double SHOOTER_RPM_INCREMENT_SMALL = 50;
-        public static final double SHOOTER_RPM_LENIENCE = 100;
+        public static final double SHOOTER_RPM_LENIENCE = 150;
         public static final double BANGBANG_COEF = 1.2;
 
         // Shooter PIDF

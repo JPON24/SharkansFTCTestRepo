@@ -6,9 +6,9 @@ public class EnhancedGamepad {
     private Gamepad gamepad;
 
     /**
-        We create readers for the most used buttons
+        reading the most used buttons
      */
-    public ButtonReader a, b, x, y, dpad_up, dpad_down, dpad_left, dpad_right, lb, rb;
+    public ButtonReader a, b, x, y, dpad_up, dpad_down, dpad_left, dpad_right, lb, rb, lt, rt;
 
     public EnhancedGamepad(Gamepad gamepad) {
         this.gamepad = gamepad;
@@ -22,6 +22,8 @@ public class EnhancedGamepad {
         dpad_right = new ButtonReader();
         lb = new ButtonReader();
         rb = new ButtonReader();
+        lt = new ButtonReader();
+        rt = new ButtonReader();
     }
 
     /**
@@ -38,6 +40,8 @@ public class EnhancedGamepad {
         dpad_right.update(gamepad.dpad_right);
         lb.update(gamepad.left_bumper);
         rb.update(gamepad.right_bumper);
+        lt.update(gamepad.left_trigger);
+        rt.update(gamepad.right_trigger);
     }
 
     /**

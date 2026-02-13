@@ -33,7 +33,7 @@ public class CoaxialSwerve {
     double BL_OFFSET = 0.0;
     double BR_OFFSET = 0.0;
 
-    double speed = 0.55;
+    double speed = 1.00;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 
@@ -48,13 +48,14 @@ public class CoaxialSwerve {
      * swerve.initBackLeft(hardwareMap, "blServo", "blMotor", "blEnc", 0.015,0,0.0003,0, 90);
      * swerve.initBackRight(hardwareMap, "brServo", "brMotor", "brEnc", 0.015,0,0.0003,0, 180);
      *
-     * swerve.initGeometry(0.3, 0.3, 0.1);
+     * swerve.CoaxialSwerveConstants(11, 10, 9.11) Should be in a ratio.
      */
 
-    public void CoaxialSwerveConstants(double width, double length, double height)
+    public void CoaxialSwerveConstants(double width, double length, double height, double speed)
     {
 
         this.dimensions = new RobotGeometry(width, length, height);
+        this.speed = speed;
     }
 
     // Front Left
@@ -65,7 +66,7 @@ public class CoaxialSwerve {
                               double kP, double kI, double kD, double kF,
                               double offset)
     {
-        frontLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF);
+        frontLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0.3);
         FL_OFFSET = offset;
         frontLeftMotor = new Motor(hwMap, motorName);
     }
@@ -78,7 +79,7 @@ public class CoaxialSwerve {
                                double kP, double kI, double kD, double kF,
                                double offset)
     {
-        frontRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF);
+        frontRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0.3);
         FR_OFFSET = offset;
         frontRightMotor = new Motor(hwMap, motorName);
     }
@@ -91,7 +92,7 @@ public class CoaxialSwerve {
                              double kP, double kI, double kD, double kF,
                              double offset)
     {
-        backLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF);
+        backLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0.3);
         BL_OFFSET = offset;
         backLeftMotor = new Motor(hwMap, motorName);
     }
@@ -104,7 +105,7 @@ public class CoaxialSwerve {
                               double kP, double kI, double kD, double kF,
                               double offset)
     {
-        backRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF);
+        backRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF,0.3);
         BR_OFFSET = offset;
         backRightMotor = new Motor(hwMap, motorName);
     }
@@ -205,8 +206,6 @@ public class CoaxialSwerve {
     }
 
     private void runPID(double targetFL, double targetFR, double targetRL, double targetRR) {
-
-
 
         frontLeftServo.setPosition(targetFL);
         frontRightServo.setPosition(targetFR);

@@ -11,26 +11,33 @@ import com.sharklib.core.util.math.LinearMath;
 import com.sharklib.core.util.math.InterpLUT;
 import com.sharklib.core.util.math.geometry.Vector2D;
 import com.sharklib.core.control.PIDController;
+import com.sharklib.core.util.math.Ballistics;
 
 import org.firstinspires.ftc.teamcode.global.constants;
 
 public class VirtualGoalShooter {
 
+    Ballistics Ballistics;
+
     public static final Vector2D BLUE_BASKET = new Vector2D(constants.ZEPHYR_BLUE_BASKET_X, constants.ZEPHYR_BLUE_BASKET_Y);
     public static final Vector2D RED_BASKET = new Vector2D(constants.ZEPHYR_RED_BASKET_X, constants.ZEPHYR_RED_BASKET_Y);
-    public static double PROJECTILE_SPEED = constants.ZEPHYR_AVG_VELOCITY;
+
+    private final double WHEEL_RADIUS_INCHES = 1.378;
+    private final double GEAR_RATIO = 1.0;
+    private final double HOOD_MIN_ANGLE = 20.0;
+    private final double HOOD_MAX_ANGLE = 60.0;
 
     private final double TURRET_MAX_DEG = constants.TURRET_MAX_DEG;
     private final double TURRET_MIN_DEG = constants.TURRET_MIN_DEG;
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.006;
-    private double baseI = 0.0;
-    private double baseD = 0.0002;
-    private double baseF = 0.0;
+    private double baseP = constants.TURRET_KP;
+    private double baseI = constants.TURRET_KI;
+    private double baseD = constants.TURRET_KD;
+    private double baseF = constants.TURRET_KF;
 
-    private double normalP = 100, boostP = 200, rpmDropThreshold = 300;
+    private double normalP = 100, boostP = 200, rpmDropThreshold = constants.SHOOTER_RPM_DROP_THRESHOLD;
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
@@ -69,7 +76,6 @@ public class VirtualGoalShooter {
         rightHood = hardwareMap.get(Servo.class, "rightHood");
 
         //jacob got that
-
         rpmTable.add(0.0, 3100.0);
         rpmTable.add(38.5, 3300.0);
         rpmTable.add(48.5, 3300.0);
@@ -113,13 +119,21 @@ public class VirtualGoalShooter {
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
-        double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
-        double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
-
         double dx = targetPos.x - pos.x;
         double dy = targetPos.y - pos.y;
         double rawDist = Math.hypot(dx, dy);
-        double timeOfFlight = rawDist / PROJECTILE_SPEED;
+
+        double tableRPM = rpmTable.get(rawDist);
+        double tableHood = hoodTable.get(rawDist);
+
+        double launchVelocity = Ballistics.toLinearVelocity(tableRPM, WHEEL_RADIUS_INCHES, GEAR_RATIO);
+        double launchAngle = hoodToDegrees(tableHood);
+
+        double timeOfFlight = Ballistics.calculateTimeOfFlight(rawDist, launchVelocity, launchAngle);
+
+
+        double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
+        double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
 
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
@@ -146,6 +160,10 @@ public class VirtualGoalShooter {
                 hoodTable.get(virtualDist),
                 virtualDist > 10 && virtualDist < 140
         );
+    }
+
+    private double hoodToDegrees(double servoPos) {
+        return LinearMath.lerp(HOOD_MIN_ANGLE, HOOD_MAX_ANGLE, servoPos);
     }
 
     private void moveTurretToAngle(double targetAngle) {
@@ -180,7 +198,7 @@ public class VirtualGoalShooter {
     }
 
     private void executeUnwind() {
-        turretPID.setPIDF(baseP * 1.5, 0, 0, 0);
+        turretPID.setPIDF(baseP * 1.5, 0, 0.3, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
         turretMotor.setPower(power);
