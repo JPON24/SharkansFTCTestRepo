@@ -1,12 +1,19 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.hardware;
 
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class SmartCRPServo {
+import org.firstinspires.ftc.teamcode.global.control.AnalogFilter;
+import org.firstinspires.ftc.teamcode.global.util.math.LinearMath;
+import org.firstinspires.ftc.teamcode.global.control.PIDController;
+import org.firstinspires.ftc.teamcode.global.hardware.HardwareUtil;
+
+public class CRServoEx {
 
     private AnalogFilter filter;
+
+    private HardwareUtil hardwareUtil;
 
     private CRServo crServo;
     private PIDController pid;
@@ -30,10 +37,11 @@ public class SmartCRPServo {
      * @param alpha The alpha for the filter
      * @param offset The encoder offset in degrees
      */
-    public SmartCRPServo(HardwareMap hwMap, String servoName, String encoderName, double kP, double kI, double kD, double kF, double alpha, double offset) {
+    public CRServoEx(HardwareMap hwMap, HardwareUtil hardwareUtil, String servoName, String encoderName, double kP, double kI, double kD, double kF, double alpha, double offset) {
         this.crServo = hwMap.get(CRServo.class, servoName);
         this.encoder = hwMap.get(AnalogInput.class, encoderName);
 
+        this.hardwareUtil = hardwareUtil;
         this.pid = new PIDController(kP, kI, kD, kF);
         this.filter = new AnalogFilter(alpha);
 
@@ -56,21 +64,13 @@ public class SmartCRPServo {
      * This actually runs the PID control and moves the servo
      */
     public void update() {
-        // Read current angle
-        double currentVoltage = encoder.getVoltage();
-        double currentAngle = (currentVoltage / 3.3) * 360.0;
+        double currentAngle = getAngle(); // I AMM TRUUUUTH!!! Halo reference
 
-        // Apply filter to smooth out noise
-        double filterAngle = filter.estimate(currentAngle);
-        currentAngle = filterAngle;
+        double wrappedError = LinearMath.angleWrap(targetAngle - currentAngle);
 
-        // Apply offset and normalize to -180 to 180
-        currentAngle = normalizeAngle(currentAngle - offset);
+        double power = pid.updateWithError(wrappedError, targetAngle);
+        power *= hardwareUtil.getVoltageMultiplier();
 
-        // Calculate PID output based on error
-        double power = pid.update(targetAngle, currentAngle);
-
-        // Apply the calculated power to the servo
         setPower(power);
     }
 
@@ -109,7 +109,8 @@ public class SmartCRPServo {
      */
     public double getAngle() {
         double rawAngle = (encoder.getVoltage() / 3.3) * 360.0;
-        double offsetAngle = rawAngle - offset;
+        double filteredAngle = filter.estimate(rawAngle);
+        double offsetAngle = filteredAngle - offset;
         return normalizeAngle(offsetAngle);
     }
 

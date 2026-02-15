@@ -1,15 +1,15 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.hardware;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-public class SmartServo {
+public class ServoEx {
     private Servo servo;
     private double lastPosition = -1.0; // Start at -1 so the first command always works
     private final double THRESHOLD = 0.001; // Servos are precise, so we use a small threshold
 
-    public SmartServo(HardwareMap hwMap, String Name) {
-        this.servo = hwMap.get(Servo.class, "name");
+    public ServoEx(HardwareMap hwMap, String Name) {
+        this.servo = hwMap.get(Servo.class, Name);
     }
 
     public void setPosition(double position) {

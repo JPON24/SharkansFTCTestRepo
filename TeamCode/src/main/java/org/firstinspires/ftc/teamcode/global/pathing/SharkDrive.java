@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.global;//package com.sharklib.core.pathing;
+package org.firstinspires.ftc.teamcode.global.pathing;//package com.sharklib.core.pathing;
 //
 //import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 //import com.qualcomm.robotcore.hardware.HardwareMap;

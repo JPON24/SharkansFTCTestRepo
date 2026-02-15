@@ -4,10 +4,9 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.global.EnhancedGamepad;
-import org.firstinspires.ftc.teamcode.global.CoaxialSwerve;
+import org.firstinspires.ftc.teamcode.global.drivetrain.CoaxialSwerve;
+import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
 
 
 @TeleOp
@@ -15,8 +14,8 @@ public class TurtleOp extends OpMode{
 
     CoaxialSwerve drive = new CoaxialSwerve();
 
-    EnhancedGamepad g1 = new EnhancedGamepad(gamepad1);
-    EnhancedGamepad g2 = new EnhancedGamepad(gamepad2);
+    EnhancedGamepad g1 = null;
+    EnhancedGamepad g2 = null;
 
     SparkFunOTOS otos;
     VirtualGoalShooter shooter;
@@ -41,6 +40,9 @@ public class TurtleOp extends OpMode{
 
     @Override
     public void init() {
+
+        g1 = new EnhancedGamepad(gamepad1);
+        g2 = new EnhancedGamepad(gamepad2);
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
         otos.calibrateImu();

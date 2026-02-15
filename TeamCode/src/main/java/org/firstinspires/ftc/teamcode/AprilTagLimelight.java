@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 import java.util.List;
 
@@ -16,13 +17,13 @@ public class AprilTagLimelight
     private Limelight3A limeLight;
 //    private IMU Imu;
 
-    private final double LIMELIGHTANGLECONST_D = 21;
+    private final double LIMELIGHTANGLECONST_D = constants.LIMELIGHT_ANGLE_CONST_D;
 
-    private final double APRILTAGH_M = 749.3;
-    private final double LIMELIGHTDISTBOTTOM_M = 436.42;
+    private final double APRILTAGH_M = constants.APRILTAG_HEIGHT_M;
+    private final double LIMELIGHTDISTBOTTOM_M = constants.LIMELIGHT_DIST_BOTTOM_M;
     private final double LIMELIGHTDISTCONST_M = APRILTAGH_M - LIMELIGHTDISTBOTTOM_M;
 
-    private final int POLLING_RATE = 50;
+    private final int POLLING_RATE = constants.LIMELIGHT_POLLING_RATE;
 
     public void init(HardwareMap hwMap, int pipeline) {
         limeLight = hwMap.get(Limelight3A.class, "limelight");

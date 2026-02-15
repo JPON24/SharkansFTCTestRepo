@@ -8,12 +8,12 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 
-import org.firstinspires.ftc.teamcode.global.Ballistics;
+import org.firstinspires.ftc.teamcode.global.util.math.Ballistics;
 import org.firstinspires.ftc.teamcode.global.constants;
-import org.firstinspires.ftc.teamcode.global.Vector2D;
-import org.firstinspires.ftc.teamcode.global.InterpLUT;
-import org.firstinspires.ftc.teamcode.global.LinearMath;
-import org.firstinspires.ftc.teamcode.global.PIDController;
+import org.firstinspires.ftc.teamcode.global.util.math.Vector2D;
+import org.firstinspires.ftc.teamcode.global.util.math.InterpLUT;
+import org.firstinspires.ftc.teamcode.global.util.math.LinearMath;
+import org.firstinspires.ftc.teamcode.global.control.PIDController;
 
 
 public class VirtualGoalShooter {
@@ -23,7 +23,7 @@ public class VirtualGoalShooter {
     public static final Vector2D BLUE_BASKET = new Vector2D(constants.ZEPHYR_BLUE_BASKET_X, constants.ZEPHYR_BLUE_BASKET_Y);
     public static final Vector2D RED_BASKET = new Vector2D(constants.ZEPHYR_RED_BASKET_X, constants.ZEPHYR_RED_BASKET_Y);
 
-    private final double WHEEL_RADIUS_INCHES = 1.378;
+    private final double WHEEL_RADIUS_INCHES = 1.378; // tune
     private final double GEAR_RATIO = 1.0;
     private final double HOOD_MIN_ANGLE = 20.0;
     private final double HOOD_MAX_ANGLE = 60.0;
@@ -54,6 +54,15 @@ public class VirtualGoalShooter {
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
     private double unwindTargetAngle = 0;
+
+    // Cooldown to prevent unwind → tracking oscillation loop
+    private int unwindCooldownCycles = 0;
+    private static final int UNWIND_COOLDOWN = 50; // ~1 second at 50Hz
+
+    // Soft limit: fade power when within this many degrees of a mechanical stop
+    private static final double SOFT_LIMIT_ZONE = 15.0;
+    // Hard stop: zero power when within this many degrees AND pushing into the wall
+    private static final double WALL_PROTECTION_ZONE = 3.0;
 
     private boolean flywheelEnabled = false;
     private double targetRPM = 0;
@@ -262,20 +271,34 @@ public class VirtualGoalShooter {
         return LinearMath.lerp(HOOD_MIN_ANGLE, HOOD_MAX_ANGLE, servoPos);
     }
 
+    /**
+     * Picks the best reachable angle (trying target and target ± 360°),
+     * applies soft limits near mechanical stops, and protects against wall impact.
+     */
     private void moveTurretToAngle(double targetAngle) {
         double currentAngle = getTurretDegrees();
 
+        // Always evaluate the target AND target ± 360° to find the best in-range option
+        targetAngle = pickBestAngle(targetAngle, currentAngle);
+
+        // If even the best candidate is out of range, we need to unwind
         if (targetAngle > TURRET_MAX_DEG || targetAngle < TURRET_MIN_DEG) {
-            double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
-            if (currentAngle > TURRET_MAX_DEG - 10 || currentAngle < TURRET_MIN_DEG + 10) {
+            // Only unwind if cooldown has expired (prevents oscillation loop)
+            if (unwindCooldownCycles <= 0) {
+                double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
                 initiateUnwind(altAngle);
                 return;
             }
-            targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG, TURRET_MAX_DEG);
+            // During cooldown, clamp to nearest safe limit instead of unwinding
+            targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG + WALL_PROTECTION_ZONE,
+                    TURRET_MAX_DEG - WALL_PROTECTION_ZONE);
         }
 
-        double error = targetAngle - currentAngle;
+        // Decrement cooldown
+        if (unwindCooldownCycles > 0) unwindCooldownCycles--;
 
+        // --- Adaptive PID Gains ---
+        double error = targetAngle - currentAngle;
         if (Math.abs(error) > 20) {
             turretPID.setPIDF(baseP * 3.0, baseI, baseD, baseF);
         } else if (Math.abs(error) > 10) {
@@ -285,22 +308,83 @@ public class VirtualGoalShooter {
         }
 
         double power = turretPID.update(targetAngle, currentAngle);
-        turretMotor.setPower(power * 0.2);
+        power *= 0.2;
+
+        // --- Soft Limit: Fade power near mechanical stops ---
+        power = applySoftLimits(power, currentAngle);
+
+        turretMotor.setPower(power);
+    }
+
+    /**
+     * Evaluates target, target+360, and target-360 to find the angle that is
+     * within mechanical limits and closest to the current position.
+     */
+    private double pickBestAngle(double target, double current) {
+        double[] candidates = { target, target + 360, target - 360 };
+        double bestAngle = target;
+        double bestDist = Double.MAX_VALUE;
+
+        for (double candidate : candidates) {
+            // Only consider candidates within mechanical range
+            if (candidate >= TURRET_MIN_DEG && candidate <= TURRET_MAX_DEG) {
+                double dist = Math.abs(candidate - current);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestAngle = candidate;
+                }
+            }
+        }
+
+        // If no candidate is in range, return original (will trigger unwind)
+        return bestAngle;
+    }
+
+    /**
+     * Reduces power near mechanical limits and zeros it if pushing into a wall.
+     */
+    private double applySoftLimits(double power, double currentAngle) {
+        double distToMax = TURRET_MAX_DEG - currentAngle;
+        double distToMin = currentAngle - TURRET_MIN_DEG;
+
+        // Wall protection: zero power if at a limit and pushing into it
+        if (distToMax < WALL_PROTECTION_ZONE && power > 0) return 0;
+        if (distToMin < WALL_PROTECTION_ZONE && power < 0) return 0;
+
+        // Soft limit: linearly scale power down as we approach the edge
+        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
+            double scale = distToMax / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
+        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
+            double scale = distToMin / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
+
+        return power;
     }
 
     private void initiateUnwind(double target) {
         currentState = TurretState.UNWINDING;
-        unwindTargetAngle = target;
+        unwindTargetAngle = LinearMath.clamp(target, TURRET_MIN_DEG + 10, TURRET_MAX_DEG - 10);
+        turretPID.reset();
     }
 
     private void executeUnwind() {
         turretPID.setPIDF(baseP * 1.5, 0, 0.3, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
+        // Match normal tracking power scale (was missing — caused 5x aggressive unwinds)
+        power *= 0.2;
+        // Apply same soft limits during unwind
+        power = applySoftLimits(power, getTurretDegrees());
+
         turretMotor.setPower(power);
 
         if (Math.abs(unwindTargetAngle - getTurretDegrees()) < 5.0) {
             currentState = TurretState.TRACKING;
+            unwindCooldownCycles = UNWIND_COOLDOWN; // Prevent immediate re-unwind
+            turretPID.reset();
         }
     }
 

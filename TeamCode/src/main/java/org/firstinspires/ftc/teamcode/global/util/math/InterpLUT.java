@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.util.math;
 
 import java.util.Map;
 import java.util.TreeMap;

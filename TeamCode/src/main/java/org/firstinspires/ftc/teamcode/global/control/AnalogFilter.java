@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.control;
 
 public class AnalogFilter {
     private double lastEstimate = 0;

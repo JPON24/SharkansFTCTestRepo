@@ -1,15 +1,20 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.drivetrain;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.teamcode.global.hardware.Motor;
+import org.firstinspires.ftc.teamcode.global.hardware.CRServoEx;
+import org.firstinspires.ftc.teamcode.global.util.math.geometry.RobotGeometry;
+import org.firstinspires.ftc.teamcode.global.hardware.HardwareUtil;
 
 public class CoaxialSwerve {
 
     RobotGeometry dimensions;
 
-    public SmartCRPServo frontLeftServo;
-    public SmartCRPServo frontRightServo;
-    public SmartCRPServo backLeftServo;
-    public SmartCRPServo backRightServo;
+    public CRServoEx frontLeftServo;
+    public CRServoEx frontRightServo;
+    public CRServoEx backLeftServo;
+    public CRServoEx backRightServo;
 
     Motor frontLeftMotor;
     Motor frontRightMotor;
@@ -20,7 +25,7 @@ public class CoaxialSwerve {
 
     double ANGLE_HOLD_SPEED = 0.05;
 
-    double speed = 0;
+    double speed = 0.95;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     boolean initialized = false;
@@ -32,15 +37,15 @@ public class CoaxialSwerve {
      * In op Mode it should look like this:
      *
      * // In init():
-     * swerve.initFrontLeft(hardwareMap, "flServo", "flMotor", "flEnc", 0.015,0,0.0003,0, 12.5);
-     * swerve.initFrontRight(hardwareMap, "frServo", "frMotor", "frEnc", 0.015,0,0.0003,0, 45);
-     * swerve.initBackLeft(hardwareMap, "blServo", "blMotor", "blEnc", 0.015,0,0.0003,0, 90);
-     * swerve.initBackRight(hardwareMap, "brServo", "brMotor", "brEnc", 0.015,0,0.0003,0, 180);
+     * swerve.initFrontLeft(hardwareMap, "flServo", "flMotor", "flEnc", 0.015,0,0.0003,0, 0.3, -12);
+     * swerve.initFrontRight(hardwareMap, "frServo", "frMotor", "frEnc", 0.015,0,0.0003,0, 0.3, -12);
+     * swerve.initBackLeft(hardwareMap, "blServo", "blMotor", "blEnc", 0.015,0,0.0003,0, 0.3, -12);
+     * swerve.initBackRight(hardwareMap, "brServo", "brMotor", "brEnc", 0.015,0,0.0003,0, 0.3, -12);
      * swerve.CoaxialSwerveConstants(11, 10, 9.11, 0.8);
-     * swerve.initialize();  // IMPORTANT!
+     * swerve.initialize();
      *
      * // In loop():
-     * swerve.drive(x, y, turn, heading);  // This calls updateServos() internally
+     * swerve.drive(x, y, turn, heading);
      */
 
     public void CoaxialSwerveConstants(double width, double length, double height, double speed)
@@ -51,49 +56,53 @@ public class CoaxialSwerve {
 
     // Front Left
     public void initFrontLeft(HardwareMap hwMap,
+                              HardwareUtil hardwareUtil,
                               String servoName,
                               String motorName,
                               String encoderName,
-                              double kP, double kI, double kD, double kF,
+                              double kP, double kI, double kD, double kF, double filterStrength,
                               double offset)
     {
-        frontLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0, offset);
+        frontLeftServo = new CRServoEx(hwMap, hardwareUtil, servoName, encoderName, kP, kI, kD, kF, filterStrength, offset);
         frontLeftMotor = new Motor(hwMap, motorName);
     }
 
     // Front Right
     public void initFrontRight(HardwareMap hwMap,
+                               HardwareUtil hardwareUtil,
                                String servoName,
                                String motorName,
                                String encoderName,
-                               double kP, double kI, double kD, double kF,
+                               double kP, double kI, double kD, double kF, double filterStrength,
                                double offset)
     {
-        frontRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0, offset);
+        frontRightServo = new CRServoEx(hwMap, hardwareUtil, servoName, encoderName, kP, kI, kD, kF, filterStrength, offset);
         frontRightMotor = new Motor(hwMap, motorName);
     }
 
     // Back Left
     public void initBackLeft(HardwareMap hwMap,
+                             HardwareUtil hardwareUtil,
                              String servoName,
                              String motorName,
                              String encoderName,
-                             double kP, double kI, double kD, double kF,
+                             double kP, double kI, double kD, double kF, double filterStrength,
                              double offset)
     {
-        backLeftServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF, 0, offset);
+        backLeftServo = new CRServoEx(hwMap, hardwareUtil, servoName, encoderName, kP, kI, kD, kF, filterStrength, offset);
         backLeftMotor = new Motor(hwMap, motorName);
     }
 
     // Back Right
     public void initBackRight(HardwareMap hwMap,
+                              HardwareUtil hardwareUtil,
                               String servoName,
                               String motorName,
                               String encoderName,
-                              double kP, double kI, double kD, double kF,
+                              double kP, double kI, double kD, double kF, double filterStrength,
                               double offset)
     {
-        backRightServo = new SmartCRPServo(hwMap, servoName, encoderName, kP, kI, kD, kF,0, offset);
+        backRightServo = new CRServoEx(hwMap, hardwareUtil, servoName, encoderName, kP, kI, kD, kF,filterStrength, offset);
         backRightMotor = new Motor(hwMap, motorName);
     }
 

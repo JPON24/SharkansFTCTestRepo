@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.pathing;
 import java.util.HashMap;
 
 public class CommandSystem

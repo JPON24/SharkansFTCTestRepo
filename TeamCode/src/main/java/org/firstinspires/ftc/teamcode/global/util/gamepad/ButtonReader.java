@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.global;
+package org.firstinspires.ftc.teamcode.global.util.gamepad;
 
 public class ButtonReader {
     private boolean lastState = false;
