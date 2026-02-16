@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.global.drivetrain;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 public class MecanumDrive {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
@@ -44,7 +45,7 @@ public class MecanumDrive {
         double rotX = x * Math.cos(-heading) - y * Math.sin(-heading);
         double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
 
-        rotX = rotX * 1.1;  // Counteract imperfect strafing
+        rotX = rotX * constants.MECANUM_STRAFE_FACTOR;  // Counteract imperfect strafing
 
         double theta = Math.atan2(rotY, rotX);
         double power = Math.hypot(rotX, rotY);

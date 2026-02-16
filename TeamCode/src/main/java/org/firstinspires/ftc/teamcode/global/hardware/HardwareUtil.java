@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.global.hardware;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import org.firstinspires.ftc.teamcode.global.constants;
 import org.firstinspires.ftc.teamcode.global.control.KalmanFilter;
 
 import java.util.List;
@@ -13,8 +14,8 @@ public class HardwareUtil {
 
     private KalmanFilter voltageFilter;
 
-    private double baselineVoltage = 11.5; // Default safe value
-    private double cachedVoltage = 12.0;
+    private double baselineVoltage = constants.VOLTAGE_BASELINE_DEFAULT;
+    private double cachedVoltage = constants.VOLTAGE_CACHED_DEFAULT;
 
     public HardwareUtil(HardwareMap hardwareMap) {
         allHubs = hardwareMap.getAll(LynxModule.class);
@@ -26,15 +27,13 @@ public class HardwareUtil {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        // Q=0.001 (Slow changes), R=0.5 (Noisy sensor)
-        voltageFilter = new KalmanFilter(0.001, 0.5);
+        voltageFilter = new KalmanFilter(constants.VOLTAGE_KALMAN_Q, constants.VOLTAGE_KALMAN_R);
 
-        // We read it 10 times to average out any startup noise
         double sum = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < constants.VOLTAGE_SAMPLE_COUNT; i++) {
             sum += voltageSensor.getVoltage();
         }
-        baselineVoltage = sum / 10.0;
+        baselineVoltage = sum / constants.VOLTAGE_SAMPLE_COUNT;
 
         // Seed the filter with this clean baseline
         voltageFilter.setEstimate(baselineVoltage);
@@ -60,7 +59,7 @@ public class HardwareUtil {
      */
     public double getVoltageMultiplier() {
         // Prevent division by zero or massive spikes if battery dies
-        if (cachedVoltage < 5.0) return 1.0;
+        if (cachedVoltage < constants.VOLTAGE_SAFETY_MIN) return 1.0;
 
         // Example: Started at 13V, now at 11V.
         // Result = 13.0 / 11.0 = 1.18 (18% boost)

@@ -102,7 +102,8 @@ public class constants {
         public static final double SWERVE_SERVO_JITTER_THRESHOLD = 0.00396825396;
         public static final double SWERVE_UPDATE_HZ = 6;
         public static final double SWERVE_DELTA_MAX = 25;
-        public static final double SWERVE_MAX_SPEED = 0.90;
+        public static final double SWERVE_MAX_SPEED = 0.95;
+        public static final double SWERVE_DEADZONE = 0.05;
 
         // SharkDrive & Odometry
         // PID Coefficients
@@ -166,4 +167,49 @@ public class constants {
 
         public static final double SWERVE_TEST_FL_OFFSET = 10.0;
         public static final double SWERVE_TEST_KP = 0.005;
+
+        // Hardware Wrapper Thresholds
+        public static final double MOTOR_POWER_THRESHOLD = 0.001;
+        public static final double MOTOREX_POWER_THRESHOLD = 0.005;
+        public static final double SERVO_POSITION_THRESHOLD = 0.001;
+        public static final double CRSERVO_POWER_THRESHOLD = 0.01;
+        public static final double CRSERVO_KALMAN_Q = 0.1;
+        public static final double CRSERVO_KALMAN_R = 3.0;
+        public static final double ANALOG_VOLTAGE_REF = 3.3;
+
+        // Voltage Compensation
+        public static final double VOLTAGE_KALMAN_Q = 0.001;
+        public static final double VOLTAGE_KALMAN_R = 0.5;
+        public static final double VOLTAGE_BASELINE_DEFAULT = 11.5;
+        public static final double VOLTAGE_CACHED_DEFAULT = 12.0;
+        public static final double VOLTAGE_SAFETY_MIN = 5.0;
+        public static final int VOLTAGE_SAMPLE_COUNT = 10;
+
+        // Mecanum Drivetrain
+        public static final double MECANUM_STRAFE_FACTOR = 1.1;
+
+        // VirtualGoalShooter
+        public static final double VGS_WHEEL_RADIUS = 1.378;
+        public static final double VGS_GEAR_RATIO = 1.0;
+        public static final double VGS_HOOD_MIN_ANGLE = 20.0;
+        public static final double VGS_HOOD_MAX_ANGLE = 60.0;
+        public static final double VGS_TURRET_MAX_INTEGRAL = 1.0;
+        public static final int VGS_UNWIND_COOLDOWN = 50;
+        public static final double VGS_SOFT_LIMIT_ZONE = 15.0;
+        public static final double VGS_WALL_PROTECTION_ZONE = 3.0;
+        public static final double VGS_TURRET_POWER_SCALE = 0.2;
+
+        // AutoPIDTuner
+        public static final int TUNER_CROSSINGS_CONFIRM = 6;
+        public static final double TUNER_STABILITY_THRESHOLD = 0.15;
+        public static final int TUNER_PERIODS_TO_MEASURE = 4;
+        public static final double TUNER_KP_MIN_DEFAULT = 0.001;
+        public static final double TUNER_KP_MAX_DEFAULT = 0.1;
+        public static final double TUNER_KP_STEP_DEFAULT = 0.001;
+        public static final double TUNER_MAX_POWER_DEFAULT = 0.5;
+        public static final double TUNER_STEP_TIMEOUT_DEFAULT = 8.0;
+        public static final double TUNER_ZN_KP_MULT = 0.6;
+        public static final double TUNER_ZN_KI_MULT = 1.2;
+        public static final double TUNER_ZN_KD_MULT = 0.075;
+        public static final double TUNER_ZERO_CROSS_MIN_ERROR = 0.5;
 }

@@ -2,12 +2,13 @@ package org.firstinspires.ftc.teamcode.global.hardware;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 public class Motor {
     private final DcMotor Motor;
     private HardwareUtil hardwareUtil = null;
     private double lastPower = 0.0;
-    private final double THRESHOLD = 0.001; // Only update if change is > 0.1%
+    private final double THRESHOLD = constants.MOTOR_POWER_THRESHOLD;
 
     public Motor(HardwareMap hwMap, String name) {
         this.Motor = hwMap.get(DcMotor.class, name);

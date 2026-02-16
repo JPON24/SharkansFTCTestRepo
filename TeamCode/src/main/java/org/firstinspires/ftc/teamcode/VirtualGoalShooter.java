@@ -23,10 +23,10 @@ public class VirtualGoalShooter {
     public static final Vector2D BLUE_BASKET = new Vector2D(constants.ZEPHYR_BLUE_BASKET_X, constants.ZEPHYR_BLUE_BASKET_Y);
     public static final Vector2D RED_BASKET = new Vector2D(constants.ZEPHYR_RED_BASKET_X, constants.ZEPHYR_RED_BASKET_Y);
 
-    private final double WHEEL_RADIUS_INCHES = 1.378; // tune
-    private final double GEAR_RATIO = 1.0;
-    private final double HOOD_MIN_ANGLE = 20.0;
-    private final double HOOD_MAX_ANGLE = 60.0;
+    private final double WHEEL_RADIUS_INCHES = constants.VGS_WHEEL_RADIUS;
+    private final double GEAR_RATIO = constants.VGS_GEAR_RATIO;
+    private final double HOOD_MIN_ANGLE = constants.VGS_HOOD_MIN_ANGLE;
+    private final double HOOD_MAX_ANGLE = constants.VGS_HOOD_MAX_ANGLE;
 
     private final double TURRET_MAX_DEG = constants.TURRET_MAX_DEG;
     private final double TURRET_MIN_DEG = constants.TURRET_MIN_DEG;
@@ -38,7 +38,7 @@ public class VirtualGoalShooter {
     private double baseD = constants.TURRET_KD;
     private double baseF = constants.TURRET_KF;
 
-    private double normalP = 100, boostP = 200, rpmDropThreshold = constants.SHOOTER_RPM_DROP_THRESHOLD;
+    private double normalP = constants.SHOOTER_PID_NORMAL_P, boostP = constants.SHOOTER_PID_BOOST_P, rpmDropThreshold = constants.SHOOTER_RPM_DROP_THRESHOLD;
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
@@ -57,12 +57,10 @@ public class VirtualGoalShooter {
 
     // Cooldown to prevent unwind → tracking oscillation loop
     private int unwindCooldownCycles = 0;
-    private static final int UNWIND_COOLDOWN = 50; // ~1 second at 50Hz
+    private static final int UNWIND_COOLDOWN = constants.VGS_UNWIND_COOLDOWN;
 
-    // Soft limit: fade power when within this many degrees of a mechanical stop
-    private static final double SOFT_LIMIT_ZONE = 15.0;
-    // Hard stop: zero power when within this many degrees AND pushing into the wall
-    private static final double WALL_PROTECTION_ZONE = 3.0;
+    private static final double SOFT_LIMIT_ZONE = constants.VGS_SOFT_LIMIT_ZONE;
+    private static final double WALL_PROTECTION_ZONE = constants.VGS_WALL_PROTECTION_ZONE;
 
     private boolean flywheelEnabled = false;
     private double targetRPM = 0;
@@ -74,7 +72,7 @@ public class VirtualGoalShooter {
         this.limelight = limelightRef;
 
         turretPID = new PIDController(baseP, baseI, baseD, baseF);
-        turretPID.setMaxIntegral(1.0);
+        turretPID.setMaxIntegral(constants.VGS_TURRET_MAX_INTEGRAL);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -308,7 +306,7 @@ public class VirtualGoalShooter {
         }
 
         double power = turretPID.update(targetAngle, currentAngle);
-        power *= 0.2;
+        power *= constants.VGS_TURRET_POWER_SCALE;
 
         // --- Soft Limit: Fade power near mechanical stops ---
         power = applySoftLimits(power, currentAngle);
@@ -374,8 +372,7 @@ public class VirtualGoalShooter {
         turretPID.setPIDF(baseP * 1.5, 0, 0.3, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
-        // Match normal tracking power scale (was missing — caused 5x aggressive unwinds)
-        power *= 0.2;
+        power *= constants.VGS_TURRET_POWER_SCALE;
         // Apply same soft limits during unwind
         power = applySoftLimits(power, getTurretDegrees());
 

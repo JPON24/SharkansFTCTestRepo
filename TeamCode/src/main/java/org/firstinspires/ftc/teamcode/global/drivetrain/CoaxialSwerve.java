@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.global.drivetrain;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.global.constants;
 import org.firstinspires.ftc.teamcode.global.hardware.Motor;
 import org.firstinspires.ftc.teamcode.global.hardware.CRServoEx;
 import org.firstinspires.ftc.teamcode.global.util.math.geometry.RobotGeometry;
@@ -21,11 +22,11 @@ public class CoaxialSwerve {
     Motor backLeftMotor;
     Motor backRightMotor;
 
-    double minServoPower = 0.03;
+    double minServoPower = constants.SWERVE_MIN_SERVO_POWER;
 
-    double ANGLE_HOLD_SPEED = 0.05;
+    double ANGLE_HOLD_SPEED = constants.SWERVE_ANGLE_HOLD_SPEED;
 
-    double speed = 0.95;
+    double speed = constants.SWERVE_MAX_SPEED;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
     boolean initialized = false;
@@ -149,7 +150,7 @@ public class CoaxialSwerve {
             initialize();
         }
 
-        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
+        if (Math.hypot(x_cmd, y_cmd) < constants.SWERVE_DEADZONE && Math.abs(turn_cmd) < constants.SWERVE_DEADZONE) {
             stop();
             updateServos(); // Still update PID when stopped to hold position
             return;

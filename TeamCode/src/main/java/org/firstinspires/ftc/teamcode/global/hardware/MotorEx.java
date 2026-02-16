@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.global.hardware;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 import org.firstinspires.ftc.teamcode.global.control.PIDController;
 
@@ -12,7 +13,7 @@ public class MotorEx {
     private final HardwareUtil hardwareUtil;
     private PIDController pid;
     private double lastPower = 0.0;
-    private final double THRESHOLD = 0.005; // Slightly tighter threshold for precision
+    private final double THRESHOLD = constants.MOTOREX_POWER_THRESHOLD;
 
     public MotorEx(HardwareMap hwMap, HardwareUtil hardwareUtil, String name, double p, double i, double d, double f) {
         this.motor = hwMap.get(DcMotorEx.class, name);

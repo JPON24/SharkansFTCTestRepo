@@ -2,11 +2,12 @@ package org.firstinspires.ftc.teamcode.global.hardware;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 public class ServoEx {
     private Servo servo;
     private double lastPosition = -1.0; // Start at -1 so the first command always works
-    private final double THRESHOLD = 0.001; // Servos are precise, so we use a small threshold
+    private final double THRESHOLD = constants.SERVO_POSITION_THRESHOLD;
 
     public ServoEx(HardwareMap hwMap, String Name) {
         this.servo = hwMap.get(Servo.class, Name);

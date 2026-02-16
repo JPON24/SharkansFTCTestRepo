@@ -4,14 +4,17 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.global.control.AnalogFilter;
+import org.firstinspires.ftc.teamcode.global.constants;
+import org.firstinspires.ftc.teamcode.global.control.KalmanFilter;
 import org.firstinspires.ftc.teamcode.global.util.math.LinearMath;
 import org.firstinspires.ftc.teamcode.global.control.PIDController;
 import org.firstinspires.ftc.teamcode.global.hardware.HardwareUtil;
 
 public class CRServoEx {
 
-    private AnalogFilter filter;
+    private KalmanFilter filter;
+    private double lastFilteredAngle = 0;
+    private boolean filterInitialized = false;
 
     private HardwareUtil hardwareUtil;
 
@@ -21,7 +24,7 @@ public class CRServoEx {
 
     private double lastPower = 0.0;
     private double targetAngle = 0.0;  // Store the target angle
-    public double THRESHOLD = 0.01;
+    public double THRESHOLD = constants.CRSERVO_POWER_THRESHOLD;
 
     public double offset;
 
@@ -34,7 +37,7 @@ public class CRServoEx {
      * @param kI The I tuning value
      * @param kD The D tuning value
      * @param kF The F tuning value
-     * @param alpha The alpha for the filter
+     * @param alpha Unused (kept for API compatibility) — Kalman Q/R are set in constants
      * @param offset The encoder offset in degrees
      */
     public CRServoEx(HardwareMap hwMap, HardwareUtil hardwareUtil, String servoName, String encoderName, double kP, double kI, double kD, double kF, double alpha, double offset) {
@@ -43,7 +46,7 @@ public class CRServoEx {
 
         this.hardwareUtil = hardwareUtil;
         this.pid = new PIDController(kP, kI, kD, kF);
-        this.filter = new AnalogFilter(alpha);
+        this.filter = new KalmanFilter(constants.CRSERVO_KALMAN_Q, constants.CRSERVO_KALMAN_R);
 
         this.offset = offset;
 
@@ -108,10 +111,27 @@ public class CRServoEx {
      * @return Current angle in degrees (-180 to 180)
      */
     public double getAngle() {
-        double rawAngle = (encoder.getVoltage() / 3.3) * 360.0;
-        double filteredAngle = filter.estimate(rawAngle);
+        double rawAngle = (encoder.getVoltage() / constants.ANALOG_VOLTAGE_REF) * 360.0;
+
+        // Seed Kalman filter on first read to avoid convergence lag
+        if (!filterInitialized) {
+            filter.setEstimate(rawAngle);
+            lastFilteredAngle = rawAngle;
+            filterInitialized = true;
+        }
+
+        // Handle wrap-around: unwrap relative to last filtered value
+        // so the Kalman filter sees smooth continuous input
+        double diff = rawAngle - lastFilteredAngle;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        double unwrapped = lastFilteredAngle + diff;
+
+        double filteredAngle = filter.filter(unwrapped);
+        lastFilteredAngle = filteredAngle;
+
         double offsetAngle = filteredAngle - offset;
-        return normalizeAngle(offsetAngle);
+        return LinearMath.angleWrap(offsetAngle);
     }
 
     /**
@@ -127,17 +147,13 @@ public class CRServoEx {
      * @return Error in degrees
      */
     public double getError() {
-        return normalizeAngle(targetAngle - getAngle());
+        return LinearMath.angleWrap(targetAngle - getAngle());
     }
 
-    private double normalizeAngle(double angle) {
-        angle = (angle + 180.0) % 360.0;
-        if (angle < 0) angle += 360.0;
-        return angle - 180.0;
-    }
+
 
     public double getVoltage() {
-        return encoder.getVoltage() / 3.3;
+        return encoder.getVoltage() / constants.ANALOG_VOLTAGE_REF;
     }
 
     /**
