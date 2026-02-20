@@ -8,7 +8,7 @@ public class EnhancedGamepad {
     /**
         reading the most used buttons
      */
-    public ButtonReader a, b, x, y, dpad_up, dpad_down, dpad_left, dpad_right, lb, rb, lt, rt;
+    public ButtonReader a, b, x, y, dpad_up, dpad_down, dpad_left, dpad_right, lb, rb, lt, rt, back, start;
 
     public EnhancedGamepad(Gamepad gamepad) {
         this.gamepad = gamepad;
@@ -24,6 +24,8 @@ public class EnhancedGamepad {
         rb = new ButtonReader();
         lt = new ButtonReader();
         rt = new ButtonReader();
+        back = new ButtonReader();
+        start = new ButtonReader();
     }
 
     /**
@@ -40,16 +42,21 @@ public class EnhancedGamepad {
         dpad_right.update(gamepad.dpad_right);
         lb.update(gamepad.left_bumper);
         rb.update(gamepad.right_bumper);
-        lt.update(gamepad.left_trigger);
-        rt.update(gamepad.right_trigger);
+        back.update(gamepad.back);
+        start.update(gamepad.start);
     }
 
     /**
-     * You can still access raw joystick values
+     * Raw joystick values (-1.0 to 1.0)
      */
-
-    public double left_stick_x() {return gamepad.left_stick_x; }
+    public double left_stick_x() { return gamepad.left_stick_x; }
     public double left_stick_y() { return gamepad.left_stick_y; }
     public double right_stick_x() { return gamepad.right_stick_x; }
-    public double right_stick_y( ) {return gamepad.right_stick_y; }
+    public double right_stick_y() { return gamepad.right_stick_y; }
+
+    /**
+     * Raw trigger values (0.0 to 1.0)
+     */
+    public float left_trigger() { return gamepad.left_trigger; }
+    public float right_trigger() { return gamepad.right_trigger; }
 }

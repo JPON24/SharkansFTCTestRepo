@@ -435,7 +435,7 @@ public class SharkDrive {
         {
             rad += 2 * Math.PI;
         }
-        return -rad;
+        return rad;
     }
 
     public void OverrideOtosPos(SparkFunOTOS.Pose2D position)
@@ -555,8 +555,6 @@ public class SharkDrive {
     public double initErrX = 0;
     public double initErrY = 0;
 
-    // FIXED DihdometryDihtrol2 method
-// Replace your existing method with this
 
     public void DihdometryDihtrol2(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) {
         if (!odometry.isConnected()) {
@@ -583,7 +581,6 @@ public class SharkDrive {
         double angleToTarget = Math.toDegrees(Math.atan2(errors[1], errors[0]));
         double distance = Math.hypot(errors[0], errors[1]);
 
-        // FIX: Rotation error should use tgtRot, not angleToTarget!
         errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;

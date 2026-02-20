@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.global.constants;
+import org.firstinspires.ftc.teamcode.global.control.KalmanFilter;
 
 public class ShooterSubsystem {
 
@@ -82,6 +83,7 @@ public class ShooterSubsystem {
     private Servo rightHood = null;
 //    private Servo ledLight = null;
     private SparkFunOTOS otos;
+    private KalmanFilter turretFilter;
 
     private constants constants = new constants();
 
@@ -173,6 +175,9 @@ public class ShooterSubsystem {
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 //        turretMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, new PIDFCoefficients(27,0,0,0));
         turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        // Kalman filter for turret encoder — smooths flywheel vibration noise
+        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
         rightShooter.setDirection(DcMotorEx.Direction.FORWARD);
@@ -302,7 +307,7 @@ public class ShooterSubsystem {
         if (hoodResetTimer.seconds() > 1.0 / hoodResetHz)
         {
             currentHood = h(currentDistance);
-            setHoodPosition(Math.min(0, currentHood - 0.1)); // add one tick
+            setHoodPosition(Math.max(0, currentHood - 0.1)); // add one tick
             hoodResetTimer.reset();
         }
 
@@ -386,12 +391,12 @@ public class ShooterSubsystem {
         double turretPower = (kP * error);
         turretPower = Math.max(-0.8, Math.min(0.8, turretPower));
 
-        if (turretMotor.getCurrentPosition() > turretLeftMax)
+        if (getFilteredTurretPos() > turretLeftMax)
         {
             currentState = TurretState.UNWINDING;
             tempTgt = (int)(turretRightMax + 125);
         }
-        else if (turretMotor.getCurrentPosition() < turretRightMax)
+        else if (getFilteredTurretPos() < turretRightMax)
         {
             currentState = TurretState.UNWINDING;
             tempTgt = (int)(turretLeftMax - 125);
@@ -415,7 +420,7 @@ public class ShooterSubsystem {
             turretMotor.setTargetPosition(tempTgt);
             turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-            if (Math.abs(tempTgt - turretMotor.getCurrentPosition()) < 100)
+            if (Math.abs(tempTgt - getFilteredTurretPos()) < 100)
             {
                 tempTgt = 0;
                 currentState = TurretState.TRACKING;
@@ -490,7 +495,7 @@ public class ShooterSubsystem {
 
         output = Math.max(-maxPower, Math.min(maxPower, output));
 
-        int currentPos = turretMotor.getCurrentPosition();
+        int currentPos = getFilteredTurretPos();
         boolean hitMax = (currentPos > TURRET_MAX_TICKS && output > 0);
         boolean hitMin = (currentPos < TURRET_MIN_TICKS && output > 0);
 
@@ -544,7 +549,7 @@ public class ShooterSubsystem {
 
                 // Turret limit check
                 double targetTicks = targetAngle * TICKS_PER_DEGREE;
-                int currentPos = turretMotor.getCurrentPosition();
+                int currentPos = getFilteredTurretPos();
                 if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
                     if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
                         turretMotor.setPower(0);
@@ -599,7 +604,7 @@ public class ShooterSubsystem {
 
             // Turret limit check
             double targetTicks = targetAngle * TICKS_PER_DEGREE;
-            int currentPos = turretMotor.getCurrentPosition();
+            int currentPos = getFilteredTurretPos();
             if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
                 if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
                     turretMotor.setPower(0);
@@ -645,7 +650,7 @@ public class ShooterSubsystem {
         timer.reset();
         output = Math.max(-maxPower, Math.min(maxPower, output));
 
-        int currentPos = turretMotor.getCurrentPosition();
+        int currentPos = getFilteredTurretPos();
         boolean hitMax = (currentPos > TURRET_MAX_TICKS && -output > 0);
         boolean hitMin = (currentPos < TURRET_MIN_TICKS && -output < 0);
 
@@ -741,7 +746,7 @@ public class ShooterSubsystem {
 
         // Turret limit check
         double targetTicks = turretTargetAngle * TICKS_PER_DEGREE;
-        int currentPos = turretMotor.getCurrentPosition();
+        int currentPos = getFilteredTurretPos();
 
         if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
             if (currentPos > TURRET_MAX_TICKS || currentPos < TURRET_MIN_TICKS) {
@@ -797,7 +802,7 @@ public class ShooterSubsystem {
 
         // Check if target is within turet limmits
         double targetTicks = targetAngle * TICKS_PER_DEGREE;
-        int currentPos = turretMotor.getCurrentPosition();
+        int currentPos = getFilteredTurretPos();
 
         if (targetTicks > TURRET_MAX_TICKS || targetTicks < TURRET_MIN_TICKS) {
             // Target out of range? NOT ANYMORE!!
@@ -890,7 +895,7 @@ public class ShooterSubsystem {
             integralSum = 0;
         }
 
-        int currentPos = turretMotor.getCurrentPosition();
+        int currentPos = getFilteredTurretPos();
         boolean atMaxGoingFurther = (currentPos > TURRET_MAX_TICKS && output > 0);
         boolean atMinGoingFurther = (currentPos < TURRET_MIN_TICKS && output < 0);
 
@@ -947,9 +952,15 @@ public class ShooterSubsystem {
         return (rightShooter.getVelocity() / COUNTS_PER_WHEEL_REV) * 60.0;
     }
     public double getTurretAngle() {
-        return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
+        return getFilteredTurretPos() / TICKS_PER_DEGREE;
     }
-    public int getTurretTicks() { return turretMotor.getCurrentPosition(); }
+    public int getTurretTicks() { return turretMotor.getCurrentPosition(); } // raw for debug
+
+    /** Filtered turret position in ticks — smooths flywheel vibration noise */
+    private int getFilteredTurretPos() {
+        double raw = turretMotor.getCurrentPosition();
+        return (int) turretFilter.filter(raw);
+    }
     public TurretState getTurretState() { return currentState; }
     public double getLimelightYaw() { return lastLimelightYaw; }
     public double getLastTargetAngle() { return lastCalculatedTargetAngle; }

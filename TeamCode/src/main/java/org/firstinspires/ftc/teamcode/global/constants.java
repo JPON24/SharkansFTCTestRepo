@@ -25,8 +25,8 @@ public class constants {
 
         // Turret PID & Control
         public static final double TURRET_KP = 0.01;
-        public static final double TURRET_KI = 0;
-        public static final double TURRET_KD = 0.00;
+        public static final double TURRET_KI = 0.0001;
+        public static final double TURRET_KD = 0.001;
         public static final double TURRET_KF = 0.0;
         public static final double TURRET_ADAPTIVE_KP_HIGH = 0.008;
         public static final double TURRET_ADAPTIVE_KP_MED = 0.004;
@@ -144,12 +144,6 @@ public class constants {
         // Filter Constants
         public static final double DEFAULT_FILTER_ALPHA = 0.3;
 
-        // Zephyr Subsystem Specifics
-        public static final double ZEPHYR_AVG_VELOCITY = 280.0;
-        public static final double ZEPHYR_BLUE_BASKET_X = 12.0;
-        public static final double ZEPHYR_BLUE_BASKET_Y = 136.0;
-        public static final double ZEPHYR_RED_BASKET_X = 0.0;
-        public static final double ZEPHYR_RED_BASKET_Y = 0.0;
 
         // Zephyr hardware differs slightly
         public static final double ZEPHYR_TICKS_PER_REV = 28.0;
@@ -189,15 +183,27 @@ public class constants {
         public static final double MECANUM_STRAFE_FACTOR = 1.1;
 
         // VirtualGoalShooter
-        public static final double VGS_WHEEL_RADIUS = 1.378;
+        public static final double VGS_WHEEL_RADIUS = 2.83465 / 2;
         public static final double VGS_GEAR_RATIO = 1.0;
-        public static final double VGS_HOOD_MIN_ANGLE = 20.0;
+        public static final double VGS_HOOD_MIN_ANGLE = 0.0;
         public static final double VGS_HOOD_MAX_ANGLE = 60.0;
-        public static final double VGS_TURRET_MAX_INTEGRAL = 1.0;
+        public static final double VGS_TURRET_MAX_INTEGRAL = 25.0;
         public static final int VGS_UNWIND_COOLDOWN = 50;
         public static final double VGS_SOFT_LIMIT_ZONE = 15.0;
         public static final double VGS_WALL_PROTECTION_ZONE = 3.0;
         public static final double VGS_TURRET_POWER_SCALE = 0.2;
+
+        public static final double VIRT_BLUE_BASKET_X = 12.0;
+        public static final double VIRT_BLUE_BASKET_Y = 136.0;
+        public static final double VIRT_RED_BASKET_X = 0.0;
+        public static final double VIRT_RED_BASKET_Y = 0.0;
+        public static final double VIRT_RED_BASKET_FAR_X = 12.0;
+        public static final double VIRT_RED_BASKET_FAR_Y = 0.0;
+        public static final double VIRT_BLUE_BASKET_FAR_X = 12.0;
+        public static final double VIRT_BLUE_BASKET_FAR_Y = 136.0;
+
+        public static final double VGS_TURRET_KALMAN_Q = 0.001;
+        public static final double VGS_TURRET_KALMAN_R = 0.01;
 
         // AutoPIDTuner
         public static final int TUNER_CROSSINGS_CONFIRM = 6;

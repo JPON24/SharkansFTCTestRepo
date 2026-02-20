@@ -206,7 +206,7 @@ public class CompOpRed extends OpMode {
                 }
 
                 shooter.setTargetRPM(tempTgtRPM);
-                shooter.setHoodPosition(Math.min(0, tempTgtHood - 0.1));
+                shooter.setHoodPosition(Math.max(0, tempTgtHood - 0.1));
             }
         } else if (reverseIntake) {
             intake.outFront(true);

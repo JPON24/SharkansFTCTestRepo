@@ -6,9 +6,13 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
+import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
 
 @TeleOp(name = "Competition TeleOp BLUE")
 public class CompOp extends OpMode {
+
+    EnhancedGamepad g2 = null;
+    EnhancedGamepad g1 = null;
 
     private ZephyrSubsystem zephyr;
     private WorkingSwerve swerve;
@@ -31,6 +35,10 @@ public class CompOp extends OpMode {
 
     @Override
     public void init() {
+
+        g1 = new EnhancedGamepad(gamepad1);
+        g2 = new EnhancedGamepad(gamepad2);
+
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
         otos.calibrateImu();
@@ -70,11 +78,15 @@ public class CompOp extends OpMode {
     @Override
     public void loop() {
 
+        g1.update();
+
 //        zephyr.update();
 
         double leftStickX = gamepad1.left_stick_x;
         double leftStickY = gamepad1.left_stick_y;
         double rightStickX = -gamepad1.right_stick_x;
+
+
 
 
         double plant = gamepad1.left_trigger;
@@ -90,8 +102,8 @@ public class CompOp extends OpMode {
         boolean upDpadPressed = gamepad2.dpad_up;
         boolean downDpadPressed = gamepad2.dpad_down;
 
-        boolean hoodUp = gamepad2.right_bumper;
-        boolean hoodDown = gamepad2.left_bumper;
+        boolean hoodUp = g2.rb.wasJustPressed();
+        boolean hoodDown = g2.lb.wasJustPressed();
 
         boolean willIncrement = (upDpadPressed && !lastRightBumperState);
         boolean willDecrement = (downDpadPressed && !lastLeftBumperState);
@@ -145,9 +157,9 @@ public class CompOp extends OpMode {
             shooter.setTargetRPM(0);
         }
 
-        if (hoodUp && !lastHoodUp && hoodAdjust + 0.05 <= 0.65) {
-            hoodAdjust = hoodAdjust + 0.05;
-        } else if (hoodDown && !lastHoodDown && hoodAdjust - 0.05 >= 0){
+        if (hoodUp && hoodAdjust + 0.05 <= 0.65) {
+            hoodAdjust += 0.05;
+        } else if (hoodDown &&  hoodAdjust - 0.05 >= 0){
             hoodAdjust -= 0.05;
         }
 
@@ -176,7 +188,7 @@ public class CompOp extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
-        if (hoodTimer.seconds() > 0.1)
+        if (isAutoAdjust && outtaking && hoodTimer.seconds() > 0.1)
         {
             shooter.setHoodPosition(tempTgtHood);
         }
@@ -199,7 +211,7 @@ public class CompOp extends OpMode {
                 }
 
                 shooter.setTargetRPM(tempTgtRPM);
-                shooter.setHoodPosition(Math.min(0, tempTgtHood - 0.1));
+                shooter.setHoodPosition(Math.max(0, tempTgtHood - 0.1));
             }
         } else if (reverseIntake) {
             intake.outFront(true);

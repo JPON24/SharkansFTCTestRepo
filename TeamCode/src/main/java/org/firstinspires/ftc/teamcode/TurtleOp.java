@@ -48,7 +48,9 @@ public class TurtleOp extends OpMode{
         otos.calibrateImu();
 
         limelight = new AprilTagLimelight();
-        limelight.init(hardwareMap, 0);
+        limelight.init(hardwareMap, 0); // Uhhhh... Chat can we just use one pipeline??
+
+        shooter.switchAlliance(true, false, false); // 2x2 alliance thingy for far and close + color
 
         swerveDrive.init(hardwareMap);
 
@@ -70,15 +72,13 @@ public class TurtleOp extends OpMode{
 //                0.02, 0.003, 0.0, 0, 0);
 
         shooter = new VirtualGoalShooter();
-        shooter.init(hardwareMap, otos, limelight);
+        shooter.init(hardwareMap, otos);
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-
-        shooter.setAlliance(true); // blue
 //
 //        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
 //        zephyr.setAlliance(true); // true for BLUE, false for RED
