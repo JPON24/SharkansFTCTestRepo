@@ -107,8 +107,10 @@ public class ShooterSubsystem {
     private final double TICKS_PER_REV = 145.1;
     private final double GEAR_RATIO = 5.0;
     private final double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
-    private final int TURRET_MAX_TICKS = (int)(235 * TICKS_PER_DEGREE);
-    private final int TURRET_MIN_TICKS = (int)(-125 * TICKS_PER_DEGREE);
+    private final double TURRET_MAX_DEGREES = 235;
+    private final double TURRET_MIN_DEGREES = -125;
+    private final int TURRET_MAX_TICKS = (int)(TURRET_MAX_DEGREES * TICKS_PER_DEGREE);
+    private final int TURRET_MIN_TICKS = (int)(TURRET_MIN_DEGREES * TICKS_PER_DEGREE);
 
     private final double COUNTS_PER_MOTOR_REV = 28.0;
     private final double GEAR_REDUCTION = 1;
@@ -833,6 +835,12 @@ public class ShooterSubsystem {
     public void turnToAngle(double targetAngle, boolean negateOutput) {
         double currentAngle = getTurretAngle();
         double error = targetAngle - currentAngle;
+        if (targetAngle > TURRET_MAX_DEGREES) {
+            targetAngle = TURRET_MAX_DEGREES;
+        }
+        if (targetAngle < TURRET_MIN_DEGREES) {
+            targetAngle = TURRET_MIN_DEGREES;
+        }
         targetTurretAngle = targetAngle;
 
         if (Math.abs(error) < 5)

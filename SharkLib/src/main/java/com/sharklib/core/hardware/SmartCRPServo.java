@@ -5,8 +5,11 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.sharklib.core.control.PIDController;
 import com.sharklib.core.util.math.LinearMath;
+import com.sharklib.core.control.AnalogFilter;
 
 public class SmartCRPServo {
+
+    private AnalogFilter filter;
 
     private CRServo crServo;
     private PIDController pid;
@@ -20,13 +23,19 @@ public class SmartCRPServo {
      * @param hwMap The hardware map
      * @param servoName The name of the CR Servo in config
      * @param encoderName The name of the Analog Encoder in config
+     * @param kP The P tuning value
+     * @param kI The I tuning value
+     * @param kD The D tuning value
+     * @param kF The F tuning value
+     * @param alpha The alpha for the filter
      */
-    public SmartCRPServo(HardwareMap hwMap, String servoName, String encoderName, double kP, double kI, double kD, double kF) {
+    public SmartCRPServo(HardwareMap hwMap, String servoName, String encoderName, double kP, double kI, double kD, double kF, double alpha) {
         this.crServo = hwMap.get(CRServo.class, servoName);
         this.encoder = hwMap.get(AnalogInput.class, encoderName);
 
         // Initialize PID with default tuning (You MUST tune these!)
         this.pid = new PIDController(kP, kI, kD, kF);
+        this.filter = new AnalogFilter(alpha);
     }
 
     /**
@@ -34,8 +43,10 @@ public class SmartCRPServo {
      * @param targetAngle The target angle (e.g., 0 to 360 degrees)
      */
     public void setPosition(double targetAngle) {
-        double currentVoltage = encoder.getVoltage();
+        double currentVoltage = encoder.getVoltage();;
         double currentAngle = (currentVoltage / 3.3) * 360.0;
+        double filterAngle = filter.estimate(currentAngle);
+        currentAngle = filterAngle;
 
         targetAngle = LinearMath.angleWrap(targetAngle);
         double power = pid.update(targetAngle, currentAngle);
@@ -74,6 +85,8 @@ public class SmartCRPServo {
 
     // Debug helper
     public double getAngle() {
-        return (encoder.getVoltage() / 3.3) * 360.0;
+        double rawAngle = encoder.getVoltage() / 3.3 * 360.0;
+        double estimatedAngle = filter.estimate(rawAngle);
+        return estimatedAngle;
     }
 }

@@ -1,4 +1,4 @@
-package com.sharklib.core.util.math;
+package org.firstinspires.ftc.teamcode.global.util.math;
 
 public class Ballistics {
 

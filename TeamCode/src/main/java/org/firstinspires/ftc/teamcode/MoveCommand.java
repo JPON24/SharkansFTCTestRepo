@@ -17,7 +17,7 @@ import java.util.HashMap;
  * 3. Added else clause for shooter state
  */
 public class MoveCommand {
-    SwerveSubsystem dt = new SwerveSubsystem();
+    WorkingSwerve dt = new WorkingSwerve();
     CommandSystem command = new CommandSystem();
     SharkDrive shark = new SharkDrive();
     ElapsedTime timeout = new ElapsedTime();
@@ -26,7 +26,7 @@ public class MoveCommand {
     floatingIntake intake = new floatingIntake();
 
     public void init(HardwareMap hwMap, boolean isAuton) {
-        dt.init(hwMap, shark.odometry);
+        dt.init(hwMap);
         shooter.initSystem(hwMap, shark.odometry, 0);
         intake.init(hwMap);
         shark.init(hwMap, isAuton);

@@ -1,18 +1,30 @@
-package com.sharklib.core.hardware;
+package org.firstinspires.ftc.teamcode.global.hardware;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.global.constants;
 
 public class Motor {
     private final DcMotor Motor;
+    private HardwareUtil hardwareUtil = null;
     private double lastPower = 0.0;
-    private final double THRESHOLD = 0.001; // Only update if change is > 0.1%
+    private final double THRESHOLD = constants.MOTOR_POWER_THRESHOLD;
 
     public Motor(HardwareMap hwMap, String name) {
         this.Motor = hwMap.get(DcMotor.class, name);
     }
 
+    public Motor(HardwareMap hwMap, HardwareUtil hardwareUtil, String name) {
+        this.Motor = hwMap.get(DcMotor.class, name);
+        this.hardwareUtil = hardwareUtil;
+    }
+
     public void setPower(double power) {
+        // Voltage compensation for battery droop (if HardwareUtil is provided)
+        if (hardwareUtil != null) {
+            power *= hardwareUtil.getVoltageMultiplier();
+        }
+
         // Caching
         if (Math.abs(power - lastPower) > THRESHOLD) {
             Motor.setPower(power);

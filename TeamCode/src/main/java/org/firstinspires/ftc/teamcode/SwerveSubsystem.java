@@ -40,10 +40,10 @@ public class SwerveSubsystem {
 
     private PIDController flPID, frPID, rlPID, rrPID;
 
-    private AxonAnalogFilter flFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter frFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter blFilter = new AxonAnalogFilter(0.25);
-    private AxonAnalogFilter brFilter = new AxonAnalogFilter(0.25);
+//    private AxonAnalogFilter flFilter = new AxonAnalogFilter(0.25);
+//    private AxonAnalogFilter frFilter = new AxonAnalogFilter(0.25);
+//    private AxonAnalogFilter blFilter = new AxonAnalogFilter(0.25);
+//    private AxonAnalogFilter brFilter = new AxonAnalogFilter(0.25);
 
     private ElapsedTime pidTimer = new ElapsedTime();
 

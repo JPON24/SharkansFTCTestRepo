@@ -7,30 +7,38 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import com.sharklib.core.util.math.LinearMath;
-import com.sharklib.core.util.math.InterpLUT;
-import com.sharklib.core.util.math.geometry.Vector2D;
-import com.sharklib.core.control.PIDController;
 
+import org.firstinspires.ftc.teamcode.global.util.math.Ballistics;
 import org.firstinspires.ftc.teamcode.global.constants;
+import org.firstinspires.ftc.teamcode.global.util.math.Vector2D;
+import org.firstinspires.ftc.teamcode.global.util.math.InterpLUT;
+import org.firstinspires.ftc.teamcode.global.util.math.LinearMath;
+import org.firstinspires.ftc.teamcode.global.control.PIDController;
+
 
 public class VirtualGoalShooter {
 
+    Ballistics Ballistics;
+
     public static final Vector2D BLUE_BASKET = new Vector2D(constants.ZEPHYR_BLUE_BASKET_X, constants.ZEPHYR_BLUE_BASKET_Y);
     public static final Vector2D RED_BASKET = new Vector2D(constants.ZEPHYR_RED_BASKET_X, constants.ZEPHYR_RED_BASKET_Y);
-    public static double PROJECTILE_SPEED = constants.ZEPHYR_AVG_VELOCITY;
+
+    private final double WHEEL_RADIUS_INCHES = constants.VGS_WHEEL_RADIUS;
+    private final double GEAR_RATIO = constants.VGS_GEAR_RATIO;
+    private final double HOOD_MIN_ANGLE = constants.VGS_HOOD_MIN_ANGLE;
+    private final double HOOD_MAX_ANGLE = constants.VGS_HOOD_MAX_ANGLE;
 
     private final double TURRET_MAX_DEG = constants.TURRET_MAX_DEG;
     private final double TURRET_MIN_DEG = constants.TURRET_MIN_DEG;
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.006;
-    private double baseI = 0.0;
-    private double baseD = 0.0002;
-    private double baseF = 0.0;
+    private double baseP = constants.TURRET_KP;
+    private double baseI = constants.TURRET_KI;
+    private double baseD = constants.TURRET_KD;
+    private double baseF = constants.TURRET_KF;
 
-    private double normalP = 100, boostP = 200, rpmDropThreshold = 300;
+    private double normalP = constants.SHOOTER_PID_NORMAL_P, boostP = constants.SHOOTER_PID_BOOST_P, rpmDropThreshold = constants.SHOOTER_RPM_DROP_THRESHOLD;
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
@@ -46,14 +54,25 @@ public class VirtualGoalShooter {
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
     private double unwindTargetAngle = 0;
+
+    // Cooldown to prevent unwind → tracking oscillation loop
+    private int unwindCooldownCycles = 0;
+    private static final int UNWIND_COOLDOWN = constants.VGS_UNWIND_COOLDOWN;
+
+    private static final double SOFT_LIMIT_ZONE = constants.VGS_SOFT_LIMIT_ZONE;
+    private static final double WALL_PROTECTION_ZONE = constants.VGS_WALL_PROTECTION_ZONE;
+
+    private boolean flywheelEnabled = false;
     private double targetRPM = 0;
+
+    private FiringSolution lastSolution = null;
 
     public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, AprilTagLimelight limelightRef) {
         this.otos = otosRef;
         this.limelight = limelightRef;
 
         turretPID = new PIDController(baseP, baseI, baseD, baseF);
-        turretPID.setMaxIntegral(1.0);
+        turretPID.setMaxIntegral(constants.VGS_TURRET_MAX_INTEGRAL);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -69,43 +88,133 @@ public class VirtualGoalShooter {
         rightHood = hardwareMap.get(Servo.class, "rightHood");
 
         //jacob got that
+        rpmTable.add(65, 3300);
+        rpmTable.add(73.5, 3350);
+        rpmTable.add(77, 3400);
+        rpmTable.add(81, 3450.0);
+        rpmTable.add(85, 3700.0);
+        rpmTable.add(90, 3800);
 
-        rpmTable.add(0.0, 3100.0);
-        rpmTable.add(38.5, 3300.0);
-        rpmTable.add(48.5, 3300.0);
-        rpmTable.add(68.5, 3450.0);
-        rpmTable.add(83.5, 3700.0);
-        rpmTable.add(129.0, 4600.0);
-
-        hoodTable.add(0.0, 0.65);
-        hoodTable.add(37.0, 0.45);
-        hoodTable.add(62.0, 0.45);
-        hoodTable.add(72.0, 0.15);
-        hoodTable.add(129.0, 0.0);
+        hoodTable.add(56, 0.45);
+        hoodTable.add(71, 0.5);
+        hoodTable.add(77, 0.45);
+        hoodTable.add(81, 0.55);
+        hoodTable.add(85, 0.1);
     }
 
     public void setAlliance(boolean isBlue) {
         this.targetPos = isBlue ? BLUE_BASKET : RED_BASKET;
     }
 
+    /**
+     * Call this in your loop - it automatically tracks the turret and hood
+     * but does NOT spin the flywheel unless spinUpShooter() has been called
+     */
     public void update() {
+        // Always update shooter PIDF regardless of flywheel state
         updateShooterPIDF();
 
+        // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
+            // Still calculate solution for hood/flywheel even during unwind
+            lastSolution = solveFiringSolution();
+            if (lastSolution.validShot) {
+                setHoodPos(lastSolution.hoodAngle);
+                if (flywheelEnabled) {
+                    setShooterRPM(lastSolution.rpm);
+                }
+            }
             return;
         }
 
         FiringSolution solution = solveFiringSolution();
+        lastSolution = solution;
 
         if (solution.validShot) {
-            setShooterRPM(solution.rpm);
             setHoodPos(solution.hoodAngle);
             moveTurretToAngle(solution.turretAngle);
+
+            if (flywheelEnabled) {
+                setShooterRPM(solution.rpm);
+            } else {
+                setShooterRPM(0);
+            }
         } else {
             turretMotor.setPower(0);
             setShooterRPM(0);
         }
+    }
+
+    /**
+     * Call this to start spinning the flywheel
+     * Turret will continue to track automatically
+     */
+    public void spinUpShooter() {
+        flywheelEnabled = true;
+    }
+
+    /**
+     * Call this to stop the flywheel
+     * Turret will continue to track automatically
+     */
+    public void stopShooter() {
+        flywheelEnabled = false;
+        setShooterRPM(0);
+        targetRPM = 0;
+    }
+
+    /**
+     * Check if the shooter is ready to fire
+     * @param rpmTolerance How close to target RPM (default: 100)
+     * @return true if flywheel is at speed and shot is valid
+     */
+    public boolean isReadyToShoot(double rpmTolerance) {
+        if (!flywheelEnabled || lastSolution == null || !lastSolution.validShot) {
+            return false;
+        }
+
+        double currentRPM = getCurrentRPM();
+        double error = Math.abs(targetRPM - currentRPM);
+
+        return error < rpmTolerance && targetRPM > 0;
+    }
+
+    /**
+     * Overload with default tolerance
+     */
+    public boolean isReadyToShoot() {
+        return isReadyToShoot(100.0);
+    }
+
+    /**
+     * Check if turret is aimed at target
+     * @param angleTolerance How close to target angle in degrees (default: 2.0)
+     * @return true if turret is within tolerance
+     */
+    public boolean isTurretOnTarget(double angleTolerance) {
+        if (lastSolution == null || !lastSolution.validShot) {
+            return false;
+        }
+
+        double currentAngle = getTurretDegrees();
+        double error = Math.abs(lastSolution.turretAngle - currentAngle);
+
+        return error < angleTolerance;
+    }
+
+    /**
+     * Overload with default tolerance
+     */
+    public boolean isTurretOnTarget() {
+        return isTurretOnTarget(2.0);
+    }
+
+    /**
+     * Check if everything is ready for a shot
+     */
+    public boolean isFullyReady() {
+        return isReadyToShoot() && isTurretOnTarget();
     }
 
     private FiringSolution solveFiringSolution() {
@@ -113,13 +222,21 @@ public class VirtualGoalShooter {
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
-        double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
-        double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
-
         double dx = targetPos.x - pos.x;
         double dy = targetPos.y - pos.y;
         double rawDist = Math.hypot(dx, dy);
-        double timeOfFlight = rawDist / PROJECTILE_SPEED;
+
+        double tableRPM = rpmTable.get(rawDist);
+        double tableHood = hoodTable.get(rawDist);
+
+        double launchVelocity = Ballistics.toLinearVelocity(tableRPM, WHEEL_RADIUS_INCHES, GEAR_RATIO);
+        double launchAngle = hoodToDegrees(tableHood);
+
+        double timeOfFlight = Ballistics.calculateTimeOfFlight(rawDist, launchVelocity, launchAngle);
+
+
+        double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
+        double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
 
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
@@ -148,20 +265,38 @@ public class VirtualGoalShooter {
         );
     }
 
+    private double hoodToDegrees(double servoPos) {
+        return LinearMath.lerp(HOOD_MIN_ANGLE, HOOD_MAX_ANGLE, servoPos);
+    }
+
+    /**
+     * Picks the best reachable angle (trying target and target ± 360°),
+     * applies soft limits near mechanical stops, and protects against wall impact.
+     */
     private void moveTurretToAngle(double targetAngle) {
         double currentAngle = getTurretDegrees();
 
+        // Always evaluate the target AND target ± 360° to find the best in-range option
+        targetAngle = pickBestAngle(targetAngle, currentAngle);
+
+        // If even the best candidate is out of range, we need to unwind
         if (targetAngle > TURRET_MAX_DEG || targetAngle < TURRET_MIN_DEG) {
-            double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
-            if (currentAngle > TURRET_MAX_DEG - 10 || currentAngle < TURRET_MIN_DEG + 10) {
+            // Only unwind if cooldown has expired (prevents oscillation loop)
+            if (unwindCooldownCycles <= 0) {
+                double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
                 initiateUnwind(altAngle);
                 return;
             }
-            targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG, TURRET_MAX_DEG);
+            // During cooldown, clamp to nearest safe limit instead of unwinding
+            targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG + WALL_PROTECTION_ZONE,
+                    TURRET_MAX_DEG - WALL_PROTECTION_ZONE);
         }
 
-        double error = targetAngle - currentAngle;
+        // Decrement cooldown
+        if (unwindCooldownCycles > 0) unwindCooldownCycles--;
 
+        // --- Adaptive PID Gains ---
+        double error = targetAngle - currentAngle;
         if (Math.abs(error) > 20) {
             turretPID.setPIDF(baseP * 3.0, baseI, baseD, baseF);
         } else if (Math.abs(error) > 10) {
@@ -171,22 +306,82 @@ public class VirtualGoalShooter {
         }
 
         double power = turretPID.update(targetAngle, currentAngle);
+        power *= constants.VGS_TURRET_POWER_SCALE;
+
+        // --- Soft Limit: Fade power near mechanical stops ---
+        power = applySoftLimits(power, currentAngle);
+
         turretMotor.setPower(power);
+    }
+
+    /**
+     * Evaluates target, target+360, and target-360 to find the angle that is
+     * within mechanical limits and closest to the current position.
+     */
+    private double pickBestAngle(double target, double current) {
+        double[] candidates = { target, target + 360, target - 360 };
+        double bestAngle = target;
+        double bestDist = Double.MAX_VALUE;
+
+        for (double candidate : candidates) {
+            // Only consider candidates within mechanical range
+            if (candidate >= TURRET_MIN_DEG && candidate <= TURRET_MAX_DEG) {
+                double dist = Math.abs(candidate - current);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestAngle = candidate;
+                }
+            }
+        }
+
+        // If no candidate is in range, return original (will trigger unwind)
+        return bestAngle;
+    }
+
+    /**
+     * Reduces power near mechanical limits and zeros it if pushing into a wall.
+     */
+    private double applySoftLimits(double power, double currentAngle) {
+        double distToMax = TURRET_MAX_DEG - currentAngle;
+        double distToMin = currentAngle - TURRET_MIN_DEG;
+
+        // Wall protection: zero power if at a limit and pushing into it
+        if (distToMax < WALL_PROTECTION_ZONE && power > 0) return 0;
+        if (distToMin < WALL_PROTECTION_ZONE && power < 0) return 0;
+
+        // Soft limit: linearly scale power down as we approach the edge
+        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
+            double scale = distToMax / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
+        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
+            double scale = distToMin / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
+
+        return power;
     }
 
     private void initiateUnwind(double target) {
         currentState = TurretState.UNWINDING;
-        unwindTargetAngle = target;
+        unwindTargetAngle = LinearMath.clamp(target, TURRET_MIN_DEG + 10, TURRET_MAX_DEG - 10);
+        turretPID.reset();
     }
 
     private void executeUnwind() {
-        turretPID.setPIDF(baseP * 1.5, 0, 0, 0);
+        turretPID.setPIDF(baseP * 1.5, 0, 0.3, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
+        power *= constants.VGS_TURRET_POWER_SCALE;
+        // Apply same soft limits during unwind
+        power = applySoftLimits(power, getTurretDegrees());
+
         turretMotor.setPower(power);
 
         if (Math.abs(unwindTargetAngle - getTurretDegrees()) < 5.0) {
             currentState = TurretState.TRACKING;
+            unwindCooldownCycles = UNWIND_COOLDOWN; // Prevent immediate re-unwind
+            turretPID.reset();
         }
     }
 
@@ -220,7 +415,31 @@ public class VirtualGoalShooter {
         return (rightShooter.getVelocity() / TICKS_PER_REV_SHOOTER) * 60.0;
     }
 
-    public double getTargetRPM() { return targetRPM; }
+    public double getTargetRPM() {
+        return targetRPM;
+    }
+
+    /**
+     * Get the current turret target angle
+     */
+    public double getTargetTurretAngle() {
+        return lastSolution != null ? lastSolution.turretAngle : 0;
+    }
+
+    /**
+     * Get the turret error (how far off target)
+     */
+    public double getTurretError() {
+        if (lastSolution == null) return 0;
+        return lastSolution.turretAngle - getTurretDegrees();
+    }
+
+    /**
+     * Check if flywheel is currently enabled
+     */
+    public boolean isFlywheelEnabled() {
+        return flywheelEnabled;
+    }
 
     private static class FiringSolution {
         double turretAngle, rpm, hoodAngle;

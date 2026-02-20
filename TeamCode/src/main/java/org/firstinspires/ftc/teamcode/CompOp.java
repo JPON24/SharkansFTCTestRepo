@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.SwerveSubsystem;
 public class CompOp extends OpMode {
 
     private ZephyrSubsystem zephyr;
-    private SwerveSubsystem swerve;
+    private WorkingSwerve swerve;
     private ShooterSubsystem shooter;
     private floatingIntake intake;
 
@@ -36,8 +36,8 @@ public class CompOp extends OpMode {
         otos.calibrateImu();
 
         // Initialize subsystems
-        swerve = new SwerveSubsystem();
-        swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
+        swerve = new WorkingSwerve();
+        swerve.init(hardwareMap);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
         shooter.initSystem(hardwareMap, otos, 0);
@@ -48,7 +48,7 @@ public class CompOp extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        swerve.drive(0, 0, 0);
+        swerve.swerveDrive(0, 0, 0);
 //
 //        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
 //        zephyr.setAlliance(true); // true for BLUE, false for RED
@@ -80,18 +80,11 @@ public class CompOp extends OpMode {
         double plant = gamepad1.left_trigger;
         double reset = gamepad1.right_trigger;
 
-        if (plant > 0.4)
-        {
-            swerve.plant();
-        }
-        else
-        {
-            swerve.drive(leftStickY, leftStickX, rightStickX);
-        }
+            swerve.swerveDrive(leftStickY, leftStickX, rightStickX);
 
         if (reset > 0.4)
         {
-            swerve.resetIMU();
+            swerve.resetOTOSTracking();
         }
 
         boolean upDpadPressed = gamepad2.dpad_up;
@@ -265,11 +258,6 @@ public class CompOp extends OpMode {
         telemetry.addData("frSpeed: ", swerve.frSpeed);
         telemetry.addData("blSpeed: ", swerve.blSpeed);
         telemetry.addData("brSpeed: ", swerve.brSpeed);
-        telemetry.addData("is decelerating: ", swerve.decelerating);
-
-        telemetry.addData("x cmd: ", swerve.xCmdVal);
-        telemetry.addData("y cmd: ", swerve.yCmdVal);
-        telemetry.addData("r cmd: ", swerve.rCmdVal);
 
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);

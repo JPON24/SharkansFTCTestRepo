@@ -1,4 +1,4 @@
-package com.sharklib.core.util.gamepad;
+package org.firstinspires.ftc.teamcode.global.util.gamepad;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 

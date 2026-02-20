@@ -23,6 +23,9 @@ public class testmode extends OpMode
 //    private SwerveSubsystem swerve;
     private DcMotorEx frontLeftMotor, frontRightMotor, backLeftMotor, backRightMotor;
     private Servo frontLeftServo, frontRightServo, backLeftServo, backRightServo;
+
+    private Servo leftHood, rightHood;
+
     private AnalogInput frontLeftAnalog, frontRightAnalog, backLeftAnalog, backRightAnalog;
 
     private DcMotorEx turret;
@@ -41,15 +44,15 @@ public class testmode extends OpMode
         backLeftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backRightMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
-        frontLeftServo = hardwareMap.get(Servo.class, "frontLeftServo"); // Ctrl h 1
-        frontRightServo = hardwareMap.get(Servo.class, "frontRightServo"); // Exp h 5
-        backLeftServo = hardwareMap.get(Servo.class, "backLeftServo"); // Ctrl h 2
-        backRightServo = hardwareMap.get(Servo.class, "backRightServo"); // Exp h 4
+//        frontLeftServo = hardwareMap.get(Servo.class, "frontLeftServo"); // Ctrl h 1
+//        frontRightServo = hardwareMap.get(Servo.class, "frontRightServo"); // Exp h 5
+//        backLeftServo = hardwareMap.get(Servo.class, "backLeftServo"); // Ctrl h 2
+//        backRightServo = hardwareMap.get(Servo.class, "backRightServo"); // Exp h 4
 
-        frontLeftServo.setPosition(0);
-        backLeftServo.setPosition(0);
-        frontRightServo.setPosition(0);
-        backRightServo.setPosition(0);
+//        frontLeftServo.setPosition(0);
+//        backLeftServo.setPosition(0);
+//        frontRightServo.setPosition(0);
+//        backRightServo.setPosition(0);
 
         odometry = hardwareMap.get(SparkFunOTOS.class, "otos");
         odometry.setLinearUnit(DistanceUnit.INCH);
@@ -60,6 +63,10 @@ public class testmode extends OpMode
         odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
 
         turret = hardwareMap.get(DcMotorEx.class, "turretMotor");
+
+        leftHood = hardwareMap.get(Servo.class, "leftHood"); //
+        leftHood.setDirection(Servo.Direction.REVERSE);
+        rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
         odometry.resetTracking();
         odometry.begin();
@@ -93,45 +100,45 @@ public class testmode extends OpMode
     public void loop()
     {
         // 315 degree range
-        if (gamepad1.a && !lastA) {
-            flTgt += 0.02;
-
-            if (flTgt > 1)
-            {
-                flTgt = 0;
-            }
-            frontLeftServo.setPosition(flTgt);
-        }
-
-        if (gamepad1.x && !lastX)
-        {
-            frTgt += 0.02;
-
-            if (frTgt > 1)
-            {
-                frTgt = 0;
-            }
-            frontRightServo.setPosition(frTgt);
-        }
-
-        if (gamepad1.y && !lastY) {
-            rrTgt += 0.02;
-
-            if (rrTgt > 1)
-            {
-                rrTgt = 0;
-            }
-            backRightServo.setPosition(rrTgt);
-        }
-
-        if (gamepad1.b && !lastB) {
-            rlTgt += 0.02;
-            if (rlTgt > 1)
-            {
-                rlTgt = 0;
-            }
-            backLeftServo.setPosition(rlTgt);
-        }
+//        if (gamepad1.a && !lastA) {
+//            flTgt += 0.02;
+//
+//            if (flTgt > 1)
+//            {
+//                flTgt = 0;
+//            }
+//            frontLeftServo.setPosition(flTgt);
+//        }
+//
+//        if (gamepad1.x && !lastX)
+//        {
+//            frTgt += 0.02;
+//
+//            if (frTgt > 1)
+//            {
+//                frTgt = 0;
+//            }
+//            frontRightServo.setPosition(frTgt);
+//        }
+//
+//        if (gamepad1.y && !lastY) {
+//            rrTgt += 0.02;
+//
+//            if (rrTgt > 1)
+//            {
+//                rrTgt = 0;
+//            }
+//            backRightServo.setPosition(rrTgt);
+//        }
+//
+//        if (gamepad1.b && !lastB) {
+//            rlTgt += 0.02;
+//            if (rlTgt > 1)
+//            {
+//                rlTgt = 0;
+//            }
+//            backLeftServo.setPosition(rlTgt);
+//        }
 
         if (gamepad1.dpad_up)
         {
@@ -140,12 +147,15 @@ public class testmode extends OpMode
             rrTgt = brOffset;
             frTgt = frOffset;
 
-            frontLeftServo.setPosition(flOffset);
-            frontRightServo.setPosition(frOffset);
-            backLeftServo.setPosition(blOffset);
-            backRightServo.setPosition(brOffset);
+//            frontLeftServo.setPosition(flOffset);
+//            frontRightServo.setPosition(frOffset);
+//            backLeftServo.setPosition(blOffset);
+//            backRightServo.setPosition(brOffset);
         }
 
+
+        leftHood.setPosition(0);
+        rightHood.setPosition(0);
 //        turret.setPower(0.3);
 
         lastA = gamepad1.a;
@@ -158,10 +168,10 @@ public class testmode extends OpMode
         telemetry.addData("bl: ", rlTgt);
         telemetry.addData("br: ", rrTgt);
 
-        telemetry.addData("fl deg: ", GetAngle(flTgt, flOffset));
-        telemetry.addData("fr deg: ", GetAngle(frTgt, frOffset));
-        telemetry.addData("bl deg: ", GetAngle(rlTgt, blOffset));
-        telemetry.addData("br deg: ", GetAngle(rrTgt, brOffset));
+//        telemetry.addData("fl deg: ", GetAngle(flTgt, flOffset));
+//        telemetry.addData("fr deg: ", GetAngle(frTgt, frOffset));
+//        telemetry.addData("bl deg: ", GetAngle(rlTgt, blOffset));
+//        telemetry.addData("br deg: ", GetAngle(rrTgt, brOffset));
 
         SparkFunOTOS.Pose2D position = odometry.getPosition();
 

@@ -1,4 +1,4 @@
-package com.sharklib.core.util.gamepad;
+package org.firstinspires.ftc.teamcode.global.util.gamepad;
 
 public class ButtonReader {
     private boolean lastState = false;
