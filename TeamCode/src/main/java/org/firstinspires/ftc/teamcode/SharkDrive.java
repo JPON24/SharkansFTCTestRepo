@@ -556,7 +556,7 @@ public class SharkDrive {
     public double initErrY = 0;
 
 
-    public void DihdometryDihtrol2(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) {
+    public void DihdometryDihtrol2(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { // Dihmola
         if (!odometry.isConnected()) {
             return;
         }

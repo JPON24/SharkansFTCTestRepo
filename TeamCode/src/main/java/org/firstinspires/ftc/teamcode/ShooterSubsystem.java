@@ -237,6 +237,9 @@ public class ShooterSubsystem {
         {
             return 3800;
         }
+        if (x > 90) {
+            return 5000;
+        }
 
         return 3550;
     }
@@ -272,6 +275,9 @@ public class ShooterSubsystem {
         if (x < 92)
         {
             return 0;
+        }
+        if (x > 90) {
+            return 0.25;
         }
 
         return 0.45;

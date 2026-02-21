@@ -83,8 +83,8 @@ public class CompOp extends OpMode {
 //        zephyr.update();
 
         double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = gamepad1.left_stick_y;
-        double rightStickX = -gamepad1.right_stick_x;
+        double leftStickY = -gamepad1.left_stick_y;
+        double rightStickX = gamepad1.right_stick_x;
 
 
 
@@ -270,6 +270,11 @@ public class CompOp extends OpMode {
         telemetry.addData("frSpeed: ", swerve.frSpeed);
         telemetry.addData("blSpeed: ", swerve.blSpeed);
         telemetry.addData("brSpeed: ", swerve.brSpeed);
+
+        telemetry.addData("servo angle: ", swerve.getFLError());
+        telemetry.addData("servo angle: ", swerve.getFRError());
+        telemetry.addData("servoAngle Bl", swerve.getBLError());
+        telemetry.addData("servoAngle Br", swerve.getFLRaw());
 
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);

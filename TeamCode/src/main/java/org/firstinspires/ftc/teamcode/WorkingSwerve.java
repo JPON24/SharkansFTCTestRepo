@@ -29,19 +29,19 @@ public class WorkingSwerve {
     SparkFunOTOS otos;
 
     // PID Constants
-    double FLkP = 0.0023;
+    double FLkP = 0.0046; // 0.0023
     double FLkI = 0.0008;
     double FLkD = 0.00008;
 
-    double FRkP = 0.0024;
+    double FRkP = 0.0048; //0.0024
     double FRkI = 0.0005;
     double FRkD = 0.00008;
 
-    double BLkP = 0.0022;
+    double BLkP = 0.0044; // 0.0022
     double BLkI = 0.0007;
     double BLkD = 0.00008;
 
-    double BRkP = 0.0024;
+    double BRkP = 0.0048; // 0.0024
     double BRkI = 0.0005;
     double BRkD = 0.00008;
 

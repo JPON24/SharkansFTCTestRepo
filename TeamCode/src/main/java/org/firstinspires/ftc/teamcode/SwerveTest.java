@@ -93,6 +93,7 @@ public class SwerveTest extends OpMode {
         swerveDrive(leftStickY, leftStickX, rightStickX, reset);
 
         telemetry.addData("servo angle: ", getAngle(frontLeftAnalog, FL_OFFSET));
+        telemetry.addData("servo angle: ", getAngle(frontLeftAnalog, FL_OFFSET));
 //        telemetry.addData("servo angle: ", getAngle(frontLeftAnalog));
 //        telemetry.addData("servo angle: ", getAngle(frontLeftAnalog));
         telemetry.update();

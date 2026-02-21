@@ -6,12 +6,16 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
+import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
 
 @TeleOp(name = "Competition TeleOp RED")
 public class CompOpRed extends OpMode {
 
+    EnhancedGamepad g2 = null;
+    EnhancedGamepad g1 = null;
+
     private ZephyrSubsystem zephyr;
-    private SwerveSubsystem swerve;
+    private WorkingSwerve swerve;
     private ShooterSubsystem shooter;
     private floatingIntake intake;
 
@@ -31,13 +35,17 @@ public class CompOpRed extends OpMode {
 
     @Override
     public void init() {
+
+        g1 = new EnhancedGamepad(gamepad1);
+        g2 = new EnhancedGamepad(gamepad2);
+
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
         otos.calibrateImu();
 
         // Initialize subsystems
-        swerve = new SwerveSubsystem();
-        swerve.init(hardwareMap, otos);  // Pass OTOS for field-centric
+        swerve = new WorkingSwerve();
+        swerve.init(hardwareMap);  // Pass OTOS for field-centric
 
         shooter = new ShooterSubsystem();
         shooter.initSystem(hardwareMap, otos, 1);
@@ -48,7 +56,7 @@ public class CompOpRed extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        swerve.drive(0, 0, 0);
+        swerve.swerveDrive(0, 0, 0);
 //
 //        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
 //        zephyr.setAlliance(true); // true for BLUE, false for RED
@@ -70,6 +78,8 @@ public class CompOpRed extends OpMode {
     @Override
     public void loop() {
 
+        g1.update();
+
 //        zephyr.update();
 
         double leftStickX = gamepad1.left_stick_x;
@@ -77,28 +87,23 @@ public class CompOpRed extends OpMode {
         double rightStickX = -gamepad1.right_stick_x;
 
 
+
+
         double plant = gamepad1.left_trigger;
         double reset = gamepad1.right_trigger;
 
-        if (plant > 0.4)
-        {
-            swerve.plant();
-        }
-        else
-        {
-            swerve.drive(leftStickY, leftStickX, rightStickX);
-        }
+        swerve.swerveDrive(leftStickY, leftStickX, rightStickX);
 
         if (reset > 0.4)
         {
-            swerve.resetIMU();
+            swerve.resetOTOSTracking();
         }
 
         boolean upDpadPressed = gamepad2.dpad_up;
         boolean downDpadPressed = gamepad2.dpad_down;
 
-        boolean hoodUp = gamepad2.right_bumper;
-        boolean hoodDown = gamepad2.left_bumper;
+        boolean hoodUp = g2.rb.wasJustPressed();
+        boolean hoodDown = g2.lb.wasJustPressed();
 
         boolean willIncrement = (upDpadPressed && !lastRightBumperState);
         boolean willDecrement = (downDpadPressed && !lastLeftBumperState);
@@ -152,9 +157,9 @@ public class CompOpRed extends OpMode {
             shooter.setTargetRPM(0);
         }
 
-        if (hoodUp && !lastHoodUp && hoodAdjust + 0.05 <= 0.65) {
-            hoodAdjust = hoodAdjust + 0.05;
-        } else if (hoodDown && !lastHoodDown && hoodAdjust - 0.05 >= 0){
+        if (hoodUp && hoodAdjust + 0.05 <= 0.65) {
+            hoodAdjust += 0.05;
+        } else if (hoodDown &&  hoodAdjust - 0.05 >= 0){
             hoodAdjust -= 0.05;
         }
 
@@ -183,7 +188,7 @@ public class CompOpRed extends OpMode {
         lastHoodUp = hoodUp;
         lastHoodDown = hoodDown;
 
-        if (hoodTimer.seconds() > 0.1)
+        if (isAutoAdjust && outtaking && hoodTimer.seconds() > 0.1)
         {
             shooter.setHoodPosition(tempTgtHood);
         }
@@ -265,11 +270,11 @@ public class CompOpRed extends OpMode {
         telemetry.addData("frSpeed: ", swerve.frSpeed);
         telemetry.addData("blSpeed: ", swerve.blSpeed);
         telemetry.addData("brSpeed: ", swerve.brSpeed);
-        telemetry.addData("is decelerating: ", swerve.decelerating);
 
-        telemetry.addData("x cmd: ", swerve.xCmdVal);
-        telemetry.addData("y cmd: ", swerve.yCmdVal);
-        telemetry.addData("r cmd: ", swerve.rCmdVal);
+        telemetry.addData("servo AngleFL: ", swerve.getFLError());
+        telemetry.addData("servo AngleFR: ", swerve.getFRError());
+        telemetry.addData("servo AngleBL", swerve.getBLError());
+        telemetry.addData("servo AngleBR", swerve.getBRError());
 
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);
@@ -278,6 +283,7 @@ public class CompOpRed extends OpMode {
         telemetry.addData("ticks: ", shooter.getTurretTicks());
         telemetry.addData("Tx: ", shooter.getTx());
         telemetry.addData("Distance", shooter.getDistance());
+        telemetry.addData("Turret Encoder", shooter.getTurretAngle());
         telemetry.update();
     }
 }

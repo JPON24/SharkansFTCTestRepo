@@ -65,6 +65,7 @@ public class HoodTestOp extends OpMode{
 
         telemetry.addData("Turret Position", shooter.getTurretDegrees());
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
+        telemetry.addData("Hood", "%.2f", hoodPosition);
         telemetry.update();
 
 

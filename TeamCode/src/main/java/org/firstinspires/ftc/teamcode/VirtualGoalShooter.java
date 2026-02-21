@@ -33,7 +33,7 @@ public class VirtualGoalShooter {
     public static final Vector2D RED_BASKET_CLOSE = new Vector2D(constants.VIRT_RED_BASKET_X, constants.VIRT_RED_BASKET_Y);
     public static final Vector2D RED_BASKET_FAR = new Vector2D(constants.VIRT_RED_BASKET_FAR_X, constants.VIRT_RED_BASKET_FAR_Y);
     public static final Vector2D BLUE_BASKET_FAR = new Vector2D(constants.VIRT_BLUE_BASKET_FAR_X, constants.VIRT_BLUE_BASKET_FAR_Y);
-    public static final Vector2D NO_POSITION = new Vector2D(0, 0);
+    public static final Vector2D NO_POSITION = new Vector2D(0, 10);
 
     private final double WHEEL_RADIUS_INCHES = constants.VGS_WHEEL_RADIUS;
     private final double GEAR_RATIO = constants.VGS_GEAR_RATIO;

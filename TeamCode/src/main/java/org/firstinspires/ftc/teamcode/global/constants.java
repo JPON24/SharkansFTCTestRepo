@@ -193,14 +193,14 @@ public class constants {
         public static final double VGS_WALL_PROTECTION_ZONE = 3.0;
         public static final double VGS_TURRET_POWER_SCALE = 0.2;
 
-        public static final double VIRT_BLUE_BASKET_X = 12.0;
-        public static final double VIRT_BLUE_BASKET_Y = 136.0;
-        public static final double VIRT_RED_BASKET_X = 0.0;
+        public static final double VIRT_BLUE_BASKET_X = -7.5;
+        public static final double VIRT_BLUE_BASKET_Y = 0.0;
+        public static final double VIRT_RED_BASKET_X = 7.5;
         public static final double VIRT_RED_BASKET_Y = 0.0;
-        public static final double VIRT_RED_BASKET_FAR_X = 12.0;
-        public static final double VIRT_RED_BASKET_FAR_Y = 0.0;
-        public static final double VIRT_BLUE_BASKET_FAR_X = 12.0;
-        public static final double VIRT_BLUE_BASKET_FAR_Y = 136.0;
+        public static final double VIRT_RED_BASKET_FAR_X = 30.0;
+        public static final double VIRT_RED_BASKET_FAR_Y = 100;
+        public static final double VIRT_BLUE_BASKET_FAR_X = -30.0;
+        public static final double VIRT_BLUE_BASKET_FAR_Y = 100;
 
         public static final double VGS_TURRET_KALMAN_Q = 0.001;
         public static final double VGS_TURRET_KALMAN_R = 0.01;

@@ -49,8 +49,7 @@ public class TurtleOp extends OpMode{
 
         limelight = new AprilTagLimelight();
         limelight.init(hardwareMap, 0); // Uhhhh... Chat can we just use one pipeline??
-
-        shooter.switchAlliance(true, false, false); // 2x2 alliance thingy for far and close + color
+        // 2x2 alliance thingy for far and close + color
 
         swerveDrive.init(hardwareMap);
 
@@ -73,6 +72,8 @@ public class TurtleOp extends OpMode{
 
         shooter = new VirtualGoalShooter();
         shooter.init(hardwareMap, otos);
+
+        shooter.switchAlliance(true, false, false);
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
