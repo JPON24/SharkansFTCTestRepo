@@ -24,9 +24,9 @@ public class constants {
         public static final int TURRET_MIN_TICKS = (int)(TURRET_MIN_DEG * TURRET_TICKS_PER_DEGREE);
 
         // Turret PID & Control
-        public static final double TURRET_KP = 0.01;
-        public static final double TURRET_KI = 0.0001;
-        public static final double TURRET_KD = 0.001;
+        public static final double TURRET_KP = 7.5; // 0.01
+        public static final double TURRET_KI = 0.07; // 0.0001
+        public static final double TURRET_KD = 0.25; // 0.001
         public static final double TURRET_KF = 0.0;
         public static final double TURRET_ADAPTIVE_KP_HIGH = 0.008;
         public static final double TURRET_ADAPTIVE_KP_MED = 0.004;

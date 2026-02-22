@@ -164,6 +164,8 @@ public class VirtualGoalShooter {
         }
     }
 
+    public double outputAngle = 0;
+
     /**
      * Call this in your loop - it automatically tracks the turret and hood
      * but does NOT spin the flywheel unless spinUpShooter() has been called
@@ -172,6 +174,7 @@ public class VirtualGoalShooter {
         // Always update shooter PIDF regardless of flywheel state
         updateShooterPIDF();
 
+//        turretMotor.setPower(0);
         // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
@@ -189,19 +192,20 @@ public class VirtualGoalShooter {
         FiringSolution solution = solveFiringSolution();
         lastSolution = solution;
 
-        if (solution.validShot) {
-            setHoodPos(solution.hoodAngle);
-            moveTurretToAngle(solution.turretAngle);
+        outputAngle = solution.turretAngle;
+//        if (solution.validShot) {
+//        setHoodPos(solution.hoodAngle);
+        moveTurretToAngle(solution.turretAngle);
 
-            if (flywheelEnabled) {
-                setShooterRPM(solution.rpm);
-            } else {
-                setShooterRPM(0);
-            }
+        if (flywheelEnabled) {
+            setShooterRPM(6000);
         } else {
-            turretMotor.setPower(0);
             setShooterRPM(0);
         }
+//        } else {
+//            turretMotor.setPower(0);
+//            setShooterRPM(0);
+//        }
     }
 
     /**
@@ -278,10 +282,15 @@ public class VirtualGoalShooter {
     private FiringSolution solveFiringSolution() {
         SparkFunOTOS.Pose2D pos = otos.getPosition();
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
-        double chassisHeading = pos.h;
 
-        double dx = targetPos.x - pos.x;
-        double dy = targetPos.y - pos.y;
+        // makes up for sensor innacuracy
+        pos.x *= 1.6;
+        pos.y *= 1.6;
+
+        double chassisHeading = -pos.h;
+
+        double dx = 0 - (pos.x);
+        double dy = 100 - (pos.y);
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -292,27 +301,26 @@ public class VirtualGoalShooter {
 
         double timeOfFlight = Ballistics.calculateTimeOfFlight(rawDist, launchVelocity, launchAngle);
 
-
         double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
         double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
 
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
 
-        double virtDx = virtX - pos.x;
-        double virtDy = virtY - pos.y;
+        double virtDx = virtX - (pos.x);
+        double virtDy = virtY - (pos.y);
 
-        double targetFieldAngle = Math.toDegrees(Math.atan2(virtDy, virtDx));
+        double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
         double relativeTurretAngle = targetFieldAngle - Math.toDegrees(chassisHeading);
 
 
 
-        relativeTurretAngle = LinearMath.angleWrap(relativeTurretAngle);
+        targetFieldAngle = LinearMath.angleWrap(targetFieldAngle);
 
         double virtualDist = Math.hypot(virtDx, virtDy);
 
         return new FiringSolution(
-                relativeTurretAngle,
+                targetFieldAngle,
                 rpmTable.get(virtualDist),
                 hoodTable.get(virtualDist),
                 virtualDist > 10 && virtualDist < 140
@@ -457,7 +465,7 @@ public class VirtualGoalShooter {
         // Apply same soft limits during unwind
         power = applySoftLimits(power, getTurretDegrees());
 
-        turretMotor.setPower(power);
+//        turretMotor.setPower(power);
 
         if (Math.abs(unwindTargetAngle - getTurretDegrees()) < 5.0) {
             currentState = TurretState.TRACKING;

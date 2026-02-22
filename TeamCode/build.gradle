@@ -7,11 +7,11 @@ apply from: '../build.dependencies.gradle'
 android {
     namespace = 'org.firstinspires.ftc.teamcode'
 
-    compileSdkVersion 34
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 24
-        targetSdkVersion 34
+        targetSdkVersion 28
     }
     // -----------------------------------------
 
@@ -19,7 +19,7 @@ android {
         jniLibs {
             pickFirsts += ['**/*.so']
         }
-        jniLibs.useLegacyPackaging true
+        jniLibs.useLegacyPackaging = true
     }
 }
 
