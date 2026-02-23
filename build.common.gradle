@@ -48,11 +48,11 @@ android {
     }
 
     defaultConfig {
-        signingConfig signingConfigs.debug
+        signingConfig = signingConfigs.debug
         applicationId 'com.qualcomm.ftcrobotcontroller'
         minSdkVersion 24
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 34
+        targetSdkVersion 28
 
         /**
          * We keep the versionCode and versionName of robot controller applications in sync with
@@ -86,7 +86,7 @@ android {
     // http://google.github.io/android-gradle-dsl/current/com.android.build.gradle.internal.dsl.BuildType.html
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
 
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a"
@@ -106,7 +106,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    ndkVersion '21.3.6528147'
+    ndkVersion = '21.3.6528147'
 }
 
 repositories {

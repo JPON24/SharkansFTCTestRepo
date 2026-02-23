@@ -48,7 +48,7 @@ public class TurtleOp extends OpMode{
         otos.calibrateImu();
 
         limelight = new AprilTagLimelight();
-        limelight.init(hardwareMap, 0);
+        limelight.init(hardwareMap, 0); // Uhhhh... Chat can we just use one pipeline??
 
         swerveDrive.init(hardwareMap);
 
@@ -70,15 +70,15 @@ public class TurtleOp extends OpMode{
 //                0.02, 0.003, 0.0, 0, 0);
 
         shooter = new VirtualGoalShooter();
-        shooter.init(hardwareMap, otos, limelight);
+        shooter.init(hardwareMap, otos);
+
+        shooter.switchAlliance(true, false, true); // 2x2 alliance thingy for far and close + color
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-
-        shooter.setAlliance(true); // blue
 //
 //        zephyr = new ZephyrSubsystem(hardwareMap, otos, limelight);
 //        zephyr.setAlliance(true); // true for BLUE, false for RED
@@ -170,6 +170,8 @@ public class TurtleOp extends OpMode{
         }
 
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
+        telemetry.addData("SS angle output", shooter.outputAngle);
+
 //        telemetry.addData("FL Voltage", drive.getFLVoltage());
 //        telemetry.addData("FR Voltage", drive.getFRVoltage());
 //        telemetry.addData("BL Voltage", drive.getBLVoltage());
@@ -215,8 +217,8 @@ public class TurtleOp extends OpMode{
 //        telemetry.addData("y cmd: ", swerve.yCmdVal);
 //        telemetry.addData("r cmd: ", swerve.rCmdVal);
 
-        telemetry.addData("otos x: ", otos.getPosition().x);
-        telemetry.addData("otos y: ", otos.getPosition().y);
+        telemetry.addData("otos x: ", otos.getPosition().x * 1.6);
+        telemetry.addData("otos y: ", otos.getPosition().y * 1.6);
         telemetry.addData("otos h: ", otos.getPosition().h);
         telemetry.addData("FL OFFSET", swerveDrive.getFLRaw());
         telemetry.addData("FR OFFSET", swerveDrive.getFRRaw());

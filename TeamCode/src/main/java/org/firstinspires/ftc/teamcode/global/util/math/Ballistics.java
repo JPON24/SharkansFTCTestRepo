@@ -29,7 +29,7 @@ public class Ballistics {
     public static double calculateTimeOfFlight(double distanceToTarget, double velocity, double launchAngleDeg) {
         double theta = Math.toRadians(launchAngleDeg);
         double vx = velocity * Math.cos(theta);
-        if (Math.abs(vx) < 0.001) return 0; // Avoid divide by zero
+        if (Math.abs(vx) < 0.001) return 0.001; // Avoid divide by zero
         return distanceToTarget / vx;
     }
 

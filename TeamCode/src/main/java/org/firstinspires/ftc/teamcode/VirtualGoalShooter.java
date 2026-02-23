@@ -14,14 +14,26 @@ import org.firstinspires.ftc.teamcode.global.util.math.Vector2D;
 import org.firstinspires.ftc.teamcode.global.util.math.InterpLUT;
 import org.firstinspires.ftc.teamcode.global.util.math.LinearMath;
 import org.firstinspires.ftc.teamcode.global.control.PIDController;
+import org.firstinspires.ftc.teamcode.global.control.KalmanFilter;
 
 
 public class VirtualGoalShooter {
 
     Ballistics Ballistics;
 
-    public static final Vector2D BLUE_BASKET = new Vector2D(constants.ZEPHYR_BLUE_BASKET_X, constants.ZEPHYR_BLUE_BASKET_Y);
-    public static final Vector2D RED_BASKET = new Vector2D(constants.ZEPHYR_RED_BASKET_X, constants.ZEPHYR_RED_BASKET_Y);
+    public enum StartPosition{
+        CLOSE_BLUE,
+        CLOSE_RED,
+        FAR_BLUE,
+        FAR_RED,
+        NO_POSITION
+    }
+
+    public static final Vector2D BLUE_BASKET_CLOSE = new Vector2D(constants.VIRT_BLUE_BASKET_X, constants.VIRT_BLUE_BASKET_Y);
+    public static final Vector2D RED_BASKET_CLOSE = new Vector2D(constants.VIRT_RED_BASKET_X, constants.VIRT_RED_BASKET_Y);
+    public static final Vector2D RED_BASKET_FAR = new Vector2D(constants.VIRT_RED_BASKET_FAR_X, constants.VIRT_RED_BASKET_FAR_Y);
+    public static final Vector2D BLUE_BASKET_FAR = new Vector2D(constants.VIRT_BLUE_BASKET_FAR_X, constants.VIRT_BLUE_BASKET_FAR_Y);
+    public static final Vector2D NO_POSITION = new Vector2D(0, 10);
 
     private final double WHEEL_RADIUS_INCHES = constants.VGS_WHEEL_RADIUS;
     private final double GEAR_RATIO = constants.VGS_GEAR_RATIO;
@@ -33,23 +45,31 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = constants.TURRET_KP;
-    private double baseI = constants.TURRET_KI;
-    private double baseD = constants.TURRET_KD;
-    private double baseF = constants.TURRET_KF;
+    private double baseP = 0.002;
+    private double baseI = 0.0001;
+    private double baseD = 0.0;
+    private double baseF = 0.0;
+
+    // Rate limiter and power limits
+    private double maxPower = 0.7;
+    private double maxDeltaPower = 0.03;
+    private double lastOutput = 0;
+    private double turretDeadband = 5.0; // degrees
+
+    public VirtualGoalShooter.StartPosition currentStartState = VirtualGoalShooter.StartPosition.NO_POSITION;
 
     private double normalP = constants.SHOOTER_PID_NORMAL_P, boostP = constants.SHOOTER_PID_BOOST_P, rpmDropThreshold = constants.SHOOTER_RPM_DROP_THRESHOLD;
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
     private SparkFunOTOS otos;
-    private AprilTagLimelight limelight;
 
-    private Vector2D targetPos = BLUE_BASKET;
+    private Vector2D targetPos = BLUE_BASKET_CLOSE;
     private InterpLUT rpmTable = new InterpLUT("RPM");
     private InterpLUT hoodTable = new InterpLUT("Hood");
 
     private PIDController turretPID;
+    private KalmanFilter turretFilter;
 
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
@@ -67,12 +87,16 @@ public class VirtualGoalShooter {
 
     private FiringSolution lastSolution = null;
 
-    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef, AprilTagLimelight limelightRef) {
+    public void init(HardwareMap hardwareMap, SparkFunOTOS otosRef) {
         this.otos = otosRef;
-        this.limelight = limelightRef;
 
         turretPID = new PIDController(baseP, baseI, baseD, baseF);
         turretPID.setMaxIntegral(constants.VGS_TURRET_MAX_INTEGRAL);
+
+        // Kalman filter for turret encoder — smooths out flywheel vibration noise
+        // Q = process noise (low = turret position changes slowly)
+        // R = measurement noise (higher = more vibration rejection)
+        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -102,9 +126,45 @@ public class VirtualGoalShooter {
         hoodTable.add(85, 0.1);
     }
 
-    public void setAlliance(boolean isBlue) {
-        this.targetPos = isBlue ? BLUE_BASKET : RED_BASKET;
+    public void switchAlliance(boolean blue, boolean far, boolean noPosition) {
+        if (blue && !far && !noPosition) {
+            currentStartState = VirtualGoalShooter.StartPosition.CLOSE_BLUE;
+        } else if (blue && far && !noPosition) {
+            currentStartState = VirtualGoalShooter.StartPosition.FAR_BLUE;
+        } else if (!blue && !far && !noPosition) {
+            currentStartState = VirtualGoalShooter.StartPosition.CLOSE_RED;
+        } else if (!blue && far && !noPosition) {
+            currentStartState = VirtualGoalShooter.StartPosition.FAR_RED;
+        } else {
+            currentStartState = VirtualGoalShooter.StartPosition.NO_POSITION;
+        }
     }
+
+    public void updateShooter() {
+        switch (currentStartState) {
+            case CLOSE_BLUE:
+                targetPos = BLUE_BASKET_CLOSE;
+                break;
+
+            case CLOSE_RED:
+                targetPos = RED_BASKET_CLOSE;
+                break;
+
+            case FAR_BLUE:
+                targetPos = BLUE_BASKET_FAR;
+                break;
+
+            case FAR_RED:
+                targetPos = RED_BASKET_FAR;
+                break;
+
+            case NO_POSITION:
+                targetPos = NO_POSITION;
+                break;
+        }
+    }
+
+    public double outputAngle = 0;
 
     /**
      * Call this in your loop - it automatically tracks the turret and hood
@@ -114,6 +174,7 @@ public class VirtualGoalShooter {
         // Always update shooter PIDF regardless of flywheel state
         updateShooterPIDF();
 
+//        turretMotor.setPower(0);
         // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
@@ -131,19 +192,20 @@ public class VirtualGoalShooter {
         FiringSolution solution = solveFiringSolution();
         lastSolution = solution;
 
-        if (solution.validShot) {
-            setHoodPos(solution.hoodAngle);
-            moveTurretToAngle(solution.turretAngle);
+        outputAngle = solution.turretAngle;
+//        if (solution.validShot) {
+//        setHoodPos(solution.hoodAngle);
+        moveTurretToAngle(solution.turretAngle);
 
-            if (flywheelEnabled) {
-                setShooterRPM(solution.rpm);
-            } else {
-                setShooterRPM(0);
-            }
+        if (flywheelEnabled) {
+            setShooterRPM(6000);
         } else {
-            turretMotor.setPower(0);
             setShooterRPM(0);
         }
+//        } else {
+//            turretMotor.setPower(0);
+//            setShooterRPM(0);
+//        }
     }
 
     /**
@@ -220,10 +282,15 @@ public class VirtualGoalShooter {
     private FiringSolution solveFiringSolution() {
         SparkFunOTOS.Pose2D pos = otos.getPosition();
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
-        double chassisHeading = pos.h;
 
-        double dx = targetPos.x - pos.x;
-        double dy = targetPos.y - pos.y;
+        // makes up for sensor innacuracy
+        pos.x *= 1.6;
+        pos.y *= 1.6;
+
+        double chassisHeading = -pos.h;
+
+        double dx = 0 - (pos.x);
+        double dy = 100 - (pos.y);
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -234,31 +301,26 @@ public class VirtualGoalShooter {
 
         double timeOfFlight = Ballistics.calculateTimeOfFlight(rawDist, launchVelocity, launchAngle);
 
-
         double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
         double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
 
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
 
-        double virtDx = virtX - pos.x;
-        double virtDy = virtY - pos.y;
+        double virtDx = virtX - (pos.x);
+        double virtDy = virtY - (pos.y);
 
-        double targetFieldAngle = Math.toDegrees(Math.atan2(virtDy, virtDx));
+        double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
         double relativeTurretAngle = targetFieldAngle - Math.toDegrees(chassisHeading);
 
-        if (limelight.GetLimelightId() != 0) {
-            double currentTurret = getTurretDegrees();
-            double visionTarget = currentTurret - limelight.GetTX();
-            relativeTurretAngle = LinearMath.lerp(relativeTurretAngle, visionTarget, 0.2);
-        }
 
-        relativeTurretAngle = LinearMath.angleWrap(relativeTurretAngle);
+
+        targetFieldAngle = LinearMath.angleWrap(targetFieldAngle);
 
         double virtualDist = Math.hypot(virtDx, virtDy);
 
         return new FiringSolution(
-                relativeTurretAngle,
+                targetFieldAngle,
                 rpmTable.get(virtualDist),
                 hoodTable.get(virtualDist),
                 virtualDist > 10 && virtualDist < 140
@@ -295,20 +357,36 @@ public class VirtualGoalShooter {
         // Decrement cooldown
         if (unwindCooldownCycles > 0) unwindCooldownCycles--;
 
-        // --- Adaptive PID Gains ---
+        // Deadband: stop motor when close enough (prevents jitter)
         double error = targetAngle - currentAngle;
+        if (Math.abs(error) < turretDeadband) {
+            turretMotor.setPower(0);
+            lastOutput = 0;
+            return;
+        }
+
+        // Adaptive PID Gains — matched from ShooterSubsystem
         if (Math.abs(error) > 20) {
-            turretPID.setPIDF(baseP * 3.0, baseI, baseD, baseF);
+            turretPID.setPIDF(0.008, baseI, baseD, baseF);  // 4x normal
         } else if (Math.abs(error) > 10) {
-            turretPID.setPIDF(baseP * 2.0, baseI, baseD, baseF);
+            turretPID.setPIDF(0.004, baseI, baseD, baseF);  // 2x normal
         } else {
             turretPID.setPIDF(baseP, baseI, baseD, baseF);
         }
 
         double power = turretPID.update(targetAngle, currentAngle);
-        power *= constants.VGS_TURRET_POWER_SCALE;
 
-        // --- Soft Limit: Fade power near mechanical stops ---
+        // Rate limiter: prevent sudden power jumps for smoother motion
+        double delta = power - lastOutput;
+        if (Math.abs(delta) > maxDeltaPower) {
+            power = lastOutput + Math.signum(delta) * maxDeltaPower;
+        }
+        lastOutput = power;
+
+        // Clamp to max power
+        power = Math.max(-maxPower, Math.min(maxPower, power));
+
+        // Soft Limit: Fade power near mechanical stops
         power = applySoftLimits(power, currentAngle);
 
         turretMotor.setPower(power);
@@ -369,18 +447,30 @@ public class VirtualGoalShooter {
     }
 
     private void executeUnwind() {
-        turretPID.setPIDF(baseP * 1.5, 0, 0.3, 0);
+        // Slightly higher P for unwind, no I/D — just get there smoothly
+        turretPID.setPIDF(baseP * 1.5, 0, 0, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
-        power *= constants.VGS_TURRET_POWER_SCALE;
+
+        // Rate limiter: same as tracking
+        double delta = power - lastOutput;
+        if (Math.abs(delta) > maxDeltaPower) {
+            power = lastOutput + Math.signum(delta) * maxDeltaPower;
+        }
+        lastOutput = power;
+
+        // Clamp to max power
+        power = Math.max(-maxPower, Math.min(maxPower, power));
+
         // Apply same soft limits during unwind
         power = applySoftLimits(power, getTurretDegrees());
 
-        turretMotor.setPower(power);
+//        turretMotor.setPower(power);
 
         if (Math.abs(unwindTargetAngle - getTurretDegrees()) < 5.0) {
             currentState = TurretState.TRACKING;
             unwindCooldownCycles = UNWIND_COOLDOWN; // Prevent immediate re-unwind
+            lastOutput = 0;
             turretPID.reset();
         }
     }
@@ -397,6 +487,12 @@ public class VirtualGoalShooter {
     }
 
     public double getTurretDegrees() {
+        double raw = turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
+        return turretFilter.filter(raw);
+    }
+
+    /** Raw unfiltered turret angle — useful for telemetry/debugging */
+    public double getTurretDegreesRaw() {
         return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
     }
 

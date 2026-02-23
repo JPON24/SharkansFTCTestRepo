@@ -109,8 +109,8 @@ public class ExampleTeleOp extends OpMode {
     // ── 9. EnhancedGamepad ──
     // Wraps the gamepad with press/release/toggle detection for every button
     // Use for: toggling states, detecting single presses, handling triggers
-    EnhancedGamepad gp1;
-    EnhancedGamepad gp2;
+    EnhancedGamepad gp1 = null;
+    EnhancedGamepad gp2 = null;
 
     // ── 10. InterpLUT ──
     // Interpolating lookup table — give it data points, it interpolates between them
@@ -157,7 +157,7 @@ public class ExampleTeleOp extends OpMode {
 
         hardwareUtil = new HardwareUtil(hardwareMap);
 
-        telemetry.addData("✅ HardwareUtil", "Baseline voltage: %.2fV", hardwareUtil.getBaseline());
+        telemetry.addData(" HardwareUtil", "Baseline voltage: %.2fV", hardwareUtil.getBaseline());
 
 
         // ────────────────────────────────────────────
@@ -380,9 +380,9 @@ public class ExampleTeleOp extends OpMode {
         }
 
         // Read joystick inputs
-        double leftX  = gp1.left_stick_x;   // Strafe
-        double leftY  = -gp1.left_stick_y;  // Forward (negative because Y is inverted)
-        double rightX = gp1.right_stick_x;  // Turn
+        double leftX  = gp1.left_stick_x();   // Strafe
+        double leftY  = -gp1.left_stick_y();  // Forward (negative because Y is inverted)
+        double rightX = gp1.right_stick_x();  // Turn
 
         if (usingSwerve) {
             // Swerve: pass x, y, turn, and heading for field-centric
@@ -409,7 +409,7 @@ public class ExampleTeleOp extends OpMode {
         }
 
         // Fine adjustment with right stick
-        armTargetPosition += gp2.right_stick_y * -5;  // 5 ticks per loop
+        armTargetPosition += gp2.right_stick_y() * -5;  // 5 ticks per loop
 
         // This runs the PID loop internally and moves the motor
         armMotor.setPosition(armTargetPosition);
@@ -419,9 +419,9 @@ public class ExampleTeleOp extends OpMode {
         // 6. INTAKE (Motor — raw power)
         // ────────────────────────────────────────────
 
-        if (gp2.right_bumper.isPressed) {
+        if (gp2.rb.wasJustPressed()) {
             intakeMotor.setPower(1.0);         // Intake
-        } else if (gp2.left_bumper.isPressed) {
+        } else if (gp2.lb.wasJustPressed()) {
             intakeMotor.setPower(-1.0);        // Outtake
         } else {
             intakeMotor.setPower(0);           // Stop
@@ -474,7 +474,7 @@ public class ExampleTeleOp extends OpMode {
 
         // map: Remap a value from one range to another
         // map(value, fromMin, fromMax, toMin, toMax)
-        double mappedTrigger = LinearMath.map(gp1.right_trigger, 0, 1, 0.3, 1.0);
+        double mappedTrigger = LinearMath.map(gp1.right_trigger(), 0, 1, 0.3, 1.0);
 
 
         // ────────────────────────────────────────────

@@ -39,15 +39,30 @@ public class AprilTagLimelight
         limeLight.start(); // Uses large  amount of battery btw... IF DELAY MOVE TO INIT METHOD.
     }
 
-    private LLResult GetResult()
-    {
-//        YawPitchRollAngles orientation = Imu.getRobotYawPitchRollAngles();
+    // Cached result to avoid multiple Limelight polls per loop
+    private LLResult cachedResult = null;
+
+    /**
+     * Call once per loop BEFORE using GetTX/GetDistance/GetLimelightId.
+     * Ensures all methods use the same frame data.
+     */
+    public void cacheResult() {
         limeLight.updateRobotOrientation(0);
-        LLResult llresult = limeLight.getLatestResult();
-        return llresult;
+        cachedResult = limeLight.getLatestResult();
     }
 
-    private final double manIdkConst = 9;
+    private LLResult GetResult()
+    {
+        // Use cached result if available, otherwise poll fresh
+        if (cachedResult != null) {
+            LLResult result = cachedResult;
+            return result;
+        }
+        limeLight.updateRobotOrientation(0);
+        return limeLight.getLatestResult();
+    }
+
+
 
     public double GetDistance()
     {
@@ -63,7 +78,7 @@ public class AprilTagLimelight
             double DIST_M = LIMELIGHTDISTCONST_M / Math.tan(theta);
             double DIST_I = DIST_M / 25.4;
 
-            return DIST_I + manIdkConst;
+            return DIST_I + constants.LIMELIGHT_OFFSET_CONST;
         }
         return -1;
     }
@@ -71,12 +86,14 @@ public class AprilTagLimelight
     public double GetTX()
     {
         LLResult llresult = GetResult();
+        if (llresult == null || !llresult.isValid()) return 0;
         return llresult.getTx();
     }
 
     public int GetLimelightId()
     {
         LLResult llresult = GetResult();
+        if (llresult == null || !llresult.isValid()) return 0;
         List<LLResultTypes.FiducialResult> fiducial = llresult.getFiducialResults();
 
         if (fiducial.isEmpty())

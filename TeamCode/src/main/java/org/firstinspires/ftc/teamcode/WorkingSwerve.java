@@ -29,19 +29,19 @@ public class WorkingSwerve {
     SparkFunOTOS otos;
 
     // PID Constants
-    double FLkP = 0.0023;
+    double FLkP = 0.0046; // 0.0023
     double FLkI = 0.0008;
     double FLkD = 0.00008;
 
-    double FRkP = 0.0024;
+    double FRkP = 0.0048; //0.0024
     double FRkI = 0.0005;
     double FRkD = 0.00008;
 
-    double BLkP = 0.0022;
+    double BLkP = 0.0044; // 0.0022
     double BLkI = 0.0007;
     double BLkD = 0.00008;
 
-    double BRkP = 0.0024;
+    double BRkP = 0.0048; // 0.0024
     double BRkI = 0.0005;
     double BRkD = 0.00008;
 
@@ -51,7 +51,7 @@ public class WorkingSwerve {
     double FL_OFFSET = -179.0;
     double FR_OFFSET = 170; //170
     double BL_OFFSET = -179.0;
-    double BR_OFFSET = 166; //166
+    double BR_OFFSET = -83; //166
 
     double speed = 0.75;
 
@@ -103,16 +103,16 @@ public class WorkingSwerve {
             return;
         }
 
-        double currentHeading = -otos.getPosition().h;
-
-        double botHeading = Math.toRadians(currentHeading);
-
-        // Rotation buh
-        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
-        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
-
-        x_cmd = rotX;
-        y_cmd = rotY;
+//        double currentHeading = -otos.getPosition().h;
+//
+//        double botHeading = Math.toRadians(currentHeading);
+//
+//        // Rotation buh
+//        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
+//        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
+//
+//        x_cmd = rotX;
+//        y_cmd = rotY;
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;

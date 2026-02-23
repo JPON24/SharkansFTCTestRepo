@@ -8,7 +8,7 @@ public class PIDController {
     private double kP, kI, kD, kF;
     private double lastError = 0;
     private double integralSum = 0;
-    private double maxIntegral = 180;
+    private double maxIntegral = 100;
 
     ElapsedTime timer = new ElapsedTime();
 
