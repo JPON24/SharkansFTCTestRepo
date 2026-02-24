@@ -274,7 +274,7 @@ public class CompOp extends OpMode {
         telemetry.addData("servo angle: ", swerve.getFLError());
         telemetry.addData("servo angle: ", swerve.getFRError());
         telemetry.addData("servoAngle Bl", swerve.getBLError());
-        telemetry.addData("servoAngle Br", swerve.getFLRaw());
+        telemetry.addData("servoAngle Br", swerve.getBRError());
 
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);

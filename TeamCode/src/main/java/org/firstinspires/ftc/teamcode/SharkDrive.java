@@ -95,7 +95,8 @@ public class SharkDrive {
             iX = integralX;
 
             double derivative = (error - previous[0]) / dxTime.seconds();
-            derivative = LowPass(xAverage, derivative);
+            xAverage = LowPass(xAverage, derivative);
+            derivative = xAverage;
 
 //            output = kpx * error + kix * integralX + kdx * derivative;
             output = SampleConstants.KPX * error + kix * integralX + SampleConstants.KDX * derivative;
@@ -116,7 +117,8 @@ public class SharkDrive {
             }
 
             double derivative = (error - previous[1]) / dyTime.seconds();
-            derivative = LowPass(yAverage, derivative);
+            yAverage = LowPass(yAverage, derivative);
+            derivative = yAverage;
             iY = integralY;
             pX = SampleConstants.KPY * error;
             dX = derivative;
@@ -131,7 +133,7 @@ public class SharkDrive {
             output = Range.clip(output, -1, 1); // old coef 2*
 
             if (Math.max(Math.abs(maximumOutputX), Math.abs(maximumOutputY)) == Math.abs(maximumOutputX) && error > Math.abs(0.5)) {
-                output *= DiagonalScalar(Math.abs(maximumOutputX), Math.abs(maximumOutputY), 0.3) * output / Math.abs(output);
+                output = DiagonalScalar(Math.abs(maximumOutputX), Math.abs(maximumOutputY), 0.3) * output / Math.abs(output);
             }
         } else if (index == 2){
             integralH += error * dhTime.seconds();
@@ -141,7 +143,8 @@ public class SharkDrive {
             }
 
             double derivative = (error - previous[2]) / dhTime.seconds();
-            derivative = LowPass(hAverage, derivative);
+            hAverage = LowPass(hAverage, derivative);
+            derivative = hAverage;
 
             iH = integralH;
 
@@ -156,8 +159,8 @@ public class SharkDrive {
             integralDih += error * dihTime.seconds();
 
             double dihrivative = (error - previousDihError) / dihTime.seconds();
-            //lowpass????? idk
-            dihrivative = LowPass(dihAverage, dihrivative);
+            dihAverage = LowPass(dihAverage, dihrivative);
+            dihrivative = dihAverage;
             dihTime.reset();
 
 
@@ -247,7 +250,7 @@ public class SharkDrive {
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;
 
-        errors[2] /= 10; // err crunch tunable
+        // Heading error scaling handled by PID gains directly
 
 //        if (new ArmLiftMotor().GetLocalNeutral() == 1250) {
 //            TuningUp();
@@ -374,13 +377,7 @@ public class SharkDrive {
 //    }
 
     private SparkFunOTOS.Pose2D GetOdometryLocalization() {
-        SparkFunOTOS.Pose2D output = new SparkFunOTOS.Pose2D();
-
-        output.x = odometry.getPosition().x;
-        output.y = odometry.getPosition().y;
-        output.h = odometry.getPosition().h;
-
-        return output;
+        return odometry.getPosition();
     }
 
     public SparkFunOTOS.Pose2D PrintOdometryLocalization()
@@ -585,12 +582,9 @@ public class SharkDrive {
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;
 
-        errors[2] /= 10; // err crunch tunable
-
         // Calculate outputs
         output[0] = pid(errors[0], 0, distanceLenience);
         output[1] = pid(errors[1], 1, distanceLenience);
-        output[2] = pid(errors[2], 2, angleLenience);
 
         // Magnitude control for driving
         double mag = pid(distance, 3, distanceLenience);
@@ -679,7 +673,7 @@ public class SharkDrive {
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;
 
-        errors[2] /= 10; // err crunch tunable
+        // Heading error scaling handled by PID gains directly
 
 //        if (new ArmLiftMotor().GetLocalNeutral() == 1250) {
 //            TuningUp();

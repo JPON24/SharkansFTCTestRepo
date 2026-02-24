@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -62,6 +63,7 @@ public class VirtualGoalShooter {
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
+//    private Servo rgbIndicator;
     private SparkFunOTOS otos;
 
     private Vector2D targetPos = BLUE_BASKET_CLOSE;
@@ -110,6 +112,9 @@ public class VirtualGoalShooter {
         leftHood = hardwareMap.get(Servo.class, "leftHood");
         leftHood.setDirection(Servo.Direction.REVERSE);
         rightHood = hardwareMap.get(Servo.class, "rightHood");
+
+//        // Gobilda RGB Indicator (PWM — controlled as a servo)
+//        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
         rpmTable.add(65, 3300);
@@ -164,8 +169,6 @@ public class VirtualGoalShooter {
         }
     }
 
-    public double outputAngle = 0;
-
     /**
      * Call this in your loop - it automatically tracks the turret and hood
      * but does NOT spin the flywheel unless spinUpShooter() has been called
@@ -174,7 +177,9 @@ public class VirtualGoalShooter {
         // Always update shooter PIDF regardless of flywheel state
         updateShooterPIDF();
 
-//        turretMotor.setPower(0);
+        // Update LED: green = ready to shoot, red = not ready
+//        updateLED();
+
         // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
             executeUnwind();
@@ -192,20 +197,19 @@ public class VirtualGoalShooter {
         FiringSolution solution = solveFiringSolution();
         lastSolution = solution;
 
-        outputAngle = solution.turretAngle;
-//        if (solution.validShot) {
-//        setHoodPos(solution.hoodAngle);
-        moveTurretToAngle(solution.turretAngle);
+        if (solution.validShot) {
+            setHoodPos(solution.hoodAngle);
+            moveTurretToAngle(solution.turretAngle);
 
-        if (flywheelEnabled) {
-            setShooterRPM(6000);
+            if (flywheelEnabled) {
+                setShooterRPM(solution.rpm);
+            } else {
+                setShooterRPM(0);
+            }
         } else {
+            turretMotor.setPower(0);
             setShooterRPM(0);
         }
-//        } else {
-//            turretMotor.setPower(0);
-//            setShooterRPM(0);
-//        }
     }
 
     /**
@@ -249,6 +253,24 @@ public class VirtualGoalShooter {
         return isReadyToShoot(100.0);
     }
 
+    // Gobilda RGB Indicator color positions (PWM servo values)
+    private static final double LED_GREEN = 0.39;
+    private static final double LED_RED = 0.0;
+    private static final double LED_OFF = 0.5;  // mid-range = off/white
+
+    /**
+     * Updates the Gobilda RGB Indicator
+     * Green = shooter at RPM and ready to fire
+     * Red = not ready
+     */
+//    private void updateLED() {
+//        if (flywheelEnabled) {
+//            rgbIndicator.setPosition(isReadyToShoot() ? LED_GREEN : LED_RED);
+//        } else {
+//            rgbIndicator.setPosition(LED_OFF);
+//        }
+//    }
+
     /**
      * Check if turret is aimed at target
      * @param angleTolerance How close to target angle in degrees (default: 2.0)
@@ -282,15 +304,10 @@ public class VirtualGoalShooter {
     private FiringSolution solveFiringSolution() {
         SparkFunOTOS.Pose2D pos = otos.getPosition();
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
+        double chassisHeading = pos.h;
 
-        // makes up for sensor innacuracy
-        pos.x *= 1.6;
-        pos.y *= 1.6;
-
-        double chassisHeading = -pos.h;
-
-        double dx = 0 - (pos.x);
-        double dy = 100 - (pos.y);
+        double dx = targetPos.x - pos.x;
+        double dy = targetPos.y - pos.y;
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -301,26 +318,27 @@ public class VirtualGoalShooter {
 
         double timeOfFlight = Ballistics.calculateTimeOfFlight(rawDist, launchVelocity, launchAngle);
 
+
         double vFieldX = (vel.x * Math.cos(chassisHeading)) - (vel.y * Math.sin(chassisHeading));
         double vFieldY = (vel.x * Math.sin(chassisHeading)) + (vel.y * Math.cos(chassisHeading));
 
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
 
-        double virtDx = virtX - (pos.x);
-        double virtDy = virtY - (pos.y);
+        double virtDx = virtX - pos.x;
+        double virtDy = virtY - pos.y;
 
-        double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
+        double targetFieldAngle = Math.toDegrees(Math.atan2(virtDy, virtDx));
         double relativeTurretAngle = targetFieldAngle - Math.toDegrees(chassisHeading);
 
 
 
-        targetFieldAngle = LinearMath.angleWrap(targetFieldAngle);
+        relativeTurretAngle = LinearMath.angleWrap(relativeTurretAngle);
 
         double virtualDist = Math.hypot(virtDx, virtDy);
 
         return new FiringSolution(
-                targetFieldAngle,
+                relativeTurretAngle,
                 rpmTable.get(virtualDist),
                 hoodTable.get(virtualDist),
                 virtualDist > 10 && virtualDist < 140
@@ -465,7 +483,7 @@ public class VirtualGoalShooter {
         // Apply same soft limits during unwind
         power = applySoftLimits(power, getTurretDegrees());
 
-//        turretMotor.setPower(power);
+        turretMotor.setPower(power);
 
         if (Math.abs(unwindTargetAngle - getTurretDegrees()) < 5.0) {
             currentState = TurretState.TRACKING;
@@ -528,6 +546,10 @@ public class VirtualGoalShooter {
     public double getTurretError() {
         if (lastSolution == null) return 0;
         return lastSolution.turretAngle - getTurretDegrees();
+    }
+
+    public double getHoodAngle() {
+        return lastSolution != null ? lastSolution.hoodAngle : 0;
     }
 
     /**

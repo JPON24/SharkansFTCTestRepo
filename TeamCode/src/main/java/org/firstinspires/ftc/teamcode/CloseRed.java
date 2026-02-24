@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 @Autonomous
 public class CloseRed extends LinearOpMode
 {
-    SharkDrive shark = new SharkDrive();
     MoveCommand moveCmd = new MoveCommand();
 
     private final double autonSpeed = 0.7;
@@ -14,8 +13,7 @@ public class CloseRed extends LinearOpMode
     @Override
     public void runOpMode()
     {
-        shark.init(hardwareMap, true);
-        moveCmd.init(hardwareMap, true);
+        moveCmd.init(hardwareMap, true, this);
 
         waitForStart();
         while (opModeIsActive())

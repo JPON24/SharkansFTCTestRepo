@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
@@ -21,11 +22,13 @@ public class MoveCommand {
     CommandSystem command = new CommandSystem();
     SharkDrive shark = new SharkDrive();
     ElapsedTime timeout = new ElapsedTime();
+    private LinearOpMode opMode;
 
     ShooterSubsystem shooter = new ShooterSubsystem();
     floatingIntake intake = new floatingIntake();
 
-    public void init(HardwareMap hwMap, boolean isAuton) {
+    public void init(HardwareMap hwMap, boolean isAuton, LinearOpMode opMode) {
+        this.opMode = opMode;
         dt.init(hwMap);
         shooter.initSystem(hwMap, shark.odometry, 0);
         intake.init(hwMap);
@@ -58,7 +61,7 @@ public class MoveCommand {
 
         timeout.reset();
 
-        while (!command.GetBoolsCompleted() && timeout.seconds() < 5) {
+        while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && opMode.opModeIsActive()) {
             shooter.BangBang(); // continue to run bang bang updates every iter
             // for every key (m, e, a, c, w)
             for (Character key : localCopy.keySet()) {
@@ -70,7 +73,7 @@ public class MoveCommand {
                             // dt.FieldOrientedTranslate(0,0,0,0);
                             break;
                         } else if (shark.GetBoolsCompleted()) { // for less precise movements
-                            shark.DihdometryDihtrol2(speed, tgtX, tgtY, rot, d, axis);
+                            shark.DihdometryDihtrol2(0, tgtX, tgtY, rot, d, axis);
                             command.SetElementTrue('m');
                             break;
                         } else {

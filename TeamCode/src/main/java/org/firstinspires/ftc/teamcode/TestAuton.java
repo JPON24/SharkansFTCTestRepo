@@ -7,32 +7,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 @Autonomous
 public class TestAuton extends LinearOpMode
 {
-    SharkDrive shark = new SharkDrive();
     MoveCommand moveCmd = new MoveCommand();
-
-
-    ShooterSubsystem shooter = new ShooterSubsystem();
-    WorkingSwerve swerve = new WorkingSwerve();
-    floatingIntake intake = new floatingIntake();
-    SparkFunOTOS otos;
 
     private final double autonSpeed = 0.7;
 
     @Override
     public void runOpMode()
     {
-        shark.init(hardwareMap, true);
-        moveCmd.init(hardwareMap, true);
-
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-        otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
-        otos.calibrateImu();
-
-        shooter.initSystem(hardwareMap, otos, 0);
-        swerve.init(hardwareMap);
-        intake.init(hardwareMap);
-
-        swerve.swerveDrive(0,0,0);
+        moveCmd.init(hardwareMap, true, this);
 
         waitForStart();
         while (opModeIsActive())

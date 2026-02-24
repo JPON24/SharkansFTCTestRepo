@@ -103,16 +103,17 @@ public class WorkingSwerve {
             return;
         }
 
-//        double currentHeading = -otos.getPosition().h;
-//
-//        double botHeading = Math.toRadians(currentHeading);
-//
-//        // Rotation buh
-//        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
-//        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
-//
-//        x_cmd = rotX;
-//        y_cmd = rotY;
+
+        double currentHeading = otos.getPosition().h;
+
+        double botHeading = Math.toRadians(currentHeading);
+
+        // Rotation buh
+        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
+        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
+
+        x_cmd = rotX;
+        y_cmd = rotY;
 
         double y_fr = y_cmd + turn_cmd * L;
         double x_fr = x_cmd - turn_cmd * W;
