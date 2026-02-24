@@ -6,16 +6,35 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 @Autonomous
-public class CloseBlue extends LinearOpMode
+public class CloseBlue extends LinearOpMode//lemme in pls
 {
-    MoveCommand moveCmd = new MoveCommand();
+    SharkDrive shark = new SharkDrive();
+    MoveCommand moveCmd = new MoveCommand(); //lemme in 2
+
+
+    ShooterSubsystem shooter = new ShooterSubsystem();
+    WorkingSwerve swerve = new WorkingSwerve();
+    floatingIntake intake = new floatingIntake();
+    SparkFunOTOS otos;
 
     private final double autonSpeed = 0.7;
 
     @Override
     public void runOpMode()
     {
-        moveCmd.init(hardwareMap, true, this);
+        shark.init(hardwareMap, true);
+        moveCmd.init(hardwareMap, true);
+
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
+        otos.setPosition(new SparkFunOTOS.Pose2D(10, 10, -45)); //set later
+        otos.calibrateImu();
+
+        shooter.initSystem(hardwareMap, otos, 0);
+        swerve.init(hardwareMap);
+        intake.init(hardwareMap);
+
+        swerve.swerveDrive(0,0,0);
 
         waitForStart();
         while (opModeIsActive())
@@ -23,9 +42,6 @@ public class CloseBlue extends LinearOpMode
             Shoot(0);
 
             SpikeMarkTwo(0);
-            Shoot(0);
-
-            GateIntake(0);
             Shoot(0);
 
             GateIntake(0);
@@ -133,7 +149,18 @@ public class CloseBlue extends LinearOpMode
 //            sleep(1000);
 //            swerve.robotCentric(0,0,0);
 
+            telemetry.addData("X", shark.GetX());
+            telemetry.addData("Y", shark.GetY());
+            telemetry.addData("Heading", shark.GetH());
+            telemetry.addData("X Error",shark.GetErrorX());
+            telemetry.addData("Y Error", shark.GetErrorY());
+            telemetry.addData("Heading Error", shark.GetErrorH());
+
+
             break;
+
+
+
         }
 
 
