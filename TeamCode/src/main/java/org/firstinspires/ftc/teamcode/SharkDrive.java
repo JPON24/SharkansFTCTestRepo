@@ -476,17 +476,17 @@ public class SharkDrive {
     {
         return errors[0];
     }
-
+    public double GetX() {return pos.x;}
     public double GetErrorY()
     {
         return errors[1];
     }
-
+    public double GetY() {return pos.y;}
     public double GetErrorH()
     {
         return errors[2];
     }
-
+    public double GetH() {return pos.h;}
     public double GetOutputX() {return output[0];}
     public double GetOutputY() {return output[1];}
 
@@ -644,7 +644,7 @@ public class SharkDrive {
 
         dt.swerveDrive(yOut, xOut, -speed * output[2]);
     }
-    public void thing(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell
+    public void thingRobotCentric(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell, ROBOT CENTRIC
         if (!odometry.isConnected()) {
             return;
         }
@@ -694,8 +694,8 @@ public class SharkDrive {
         output[1] = pid(errors[1], 1, distanceLenience);
         output[2] = pid(errors[2], 2, angleLenience);
 
-        completedBools[0] = Math.abs(errors[0]) < distanceLenience;
-        completedBools[1] = Math.abs(errors[1]) < distanceLenience;
+        completedBools[0] = Math.abs(Math.hypot(errors[0], errors[1])) < distanceLenience;
+        completedBools[1] = Math.abs(Math.hypot(errors[1], errors[0])) < distanceLenience;
 
         completedStopBools[0] = Math.abs(errors[0]) < 0.6;
         completedStopBools[1] = Math.abs(errors[1]) < 0.6;
@@ -722,8 +722,8 @@ public class SharkDrive {
             output[1] = 0;
         }
 
-//        dt.FieldOrientedTranslate(speed * output[0], speed * output[1], speed * output[2], GetOrientation());
-        dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
+        dt.swerveDriveRobotCentric(speed * output[0], speed * output[1], speed * output[2]);
+        //dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
 
     }
 }
@@ -736,5 +736,6 @@ Congratulations!! You found this useless comment
 IF YOU ARE PICKING UP THIS CODE BASE I AM GENUINELY SORRY
 PS. I strongly recommend coffee when updating this code
  */
+
 
 

@@ -148,7 +148,18 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 //            sleep(1000);
 //            swerve.robotCentric(0,0,0);
 
+            telemetry.addData("X", shark.GetX());
+            telemetry.addData("Y", shark.GetY());
+            telemetry.addData("Heading", shark.GetH());
+            telemetry.addData("X Error",shark.GetErrorX());
+            telemetry.addData("Y Error", shark.GetErrorY());
+            telemetry.addData("Heading Error", shark.GetErrorH());
+
+
             break;
+
+
+
         }
 
 
