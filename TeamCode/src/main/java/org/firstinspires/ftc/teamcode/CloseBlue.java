@@ -27,6 +27,7 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
+        otos.setPosition(new SparkFunOTOS.Pose2D(10, 10, -45)); //set later
         otos.calibrateImu();
 
         shooter.initSystem(hardwareMap, otos, 0);
