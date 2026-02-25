@@ -259,7 +259,7 @@ public class CoaxialSwerve {
     }
 
     /**
-     * Regular poo poo normalized angle
+     * Normalize angle so it's between -180 and 180 degrees
      */
     private double normalizeAngle(double angle) {
         angle = (angle + 180.0) % 360.0;
@@ -268,7 +268,7 @@ public class CoaxialSwerve {
     }
 
     /**
-     * Fack You..
+     * Optimize so Servos never turn more than 90 degrees
      */
     private double[] optimize(double target, double speed, double current) {
         double delta = normalizeAngle(target - current);

@@ -27,6 +27,11 @@ public class MoveCommand {
     ShooterSubsystem shooter = new ShooterSubsystem();
     floatingIntake intake = new floatingIntake();
 
+    // Backward-compatible init (no opMode reference)
+    public void init(HardwareMap hwMap, boolean isAuton) {
+        init(hwMap, isAuton, null);
+    }
+
     public void init(HardwareMap hwMap, boolean isAuton, LinearOpMode opMode) {
         this.opMode = opMode;
         dt.init(hwMap);
@@ -61,7 +66,7 @@ public class MoveCommand {
 
         timeout.reset();
 
-        while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && opMode.opModeIsActive()) {
+        while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && (opMode == null || opMode.opModeIsActive())) {
             shooter.BangBang(); // continue to run bang bang updates every iter
             // for every key (m, e, a, c, w)
             for (Character key : localCopy.keySet()) {

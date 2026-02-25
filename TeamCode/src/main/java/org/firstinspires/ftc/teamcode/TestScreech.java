@@ -7,11 +7,14 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-public class WorkingSwerve {
+import org.firstinspires.ftc.teamcode.global.drivetrain.CoaxialSwerve;
+import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
+
+@TeleOp
+public class TestScreech extends OpMode {
 
     // Robot dimensions lowkey in a ratio...
     final double L = 0.98;
@@ -28,21 +31,24 @@ public class WorkingSwerve {
 
     SparkFunOTOS otos;
 
+    EnhancedGamepad g1 = null;
+    EnhancedGamepad g2 = null;
+
     // PID Constants
     double FLkP = 0.0046; // 0.0023
     double FLkI = 0.0008;
     double FLkD = 0.00008;
 
     double FRkP = 0.0048; //0.0024
-    double FRkI = 0.0008;
+    double FRkI = 0.0005;
     double FRkD = 0.00008;
 
     double BLkP = 0.0044; // 0.0022
-    double BLkI = 0.0008;
+    double BLkI = 0.0007;
     double BLkD = 0.00008;
 
     double BRkP = 0.0048; // 0.0024
-    double BRkI = 0.0008;
+    double BRkI = 0.0005;
     double BRkD = 0.00008;
 
     double ANGLE_HOLD_SPEED = 0.05;
@@ -53,14 +59,23 @@ public class WorkingSwerve {
     double BL_OFFSET = -179.0;
     double BR_OFFSET = -83; //166
 
-    double speed = 0.75;
+    double FLspeed = 0.75;
+    double FRspeed = 0.75;
+    double BLspeed = 0.75;
+    double BRspeed = 0.75;
+
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 
     double flSpeed, frSpeed, blSpeed, brSpeed;
     double angleFL, angleFR, angleRL, angleRR;
 
-    public void init(HardwareMap hardwareMap) {
+    @Override
+    public void init() {
+
+        g1 = new EnhancedGamepad(gamepad1);
+        g2 = new EnhancedGamepad(gamepad2);
+
         frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
         frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
         backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
@@ -94,6 +109,53 @@ public class WorkingSwerve {
         lastTargetFR = getAngle(frontRightAnalog, FR_OFFSET);
         lastTargetRL = getAngle(backLeftAnalog, BL_OFFSET);
         lastTargetRR = getAngle(backRightAnalog, BR_OFFSET);
+
+
+
+    }
+
+
+    @Override
+    public void loop() {
+
+        g1.update();
+        g2.update();
+
+
+        if (g1.dpad_up.getToggle()) {
+            FLspeed = 0.75;
+            FRspeed = 0.0;
+            BLspeed = 0.0;
+            BRspeed = 0.0;
+        }
+        else if (g1.dpad_right.getToggle()) {
+            FLspeed = 0.0;
+            FRspeed = 0.75;
+            BLspeed = 0.0;
+            BRspeed = 0.0;
+        }
+        else if (g1.dpad_down.getToggle()) {
+            FLspeed = 0.0;
+            FRspeed = 0.0;
+            BLspeed = 0.75;
+            BRspeed = 0.0;
+        }
+        else if (g1.dpad_left.getToggle()) {
+            FLspeed = 0.0;
+            FRspeed = 0.0;
+            BLspeed = 0.0;
+            BRspeed = 0.75;
+        }
+        else {
+            FLspeed = 0.0;
+            FRspeed = 0.0;
+            BLspeed = 0.0;
+            BRspeed = 0.0;
+        }
+
+
+
+        swerveDrive(-g1.left_stick_y(), g1.left_stick_x(), g1.right_stick_x());
     }
 
     public void swerveDrive(double y_cmd, double x_cmd, double turn_cmd) {
@@ -165,10 +227,10 @@ public class WorkingSwerve {
         double[] optRR = optimize(angleRR, speed_rr, currentRR);
 
         // Set motor speeds... LOWKIRKENUINLY... If it's backwards... JUST REVERSE THE OUTPUT!!
-        flSpeed = optFL[1] * speed;
-        frSpeed = optFR[1] * speed;
-        blSpeed = optRL[1] * speed;
-        brSpeed = optRR[1] * speed;
+        flSpeed = optFL[1] * FLspeed;
+        frSpeed = optFR[1] * FRspeed;
+        blSpeed = optRL[1] * BLspeed;
+        brSpeed = optRR[1] * BRspeed;
 
         frontLeftMotor.setPower(flSpeed);
         frontRightMotor.setPower(frSpeed);
