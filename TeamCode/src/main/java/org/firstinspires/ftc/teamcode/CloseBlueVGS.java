@@ -10,6 +10,8 @@ public class CloseBlueVGS extends LinearOpMode
 {
     MoveCommandVGS moveCmd = new MoveCommandVGS();
 
+    SharkDrive shark = new SharkDrive();
+
     private final double autonSpeed = 0.7;
 
     @Override
@@ -140,11 +142,17 @@ public class CloseBlueVGS extends LinearOpMode
         }
 
 
-//        telemetry.addData("x position: ", otos.getPosition().x);
-//        telemetry.addData("y position: ", otos.getPosition().y);
-//
-//        telemetry.addData("Dih error", shark.previousDihError);
-//        telemetry.update();
+        telemetry.addData("X", shark.GetX());
+        telemetry.addData("Y", shark.GetY());
+        telemetry.addData("Heading", shark.GetH());
+        telemetry.addData("X Error",shark.GetErrorX());
+        telemetry.addData("Y Error", shark.GetErrorY());
+        telemetry.addData("Heading Error", shark.GetErrorH());
+        telemetry.addData("Derivative Heading", shark.getDerivativeH1());
+        telemetry.addData("Derivative Magnitude", shark.getDerivativeM1());
+        telemetry.update();
+
+
     }
 
     /*

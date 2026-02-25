@@ -29,6 +29,8 @@ public class SharkDrive {
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;
+    double deritivetelemythingH1 = 0;
+    double derivativetelemythingM1 = 0;
 
     boolean[] completedBools = new boolean[3];
     boolean[] completedStopBools = new boolean[3];
@@ -95,6 +97,7 @@ public class SharkDrive {
             iX = integralX;
 
             double derivative = (error - previous[0]) / dxTime.seconds();
+
             xAverage = LowPass(xAverage, derivative);
             derivative = xAverage;
 
@@ -143,6 +146,7 @@ public class SharkDrive {
             }
 
             double derivative = (error - previous[2]) / dhTime.seconds();
+            deritivetelemythingH1 = derivative;
             hAverage = LowPass(hAverage, derivative);
             derivative = hAverage;
 
@@ -159,6 +163,7 @@ public class SharkDrive {
             integralDih += error * dihTime.seconds();
 
             double dihrivative = (error - previousDihError) / dihTime.seconds();
+            derivativetelemythingM1 = dihrivative;
             dihAverage = LowPass(dihAverage, dihrivative);
             dihrivative = dihAverage;
             dihTime.reset();
@@ -484,6 +489,9 @@ public class SharkDrive {
         return errors[2];
     }
     public double GetH() {return pos.h;}
+    public double getDerivativeH1() {return deritivetelemythingH1;}
+    public double getDerivativeM1() {return derivativetelemythingM1;}
+
     public double GetOutputX() {return output[0];}
     public double GetOutputY() {return output[1];}
 
@@ -638,88 +646,88 @@ public class SharkDrive {
 
         dt.swerveDrive(yOut, xOut, -speed * output[2]);
     }
-    public void thingRobotCentric(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell, ROBOT CENTRIC
-        if (!odometry.isConnected()) {
-            return;
-        }
-//        distanceLenience; //best value 1.75
-
-        double now = runtime.milliseconds();
-        deltaTime = now - last_time;
-        last_time = now;
-
-//        pos = limelight.GetLimelightData(false, GetOdometryLocalization().h);
-//        pos = GetLocalization();
-
-//        pos = PoseEstimator();
-
-        pos = GetOdometryLocalization();
-
-        if (axis == 3 || axis == 4) {
-            angleLenience = 15;
-        } else {
-            angleLenience = 60;
-        }
-
-        errors[0] = tgtX - pos.x;
-        errors[1] = tgtY - pos.y;
-        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
-        double errorMag = Math.hypot(errors[0], errors[1]);
-        double errorAngle = Math.toDegrees(Math.atan2(errors[1], errors[0]));
-        double angleThingy = 90 - pos.h; //does pos h do degreees????
-        double idkAngle = 90 - (errorAngle - angleThingy); //this depends again on the polarity of the heading and the odometry cordinate system to switch it around if its that way idk
-        errors[0] = errorMag * Math.cos(Math.toRadians(idkAngle));
-        errors[1] = errorMag * Math.sin(Math.toRadians(idkAngle));
-
-        completedBools[2] = Math.abs(errors[2]) < angleLenience;
-
-        // Heading error scaling handled by PID gains directly
-
-//        if (new ArmLiftMotor().GetLocalNeutral() == 1250) {
-//            TuningUp();
-//        } else {
-//            TuningDown();
+//    public void thingRobotCentric(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell, ROBOT CENTRIC
+//        if (!odometry.isConnected()) {
+//            return;
 //        }
-
-        // normalized against one another
-        // should create weird diagonal movement
-        // might have to add increased magnitude to error, currently between -1 and 1
-        output[0] = pid(errors[0], 0, distanceLenience);
-        output[1] = pid(errors[1], 1, distanceLenience);
-        output[2] = pid(errors[2], 2, angleLenience);
-
-        completedBools[0] = Math.abs(Math.hypot(errors[0], errors[1])) < distanceLenience;
-        completedBools[1] = Math.abs(Math.hypot(errors[1], errors[0])) < distanceLenience;
-
-        completedStopBools[0] = Math.abs(errors[0]) < 0.6;
-        completedStopBools[1] = Math.abs(errors[1]) < 0.6;
-
-        if (axis == 0) {
-//            output[1] = output[1] / Math.abs(output[1]) * 0.2;
-            output[1] *= 0;
-//            output[2] *= 0;
-            completedBools[1] = true;
-        } else if (axis == 1) {
-            output[0] *= 0;
-            completedBools[0] = true;
-        }
-        if (tgtRot == 1){
-            completedBools[2] = true;
-            output[2] = 0;
-        }
-
-        if (axis == 4)
-        {
-            completedBools[0] = true;
-            completedBools[1] = true;
-            output[0] = 0;
-            output[1] = 0;
-        }
-
-        dt.swerveDriveRobotCentric(speed * output[0], speed * output[1], speed * output[2]);
-        //dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
-
-    }
+////        distanceLenience; //best value 1.75
+//
+//        double now = runtime.milliseconds();
+//        deltaTime = now - last_time;
+//        last_time = now;
+//
+////        pos = limelight.GetLimelightData(false, GetOdometryLocalization().h);
+////        pos = GetLocalization();
+//
+////        pos = PoseEstimator();
+//
+//        pos = GetOdometryLocalization();
+//
+//        if (axis == 3 || axis == 4) {
+//            angleLenience = 15;
+//        } else {
+//            angleLenience = 60;
+//        }
+//
+//        errors[0] = tgtX - pos.x;
+//        errors[1] = tgtY - pos.y;
+//        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
+//        double errorMag = Math.hypot(errors[0], errors[1]);
+//        double errorAngle = Math.toDegrees(Math.atan2(errors[1], errors[0]));
+//        double angleThingy = 90 - pos.h; //does pos h do degreees????
+//        double idkAngle = 90 - (errorAngle - angleThingy); //this depends again on the polarity of the heading and the odometry cordinate system to switch it around if its that way idk
+//        errors[0] = errorMag * Math.cos(Math.toRadians(idkAngle));
+//        errors[1] = errorMag * Math.sin(Math.toRadians(idkAngle));
+//
+//        completedBools[2] = Math.abs(errors[2]) < angleLenience;
+//
+//        // Heading error scaling handled by PID gains directly
+//
+////        if (new ArmLiftMotor().GetLocalNeutral() == 1250) {
+////            TuningUp();
+////        } else {
+////            TuningDown();
+////        }
+//
+//        // normalized against one another
+//        // should create weird diagonal movement
+//        // might have to add increased magnitude to error, currently between -1 and 1
+//        output[0] = pid(errors[0], 0, distanceLenience);
+//        output[1] = pid(errors[1], 1, distanceLenience);
+//        output[2] = pid(errors[2], 2, angleLenience);
+//
+//        completedBools[0] = Math.abs(Math.hypot(errors[0], errors[1])) < distanceLenience;
+//        completedBools[1] = Math.abs(Math.hypot(errors[1], errors[0])) < distanceLenience;
+//
+//        completedStopBools[0] = Math.abs(errors[0]) < 0.6;
+//        completedStopBools[1] = Math.abs(errors[1]) < 0.6;
+//
+//        if (axis == 0) {
+////            output[1] = output[1] / Math.abs(output[1]) * 0.2;
+//            output[1] *= 0;
+////            output[2] *= 0;
+//            completedBools[1] = true;
+//        } else if (axis == 1) {
+//            output[0] *= 0;
+//            completedBools[0] = true;
+//        }
+//        if (tgtRot == 1){
+//            completedBools[2] = true;
+//            output[2] = 0;
+//        }
+//
+//        if (axis == 4)
+//        {
+//            completedBools[0] = true;
+//            completedBools[1] = true;
+//            output[0] = 0;
+//            output[1] = 0;
+//        }
+//
+//        dt.swerveDriveRobotCentric(speed * output[0], speed * output[1], speed * output[2]);
+//        //dt.swerveDrive(speed * output[1], speed * output[0], -speed * output[2]);
+//
+//    }
 }
 
 /*

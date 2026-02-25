@@ -156,6 +156,8 @@ public class CloseBlue extends LinearOpMode//lemme in pls
             telemetry.addData("Y Error", shark.GetErrorY());
             telemetry.addData("Heading Error", shark.GetErrorH());
 
+            telemetry.update();
+
 
             break;
 

@@ -34,7 +34,7 @@ public class VirtualGoalShooter {
     public static final Vector2D RED_BASKET_CLOSE = new Vector2D(constants.VIRT_RED_BASKET_X, constants.VIRT_RED_BASKET_Y);
     public static final Vector2D RED_BASKET_FAR = new Vector2D(constants.VIRT_RED_BASKET_FAR_X, constants.VIRT_RED_BASKET_FAR_Y);
     public static final Vector2D BLUE_BASKET_FAR = new Vector2D(constants.VIRT_BLUE_BASKET_FAR_X, constants.VIRT_BLUE_BASKET_FAR_Y);
-    public static final Vector2D NO_POSITION = new Vector2D(0, 10);
+    public static final Vector2D NO_POSITION = new Vector2D(0, 15);
 
     private final double WHEEL_RADIUS_INCHES = constants.VGS_WHEEL_RADIUS;
     private final double GEAR_RATIO = constants.VGS_GEAR_RATIO;
@@ -46,8 +46,8 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.002;
-    private double baseI = 0.0001;
+    private double baseP = 0.1;
+    private double baseI = 0.0;
     private double baseD = 0.0;
     private double baseF = 0.0;
 
@@ -63,10 +63,10 @@ public class VirtualGoalShooter {
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
-//    private Servo rgbIndicator;
+    private Servo rgbIndicator;
     private SparkFunOTOS otos;
 
-    private Vector2D targetPos = BLUE_BASKET_CLOSE;
+    private Vector2D targetPos = BLUE_BASKET_FAR;
     private InterpLUT rpmTable = new InterpLUT("RPM");
     private InterpLUT hoodTable = new InterpLUT("Hood");
 
@@ -113,8 +113,8 @@ public class VirtualGoalShooter {
         leftHood.setDirection(Servo.Direction.REVERSE);
         rightHood = hardwareMap.get(Servo.class, "rightHood");
 
-//        // Gobilda RGB Indicator (PWM — controlled as a servo)
-//        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
+        // Gobilda RGB Indicator (PWM — controlled as a servo)
+        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
         rpmTable.add(65, 3300);
@@ -174,11 +174,12 @@ public class VirtualGoalShooter {
      * but does NOT spin the flywheel unless spinUpShooter() has been called
      */
     public void update() {
-        // Always update shooter PIDF regardless of flywheel state
+        // Sync targetPos with the current alliance selection
+        updateShooter();
+
         updateShooterPIDF();
 
-        // Update LED: green = ready to shoot, red = not ready
-//        updateLED();
+        updateLED();
 
         // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
@@ -263,13 +264,13 @@ public class VirtualGoalShooter {
      * Green = shooter at RPM and ready to fire
      * Red = not ready
      */
-//    private void updateLED() {
-//        if (flywheelEnabled) {
-//            rgbIndicator.setPosition(isReadyToShoot() ? LED_GREEN : LED_RED);
-//        } else {
-//            rgbIndicator.setPosition(LED_OFF);
-//        }
-//    }
+    private void updateLED() {
+        if (flywheelEnabled) {
+            rgbIndicator.setPosition(isReadyToShoot() ? LED_GREEN : LED_RED);
+        } else {
+            rgbIndicator.setPosition(LED_OFF);
+        }
+    }
 
     /**
      * Check if turret is aimed at target
@@ -306,8 +307,8 @@ public class VirtualGoalShooter {
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
-        double dx = targetPos.x - pos.x;
-        double dy = targetPos.y - pos.y;
+        double dx = 0 - pos.x; // -30
+        double dy = 100 - pos.y; // 100
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -328,8 +329,8 @@ public class VirtualGoalShooter {
         double virtDx = virtX - pos.x;
         double virtDy = virtY - pos.y;
 
-        double targetFieldAngle = Math.toDegrees(Math.atan2(virtDy, virtDx));
-        double relativeTurretAngle = targetFieldAngle - Math.toDegrees(chassisHeading);
+        double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
+        double relativeTurretAngle = targetFieldAngle - chassisHeading;
 
 
 
@@ -385,9 +386,9 @@ public class VirtualGoalShooter {
 
         // Adaptive PID Gains — matched from ShooterSubsystem
         if (Math.abs(error) > 20) {
-            turretPID.setPIDF(0.008, baseI, baseD, baseF);  // 4x normal
+            turretPID.setPIDF(baseP * 1.1, baseI, baseD, baseF);  // 4x normal
         } else if (Math.abs(error) > 10) {
-            turretPID.setPIDF(0.004, baseI, baseD, baseF);  // 2x normal
+            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 2x normal
         } else {
             turretPID.setPIDF(baseP, baseI, baseD, baseF);
         }
@@ -460,7 +461,7 @@ public class VirtualGoalShooter {
 
     private void initiateUnwind(double target) {
         currentState = TurretState.UNWINDING;
-        unwindTargetAngle = LinearMath.clamp(target, TURRET_MIN_DEG + 10, TURRET_MAX_DEG - 10);
+        unwindTargetAngle = LinearMath.clamp(target, TURRET_MIN_DEG + 7.5, TURRET_MAX_DEG - 7.5);
         turretPID.reset();
     }
 
