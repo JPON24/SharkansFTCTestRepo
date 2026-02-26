@@ -53,7 +53,7 @@ public class WorkingSwerve {
     double BL_OFFSET = -179.0;
     double BR_OFFSET = -83; //166
 
-    double speed = 0.75;
+    double speed = 0.5;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 

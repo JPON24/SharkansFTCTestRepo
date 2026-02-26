@@ -231,9 +231,6 @@ public class TurtleOp extends OpMode{
         telemetry.addData("BL Error", "%.2f°", swerveDrive.getBLError());
         telemetry.addData("BR Error", "%.2f°", swerveDrive.getBRError());
 
-        telemetry.addData("Shooter Tgt Angle", shooter.getTargetTurretAngle());
-        telemetry.addData("Shooter Angle", shooter.getTurretDegrees());
-
 //")
         //        telemetry.addData("heading: ", swerve.heading());
         telemetry.update();

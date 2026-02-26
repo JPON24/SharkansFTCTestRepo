@@ -17,7 +17,7 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     floatingIntake intake = new floatingIntake();
     SparkFunOTOS otos;
 
-    private final double autonSpeed = 0.7;
+    private final double autonSpeed = 1;
 
     @Override
     public void runOpMode()
@@ -27,8 +27,6 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
-        otos.setPosition(new SparkFunOTOS.Pose2D(10, 10, -45)); //set later
-        otos.calibrateImu();
 
         shooter.initSystem(hardwareMap, otos, 0);
         swerve.init(hardwareMap);
@@ -37,21 +35,20 @@ public class CloseBlue extends LinearOpMode//lemme in pls
         swerve.swerveDrive(0,0,0);
 
         waitForStart();
-        while (opModeIsActive())
-        {
+        while (opModeIsActive()) {
             Shoot(0);
-
-            SpikeMarkTwo(0);
-            Shoot(0);
-
             GateIntake(0);
-            Shoot(0);
 
-            GateIntake(0);
-            Shoot(0);
-
-            SpikeMarkOne(0);
-            ShootLeave(0);
+//            SpikeMarkTwo(0);
+//            Shoot(0);
+        }
+//            Shoot(0);
+//
+//            GateIntake(0);
+//            Shoot(0);
+//
+//            SpikeMarkOne(0);
+//            Shoot(0);
 
 //            // shoot preload
 //            shooter.setTargetRPM(3300);
@@ -149,21 +146,21 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 //            sleep(1000);
 //            swerve.robotCentric(0,0,0);
 
-            telemetry.addData("X", shark.GetX());
-            telemetry.addData("Y", shark.GetY());
-            telemetry.addData("Heading", shark.GetH());
-            telemetry.addData("X Error",shark.GetErrorX());
-            telemetry.addData("Y Error", shark.GetErrorY());
-            telemetry.addData("Heading Error", shark.GetErrorH());
-
-            telemetry.update();
-
-
-            break;
+//            telemetry.addData("X", shark.GetX());
+//            telemetry.addData("Y", shark.GetY());
+//            telemetry.addData("Heading", shark.GetH());
+//            telemetry.addData("X Error",shark.GetErrorX());
+//            telemetry.addData("Y Error", shark.GetErrorY());
+//            telemetry.addData("Heading Error", shark.GetErrorH());
+//
+//            telemetry.update();
 
 
+//            break;
 
-        }
+
+
+//        }
 
 
 //        telemetry.addData("x position: ", otos.getPosition().x);
@@ -172,6 +169,8 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 //        telemetry.addData("Dih error", shark.previousDihError);
 //        telemetry.update();
     }
+
+
 
     /*
 shoot - -9, -49 0
@@ -184,40 +183,69 @@ GATE INTAKE - -49.9, -35, 10
 
      */
 
+
+    /*
+
+    positions
+    start = 10, 130, -60
+    shoot = -13, 117, -60
+    prepare spike one = -27, 144.5, -18
+    spike one = -21, 144,5, -18
+    spike two prepare = -47, 132, -18
+    spike two = -40, 154.5, -18
+    gate intake = -38, 154, -49
+
+     */
+
+    /*
+    start = 0, 0, 0
+
+    shoot = -1.5, -21, 0
+    spike one prep = -13, -30.5, 40.5
+    spike one = -27, -15, -40.5
+
+    spike two prep = -30, -42, 40.5
+    spike two = -46.3, -24, 40
+
+    gate intake = -43.5, -23, 10
+
+     */
+
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -2, -42, 0, 1, 1, 0, 0.45, 3300, false, false);
-        moveCmd.MoveToPosition(0, -2, -42, 0, 1, 4, 0, 0.45, 3300, false, false);
-        sleep(500);
-        moveCmd.MoveToPosition(autonSpeed, -2, -42, 0, 1, 4, 0, 0.45, 3300, false, true);
-        sleep(500);
-    }
-
-    private void ShootLeave(double offset)
-    {
-        moveCmd.MoveToPosition(autonSpeed, 2, 42, 30, 1, 2, 60, 0.45, 3300, false, false);
-        moveCmd.MoveToPosition(autonSpeed, 2, 42, 30, 1, 4, 60, 0.45, 3300, false, true);
-        sleep(500);
-        moveCmd.MoveToPosition(autonSpeed, 6, 44, 30, 1, 2, 60, 0.45, 3300, false, false);
+        moveCmd.MoveToPosition(autonSpeed, -1.5, -40, 0, 2, 2, 0, 0.45, 3300, false, false);
+        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
+        sleep(2000);
+        moveCmd.MoveToPosition(autonSpeed, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, true);
+//        sleep(1000);
     }
 
     private void SpikeMarkOne(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -30, -37, 30, 1, 2, 60, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -38.3, -17.7, 30, 1, 2, 60, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -13, -30.5, -40, 2, 2, 0, 0.45, 3300, true, false);
+//        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
+
+//        sleep(1000);
+        moveCmd.MoveToPosition(autonSpeed, -27, -15,-40, 2, 2, 0, 0.45, 3300, true, false);
     }
 
     private void SpikeMarkTwo(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -54, -46, 30, 1, 2, 60, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -60.53, -26.15, 30, 1, 2, 60, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -30, -42, 40, 2, 2, 0, 0.45, 3300, true, false);
+//        moveCmd.MoveToPosition(0, -46, -24, 0, 2, 4, 0, 0.45, 3300, false, false);
+
+//        sleep(1000);
+        moveCmd.MoveToPosition(autonSpeed, -46, -28, 40, 2, 2, 0, 0.45, 3300, true, false);
     }
 
+    // 3 inch drift on gate intake
     private final int gateIntakeTimingMs = 2000;
     private void GateIntake(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -56.25, -20, 5, 1, 3, 60, 0.45, 3300, true, true);
+        // -43.5, -40
+        moveCmd.MoveToPosition(autonSpeed, -45.5 , -39, -10, 2, 2, 0, 0.45, 3300, true, false);
+//        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
         sleep(gateIntakeTimingMs); // tune this to figure out gate intake timing
     }
 }

@@ -62,14 +62,17 @@ public class testmode extends OpMode
         odometry.setLinearScalar(1);
         odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
 
+        odometry.resetTracking();
+        odometry.begin();
+
+        odometry.setPosition(new SparkFunOTOS.Pose2D(0, 0, 0));
+
         turret = hardwareMap.get(DcMotorEx.class, "turretMotor");
 
         leftHood = hardwareMap.get(Servo.class, "leftHood"); //
         leftHood.setDirection(Servo.Direction.REVERSE);
         rightHood = hardwareMap.get(Servo.class, "rightHood"); //
 
-        odometry.resetTracking();
-        odometry.begin();
     }
 
     boolean lastA = false;

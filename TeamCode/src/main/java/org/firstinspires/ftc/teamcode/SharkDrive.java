@@ -23,9 +23,9 @@ public class SharkDrive {
     SparkFunOTOS.Pose2D lastLimelightPosition = new SparkFunOTOS.Pose2D();
 
     double lastValidIMUReading = 0;
-    double dihP = 0.1;
+    double dihP = 0.2;
     double dihI = 0;
-    double dihD = 0.0145;
+    double dihD = 0.01;
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;
@@ -572,11 +572,11 @@ public class SharkDrive {
 
         pos = GetOdometryLocalization();
 
-        if (axis == 3 || axis == 4) {
-            angleLenience = 15;
-        } else {
-            angleLenience = 60;
-        }
+//        if (axis == 3 || axis == 4) {
+//            angleLenience = 15;
+//        } else {
+//            angleLenience = 60;
+//        }
 
         // Position errors
         errors[0] = tgtX - pos.x;
@@ -588,54 +588,54 @@ public class SharkDrive {
 
         errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
 
-        completedBools[2] = Math.abs(errors[2]) < angleLenience;
+//        completedBools[2] = Math.abs(errors[2]) < 10;
 
         // Calculate outputs
-        output[0] = pid(errors[0], 0, distanceLenience);
-        output[1] = pid(errors[1], 1, distanceLenience);
+//        output[0] = pid(errors[0], 0, distanceLenience);
+//        output[1] = pid(errors[1], 1, distanceLenience);
 
         // Magnitude control for driving
-        double mag = pid(distance, 3, distanceLenience);
+        double mag = pid(distance, 3, 2);
 
         // Deadband for rotation (prevent jittering)
         double delta = lastHeadinerorrthingy - errors[2];
         if (Math.abs(delta) < dihband) {
             errors[2] = 0;
+            completedBools[2] = true;
         }
-        output[2] = pid(errors[2], 2, angleLenience);
+        output[2] = pid(errors[2], 2, 10) / 10.0;
 
         lastHeadinerorrthingy = errors[2];
 
-        completedBools[0] = Math.abs(errors[0]) < distanceLenience;
-        completedBools[1] = Math.abs(errors[1]) < distanceLenience;
+//        completedBools[0] = Math.abs(mag) < 5;
+//        completedBools[1] = Math.abs(mag) < 5;
+//        completedBools[2] = Math.abs(mag) < 5;
 
-        completedStopBools[0] = Math.abs(errors[0]) < 0.6;
-        completedStopBools[1] = Math.abs(errors[1]) < 0.6;
+        completedBools[0] = Math.abs(errors[0]) < 2;
+        completedBools[1] = Math.abs(errors[1]) < 2;
+        completedBools[2] = true;
+
+//        completedStopBools[0] = Math.abs(errors[0]) < 5;
+//        completedStopBools[1] = Math.abs(errors[1]) < 5;
+//        completedStopBools[2] = Math.abs(errors[2]) < 10;
 
         if (axis == 0) {
-            output[1] *= 0;
+//            output[1] *= 0;
             completedBools[1] = true;
         } else if (axis == 1) {
-            output[0] *= 0;
+//            output[0] *= 0;
             completedBools[0] = true;
         }
 
         if (tgtRot == 1) {
             completedBools[2] = true;
-            output[2] = 0;
-        }
-
-        if (axis == 4) {
-            completedBools[0] = true;
-            completedBools[1] = true;
-            output[0] = 0;
-            output[1] = 0;
+//            output[2] = 0;
         }
 
         // Drive towards target position (using angleToTarget)
         // But rotate to tgtRot angle (using output[2])
-        double yOut = speed * Math.sin(Math.toRadians(angleToTarget)) * mag;
-        double xOut = speed * Math.cos(Math.toRadians(angleToTarget)) * mag;
+        double yOut = 1 * Math.sin(Math.toRadians(angleToTarget)) * mag;
+        double xOut = 1 * Math.cos(Math.toRadians(angleToTarget)) * mag;
 
         double maxOut = Math.max(Math.abs(yOut), Math.abs(xOut));
 
@@ -644,7 +644,19 @@ public class SharkDrive {
             xOut /= maxOut;
         }
 
-        dt.swerveDrive(yOut, xOut, -speed * output[2]);
+
+        if (axis == 4) {
+            completedBools[0] = true;
+            completedBools[1] = true;
+            completedBools[2] = true;
+
+//            output[0] =0;
+            yOut = 0;
+            xOut = 0;
+            output[2] = 0;
+        }
+
+        dt.swerveDrive(yOut, xOut, -1 * output[2]);
     }
 //    public void thingRobotCentric(double speed, double tgtX, double tgtY, double tgtRot, double distanceLenience, int axis) { //tuff as hell, ROBOT CENTRIC
 //        if (!odometry.isConnected()) {

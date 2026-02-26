@@ -47,8 +47,8 @@ public class MoveCommand {
 
         // movement, will be driven by s1.GetBoolsCompleted()
         command.SetElementFalse('m');
-        command.SetElementFalse('t'); // turret
-        command.SetElementFalse('s'); // shooter
+//        command.SetElementFalse('t'); // turret
+//        command.SetElementFalse('s'); // shooter
 
         shark.initErrX = tgtX - shark.odometry.getPosition().x;
         shark.initErrY = tgtY - shark.odometry.getPosition().y;
@@ -59,8 +59,20 @@ public class MoveCommand {
 
         shooter.setHoodPosition(hoodAngle);
 
-        intake.intake(intaking);
-        intake.outtake(outtaking);
+        if (outtaking)
+        {
+            intake.outtake(true);
+        }
+        else if (intaking)
+        {
+            intake.intake(true);
+        }
+        else
+        {
+            intake.outtake(false);
+        }
+//        intake.intake(intaking);
+//        intake.outtake(outtaking);
 
         localCopy = command.GetMap();
 
