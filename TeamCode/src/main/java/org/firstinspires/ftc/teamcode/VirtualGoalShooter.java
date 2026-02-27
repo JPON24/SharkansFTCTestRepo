@@ -48,7 +48,7 @@ public class VirtualGoalShooter {
 
     private double baseP = 0.1;
     private double baseI = 0.0;
-    private double baseD = 0.0;
+    private double baseD = 0.01;
     private double baseF = 0.0;
 
     // Rate limiter and power limits
@@ -386,7 +386,7 @@ public class VirtualGoalShooter {
 
         // Adaptive PID Gains — matched from ShooterSubsystem
         if (Math.abs(error) > 20) {
-            turretPID.setPIDF(baseP * 1.1, baseI, baseD, baseF);  // 4x normal
+            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 4x normal
         } else if (Math.abs(error) > 10) {
             turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 2x normal
         } else {

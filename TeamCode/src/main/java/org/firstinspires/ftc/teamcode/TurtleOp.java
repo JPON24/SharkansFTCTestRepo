@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.global.drivetrain.CoaxialSwerve;
 import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
 
@@ -44,8 +46,17 @@ public class TurtleOp extends OpMode{
         g1 = new EnhancedGamepad(gamepad1);
         g2 = new EnhancedGamepad(gamepad2);
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-        otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
+        otos.setLinearUnit(DistanceUnit.INCH);
+        otos.setAngularUnit(AngleUnit.DEGREES);
         otos.calibrateImu();
+        otos.setAngularScalar(1);
+        otos.setLinearScalar(1);
+        otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, -90));
+
+//        otos.resetTracking();
+//        otos.begin();
+//
+//        otos.setPosition(new SparkFunOTOS.Pose2D(0, 0, 0));
 
         limelight = new AprilTagLimelight();
         limelight.init(hardwareMap, 0); // Uhhhh... Chat can we just use one pipeline??

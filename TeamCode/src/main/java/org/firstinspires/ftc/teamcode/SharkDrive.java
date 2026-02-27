@@ -59,20 +59,15 @@ public class SharkDrive {
 
     double odometryInputMixPercentage = 0.7;
 
-    public void init(HardwareMap hwMap, boolean isAuton) {
+    public void init(HardwareMap hwMap, boolean isAuton, SparkFunOTOS odometry) {
         last_time = 0;
-        odometry = hwMap.get(SparkFunOTOS.class, "otos");
-        odometry.setLinearUnit(DistanceUnit.INCH);
-        odometry.setAngularUnit(AngleUnit.DEGREES);
-        odometry.calibrateImu();
-        odometry.setAngularScalar(1);
-        odometry.setLinearScalar(1);
-        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.74016, 0));
-
-        if (isAuton) {
-            odometry.resetTracking();
-            odometry.begin();
-        }
+        this.odometry = odometry;
+//        odometry.setLinearUnit(DistanceUnit.INCH);
+//        odometry.setAngularUnit(AngleUnit.DEGREES);
+//        odometry.calibrateImu();
+//        odometry.setAngularScalar(1);
+//        odometry.setLinearScalar(1);
+//        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, -90));
 
         dt.init(hwMap);
 
@@ -249,8 +244,8 @@ public class SharkDrive {
             angleLenience = 60;
         }
 
-        errors[0] = tgtX - pos.x;
-        errors[1] = tgtY - pos.y;
+        errors[0] = tgtX - pos.y;
+        errors[1] = tgtY - (-pos.x);
         errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
 
         completedBools[2] = Math.abs(errors[2]) < angleLenience;
@@ -579,8 +574,8 @@ public class SharkDrive {
 //        }
 
         // Position errors
-        errors[0] = tgtX - pos.x;
-        errors[1] = tgtY - pos.y;
+        errors[0] = tgtX - pos.y;
+        errors[1] = tgtY - (-pos.x);
 
         // Calculate angle to target position (for driving direction)
         double angleToTarget = Math.toDegrees(Math.atan2(errors[1], errors[0]));

@@ -61,7 +61,7 @@ public class testmode extends OpMode
         odometry.calibrateImu();
         odometry.setAngularScalar(1);
         odometry.setLinearScalar(1);
-        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, 0));
+        odometry.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, -90));
 
         odometry.resetTracking();
         odometry.begin();

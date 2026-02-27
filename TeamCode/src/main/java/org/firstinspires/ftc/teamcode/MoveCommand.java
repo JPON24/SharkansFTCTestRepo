@@ -28,16 +28,16 @@ public class MoveCommand {
     floatingIntake intake = new floatingIntake();
 
     // Backward-compatible init (no opMode reference)
-    public void init(HardwareMap hwMap, boolean isAuton) {
-        init(hwMap, isAuton, null);
+    public void init(HardwareMap hwMap, boolean isAuton, SharkDrive shark) {
+        init(hwMap, isAuton, null, shark);
     }
 
-    public void init(HardwareMap hwMap, boolean isAuton, LinearOpMode opMode) {
+    public void init(HardwareMap hwMap, boolean isAuton, LinearOpMode opMode, SharkDrive shark) {
         this.opMode = opMode;
         dt.init(hwMap);
         shooter.initSystem(hwMap, shark.odometry, 0);
         intake.init(hwMap);
-        shark.init(hwMap, isAuton);
+        this.shark = shark;
     }
 
     public void MoveToPosition(double speed, double tgtX, double tgtY, double rot, double d, int axis, double turretAngle, double hoodAngle, int RPM, boolean intaking, boolean outtaking) {
@@ -50,11 +50,11 @@ public class MoveCommand {
 //        command.SetElementFalse('t'); // turret
 //        command.SetElementFalse('s'); // shooter
 
-        shark.initErrX = tgtX - shark.odometry.getPosition().x;
-        shark.initErrY = tgtY - shark.odometry.getPosition().y;
+        shark.initErrX = tgtX - shark.odometry.getPosition().y;
+        shark.initErrY = tgtY - (-shark.odometry.getPosition().x);
 
         shark.DihdometryDihtrol2(speed,tgtX,tgtY,rot,d,axis);
-        shooter.setTargetRPM(RPM); // sets bang bang tgt initially
+        shooter.setTargetRPM(0); // sets bang bang tgt initially
         shooter.turnToAngle(turretAngle, false);
 
         shooter.setHoodPosition(hoodAngle);
