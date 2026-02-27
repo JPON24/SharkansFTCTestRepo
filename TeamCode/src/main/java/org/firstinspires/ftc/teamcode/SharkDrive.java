@@ -25,7 +25,7 @@ public class SharkDrive {
     double lastValidIMUReading = 0;
     double dihP = 0.2;
     double dihI = 0;
-    double dihD = 0.01;
+    double dihD = 0.0125;
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;
@@ -595,7 +595,7 @@ public class SharkDrive {
 //        output[1] = pid(errors[1], 1, distanceLenience);
 
         // Magnitude control for driving
-        double mag = pid(distance, 3, 2);
+        double mag = pid(distance, 3, 3.5);
 
         // Deadband for rotation (prevent jittering)
         double delta = lastHeadinerorrthingy - errors[2];
@@ -603,7 +603,7 @@ public class SharkDrive {
             errors[2] = 0;
             completedBools[2] = true;
         }
-        output[2] = pid(errors[2], 2, 10) / 10.0;
+        output[2] = pid(errors[2], 2, 10);
 
         lastHeadinerorrthingy = errors[2];
 
@@ -611,8 +611,8 @@ public class SharkDrive {
 //        completedBools[1] = Math.abs(mag) < 5;
 //        completedBools[2] = Math.abs(mag) < 5;
 
-        completedBools[0] = Math.abs(errors[0]) < 2;
-        completedBools[1] = Math.abs(errors[1]) < 2;
+        completedBools[0] = Math.abs(errors[0]) < 3.5;
+        completedBools[1] = Math.abs(errors[1]) < 3.5;
         completedBools[2] = true;
 
 //        completedStopBools[0] = Math.abs(errors[0]) < 5;

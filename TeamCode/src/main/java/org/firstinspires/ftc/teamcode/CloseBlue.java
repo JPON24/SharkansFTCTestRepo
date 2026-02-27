@@ -211,6 +211,20 @@ GATE INTAKE - -49.9, -35, 10
 
      */
 
+    /*
+    lin scal
+    44.25 / 48
+    21 / 24
+    19 / 24
+
+     */
+
+    /* - weird starting position
+    shoot =
+
+
+     */
+
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
@@ -244,7 +258,8 @@ GATE INTAKE - -49.9, -35, 10
     private void GateIntake(double offset)
     {
         // -43.5, -40
-        moveCmd.MoveToPosition(autonSpeed, -45.5 , -39, -10, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -28 , -37, 40, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -42, -35, 40, 2, 2, 0, 0.45, 3300, true, false);
 //        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
         sleep(gateIntakeTimingMs); // tune this to figure out gate intake timing
     }

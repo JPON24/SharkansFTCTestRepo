@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.SwerveSubsystem;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.lang.annotation.Retention;
 
@@ -99,67 +100,27 @@ public class testmode extends OpMode
         return (offset - position) * 315;
     }
 
+    double xIntegral = 0;
+    double yIntegral = 0;
+
+    double lastXPos = 0;
+    double lastYPos = 0;
+
+    ElapsedTime dt = new ElapsedTime();
+
     @Override
     public void loop()
     {
-        // 315 degree range
-//        if (gamepad1.a && !lastA) {
-//            flTgt += 0.02;
-//
-//            if (flTgt > 1)
-//            {
-//                flTgt = 0;
-//            }
-//            frontLeftServo.setPosition(flTgt);
-//        }
-//
-//        if (gamepad1.x && !lastX)
-//        {
-//            frTgt += 0.02;
-//
-//            if (frTgt > 1)
-//            {
-//                frTgt = 0;
-//            }
-//            frontRightServo.setPosition(frTgt);
-//        }
-//
-//        if (gamepad1.y && !lastY) {
-//            rrTgt += 0.02;
-//
-//            if (rrTgt > 1)
-//            {
-//                rrTgt = 0;
-//            }
-//            backRightServo.setPosition(rrTgt);
-//        }
-//
-//        if (gamepad1.b && !lastB) {
-//            rlTgt += 0.02;
-//            if (rlTgt > 1)
-//            {
-//                rlTgt = 0;
-//            }
-//            backLeftServo.setPosition(rlTgt);
-//        }
-
         if (gamepad1.dpad_up)
         {
             flTgt = flOffset;
             rlTgt=  blOffset;
             rrTgt = brOffset;
             frTgt = frOffset;
-
-//            frontLeftServo.setPosition(flOffset);
-//            frontRightServo.setPosition(frOffset);
-//            backLeftServo.setPosition(blOffset);
-//            backRightServo.setPosition(brOffset);
         }
-
 
         leftHood.setPosition(0);
         rightHood.setPosition(0);
-//        turret.setPower(0.3);
 
         lastA = gamepad1.a;
         lastX = gamepad1.x;
@@ -171,17 +132,27 @@ public class testmode extends OpMode
         telemetry.addData("bl: ", rlTgt);
         telemetry.addData("br: ", rrTgt);
 
-//        telemetry.addData("fl deg: ", GetAngle(flTgt, flOffset));
-//        telemetry.addData("fr deg: ", GetAngle(frTgt, frOffset));
-//        telemetry.addData("bl deg: ", GetAngle(rlTgt, blOffset));
-//        telemetry.addData("br deg: ", GetAngle(rrTgt, brOffset));
-
         SparkFunOTOS.Pose2D position = odometry.getPosition();
 
-        telemetry.addData("x position: ", position.x);
-        telemetry.addData("y position: ", position.y);
+        telemetry.addData("x position: ", (position.x));
+        telemetry.addData("y position: ", (position.y));
+
+//        telemetry.addData("x position w/ integral: ", (position.x * 1.2) + (0.02022 * xIntegral));
+//        telemetry.addData("y position w/ integral: ", (position.y * 1.2) + (0.02022 * yIntegral));
+
+//        xIntegral += Math.abs(position.x - lastXPos);
+//        yIntegral += Math.abs(position.y - lastYPos);
+//
+//        lastXPos = position.x;
+//        lastYPos = position.y;
+//
+//
+//        telemetry.addData("x integral", xIntegral);
+//        telemetry.addData("y integral", yIntegral);
+
         telemetry.addData("h position: ", position.h);
 
         telemetry.update();
-    }
+
+        dt.reset();}
 }
