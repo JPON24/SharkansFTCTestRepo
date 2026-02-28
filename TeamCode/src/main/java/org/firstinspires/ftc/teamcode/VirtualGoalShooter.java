@@ -63,7 +63,7 @@ public class VirtualGoalShooter {
 
     private DcMotorEx turretMotor, rightShooter;
     private Servo leftHood, rightHood;
-    private Servo rgbIndicator;
+//    private Servo rgbIndicator;
     private SparkFunOTOS otos;
 
     private Vector2D targetPos = BLUE_BASKET_FAR;
@@ -114,7 +114,7 @@ public class VirtualGoalShooter {
         rightHood = hardwareMap.get(Servo.class, "rightHood");
 
         // Gobilda RGB Indicator (PWM — controlled as a servo)
-        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
+//        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
         rpmTable.add(65, 3300);
@@ -179,7 +179,7 @@ public class VirtualGoalShooter {
 
         updateShooterPIDF();
 
-        updateLED();
+//        updateLED();
 
         // Handle unwinding state
         if (currentState == TurretState.UNWINDING) {
@@ -264,13 +264,13 @@ public class VirtualGoalShooter {
      * Green = shooter at RPM and ready to fire
      * Red = not ready
      */
-    private void updateLED() {
-        if (flywheelEnabled) {
-            rgbIndicator.setPosition(isReadyToShoot() ? LED_GREEN : LED_RED);
-        } else {
-            rgbIndicator.setPosition(LED_OFF);
-        }
-    }
+//    private void updateLED() {
+//        if (flywheelEnabled) {
+//            rgbIndicator.setPosition(isReadyToShoot() ? LED_GREEN : LED_RED);
+//        } else {
+//            rgbIndicator.setPosition(LED_OFF);
+//        }
+//    }
 
     /**
      * Check if turret is aimed at target
@@ -307,8 +307,8 @@ public class VirtualGoalShooter {
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
-        double dx = 0 - pos.x; // -30
-        double dy = 100 - pos.y; // 100
+        double dx = targetPos.x - pos.x; // 0
+        double dy = targetPos.y - pos.y; // 100
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
