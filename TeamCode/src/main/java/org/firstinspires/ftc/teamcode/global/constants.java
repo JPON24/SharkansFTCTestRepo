@@ -198,9 +198,9 @@ public class constants {
         public static final double VIRT_RED_BASKET_X = 7.5;
         public static final double VIRT_RED_BASKET_Y = 0.0;
         public static final double VIRT_RED_BASKET_FAR_X = 30.0;
-        public static final double VIRT_RED_BASKET_FAR_Y = 100;
+        public static final double VIRT_RED_BASKET_FAR_Y = 110;
         public static final double VIRT_BLUE_BASKET_FAR_X = -30.0;
-        public static final double VIRT_BLUE_BASKET_FAR_Y = 100;
+        public static final double VIRT_BLUE_BASKET_FAR_Y = 110;
 
         public static final double VIRT_BLUE_HUMAN_ZONE_X = 0.0;
         public static final double VIRT_BLUE_HUMAN_ZONE_Y = 100.0;

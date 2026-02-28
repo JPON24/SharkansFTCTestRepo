@@ -108,28 +108,7 @@ public class TurtleOp extends OpMode{
     @Override
     public void loop() {
 
-//        g1.update();
-//        g2.update();
-
-//        double leftStickX = g1.left_stick_x();
-//        double leftStickY = g1.left_stick_y();
-//        double rightStickX = -g1.right_stick_x();;
-
-
-        double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = -gamepad1.left_stick_y;
-        double rightStickX = gamepad1.right_stick_x;;
-
-//        drive.drive(leftStickX, leftStickY, rightStickX, 0);
-//        drive.updateServos();
-
-        swerveDrive.swerveDrive(leftStickY,leftStickX,rightStickX);
-
-        shooter.update();
-
-//        boolean plant = g1.lt.isDown();
-//        boolean reset = g1.rt.isDown();
-
+        // Sinex Controller
 
         boolean upDpadPressed = gamepad2.dpad_up;
         boolean downDpadPressed = gamepad2.dpad_down;
@@ -148,7 +127,21 @@ public class TurtleOp extends OpMode{
         boolean turretPos = gamepad2.dpad_left;
         boolean turretNeg = gamepad2.dpad_right;
 
-        if (upDpadPressed) {
+        if (gamepad2.left_trigger > 0.3) {
+            outtaking = false;
+            intake.intake(true);
+        } else if (gamepad2.right_trigger > 0.3) {
+            intake.outtake(true);
+            outtaking = true;
+        }
+        else {
+            outtaking = false;
+            intake.intake(false);
+            intake.outtake(false);
+            intake.outFront(false);
+        }
+
+        if (gamepad2.b) {
             shooter.spinUpShooter();
 
             if (shooter.isReadyToShoot()) {
@@ -159,21 +152,46 @@ public class TurtleOp extends OpMode{
             gamepad2.stopRumble();
         }
 
-        if (gamepad1.left_trigger > 0.3) {
-            outtaking = false;
-            intake.intake(true);
-        } else if (gamepad2.right_trigger > 0.3) {
-            intake.outtake(true);
-            outtaking = true;
-        } else if (reverseIntake) {
-            intake.outFront(true);
+        if (gamepad2.y) {
+            shooter.setShooterRPM(3300);
         }
-        else {
-            outtaking = false;
-            intake.intake(false);
-            intake.outtake(false);
-            intake.outFront(false);
+
+        if (gamepad2.x) {
+            shooter.setShooterRPM(0);
         }
+
+        if (gamepad2.a) {
+            shooter.setShooterRPM(4250);
+        }
+
+//        if (hoodUp) {
+//            shooter.setHoodPosition
+//        }
+
+        shooter.update();
+
+
+
+//        g1.update();
+//        g2.update();
+
+
+        // Elias Controller
+
+
+        double leftStickX = gamepad1.left_stick_x;
+        double leftStickY = -gamepad1.left_stick_y;
+        double rightStickX = gamepad1.right_stick_x;;
+
+//        drive.drive(leftStickX, leftStickY, rightStickX, 0);
+//        drive.updateServos();
+
+        swerveDrive.swerveDrive(leftStickY,leftStickX,rightStickX);
+
+
+//        boolean plant = g1.lt.isDown();
+//        boolean reset = g1.rt.isDown();
+
 
         if (gamepad1.right_trigger > 0.4)
         {

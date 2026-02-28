@@ -34,8 +34,8 @@ public class floatingIntake {
     public void outtake(boolean runOuttake) {
 
         if (runOuttake) {
-            transferMotor.setPower(transferSpeed);
-            intakeMotor.setPower(intakeSpeed);
+            transferMotor.setPower(-1);
+            intakeMotor.setPower(1);
         } else {
             transferMotor.setPower(0);
             intakeMotor.setPower(0);

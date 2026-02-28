@@ -46,9 +46,9 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.1;
+    private double baseP = 0.25; // 0.2
     private double baseI = 0.0;
-    private double baseD = 0;
+    private double baseD = 0.0; // 0.05
     private double baseF = 0.0;
 
     // Rate limiter and power limits
@@ -72,6 +72,8 @@ public class VirtualGoalShooter {
 
     private PIDController turretPID;
     private KalmanFilter turretFilter;
+
+    private boolean manualOverride = false;
 
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
@@ -117,18 +119,18 @@ public class VirtualGoalShooter {
 //        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
-        rpmTable.add(65, 3300);
-        rpmTable.add(73.5, 3350);
-        rpmTable.add(77, 3400);
-        rpmTable.add(81, 3450.0);
-        rpmTable.add(85, 3700.0);
+        rpmTable.add(65, 3400);
+        rpmTable.add(73.5, 3450);
+        rpmTable.add(77, 3500);
+        rpmTable.add(81, 3550.0);
+        rpmTable.add(85, 3800.0);
         rpmTable.add(90, 4500);
 
         hoodTable.add(56, 0.45);
         hoodTable.add(71, 0.5);
         hoodTable.add(77, 0.45);
         hoodTable.add(81, 0.55);
-        hoodTable.add(85, 0.1);
+        hoodTable.add(85, 0);
     }
 
     public void switchAlliance(boolean blue, boolean far, boolean noPosition) {
@@ -365,8 +367,8 @@ public class VirtualGoalShooter {
             // Only unwind if cooldown has expired (prevents oscillation loop)
             if (unwindCooldownCycles <= 0) {
                 double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
-                initiateUnwind(altAngle);
-                return;
+//                initiateUnwind(altAngle);
+//                return;
             }
             // During cooldown, clamp to nearest safe limit instead of unwinding
             targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG + WALL_PROTECTION_ZONE,
@@ -406,7 +408,7 @@ public class VirtualGoalShooter {
         power = Math.max(-maxPower, Math.min(maxPower, power));
 
         // Soft Limit: Fade power near mechanical stops
-        power = applySoftLimits(power, currentAngle);
+//        power = applySoftLimits(power, currentAngle);
 
         turretMotor.setPower(power);
     }
@@ -447,14 +449,14 @@ public class VirtualGoalShooter {
         if (distToMin < WALL_PROTECTION_ZONE && power < 0) return 0;
 
         // Soft limit: linearly scale power down as we approach the edge
-        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
-            double scale = distToMax / SOFT_LIMIT_ZONE;
-            power *= scale;
-        }
-        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
-            double scale = distToMin / SOFT_LIMIT_ZONE;
-            power *= scale;
-        }
+//        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
+//            double scale = distToMax / SOFT_LIMIT_ZONE;
+//            power *= scale;
+//        }
+//        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
+//            double scale = distToMin / SOFT_LIMIT_ZONE;
+//            power *= scale;
+//        }
 
         return power;
     }
@@ -515,7 +517,7 @@ public class VirtualGoalShooter {
         return turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
     }
 
-    private void setShooterRPM(double rpm) {
+    public void setShooterRPM(double rpm) {
         this.targetRPM = rpm;
         double vel = (rpm / 60.0) * TICKS_PER_REV_SHOOTER;
         rightShooter.setVelocity(vel);
@@ -551,6 +553,17 @@ public class VirtualGoalShooter {
 
     public double getHoodAngle() {
         return lastSolution != null ? lastSolution.hoodAngle : 0;
+    }
+
+    public double setManualHood(double pos) {
+        leftHood.setPosition(pos);
+        rightHood.setPosition(pos);
+        return pos;
+    }
+
+    public boolean setManualOverride(boolean manualOverride) {
+        manualOverride = !manualOverride;
+        return manualOverride;
     }
 
     /**
