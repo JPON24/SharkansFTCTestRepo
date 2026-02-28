@@ -53,7 +53,7 @@ public class WorkingSwerve {
     double BL_OFFSET = -179.0;
     double BR_OFFSET = -83; //166
 
-    double speed = 0.5;
+    double speed = 0.7;
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 
@@ -106,7 +106,7 @@ public class WorkingSwerve {
 
         double currentHeading = otos.getPosition().h;
 
-        double botHeading = Math.toRadians(currentHeading);
+        double botHeading = -Math.toRadians(currentHeading);
 
         // Rotation buh
         double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);

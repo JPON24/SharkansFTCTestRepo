@@ -68,6 +68,12 @@ public class FarBlue extends LinearOpMode//lemme in pls
 
             HumanPlayerIntake(0);
             Shoot(0);
+
+            HumanPlayerIntake(0);
+            Shoot(0);
+
+            HumanPlayerIntake(0);
+            Shoot(0);
             break;
         }
     }
@@ -80,27 +86,34 @@ public class FarBlue extends LinearOpMode//lemme in pls
 
     private void ShootInit(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, 6, 0, 0, 2, 2, -17, 0.45, 5000, false, false);
+        moveCmd.MoveToPosition(autonSpeed, 2, 0, 0, 2, 2, -11, 0, 5000, false, false);
+        moveCmd.MoveToPosition(0, 2, 0, 0, 2, 4, -11, 0, 5000, false, false);
         sleep(1000);
-        moveCmd.MoveToPosition(0, 6, 0, 0, 2, 4, -17, 0.45, 5000, false, true);
+        moveCmd.MoveToPosition(0, 2, 0, 0, 2, 4, -11, 0, 5000, false, true);
         sleep(500);
     }
 
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, 6, 0, 0, 2, 2, -17, 0.45, 5000, false, true);
-        moveCmd.MoveToPosition(0, 6, 0, 0, 2, 4, -17, 0.45, 5000, false, true);
+        moveCmd.MoveToPosition(autonSpeed, 2, 0, 0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(0, 2, 0, 0, 2, 4, -11, 0, 5000, false, true);
         sleep(500);
     }
 
     private void SpikeMarkOne(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, 30, 48, 0, 2, 2, -17, 0.45, 5000, true, false);
-        moveCmd.MoveToPosition(autonSpeed, 30, 48,0, 2, 2, -17, 0.45, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 28, 0, 0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 28, 24,0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 28, 40,0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 28, 50,0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(0, 28, 50,0, 2, 4, -11, 0, 5000, true, false);
+        sleep(500);
     }
 
     private void HumanPlayerIntake(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, 6, 48, 0, 2, 2, -17, 0.45, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 2, 52, 0, 2, 2, -11, 0, 5000, true, false);
+        moveCmd.MoveToPosition(0, 2, 52, 0, 2, 4, -11, 0, 5000, true, false);
+        sleep(500);
     }
 }
