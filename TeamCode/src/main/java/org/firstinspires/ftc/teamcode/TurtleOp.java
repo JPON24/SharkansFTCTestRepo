@@ -83,7 +83,7 @@ public class TurtleOp extends OpMode{
         shooter = new VirtualGoalShooter();
         shooter.init(hardwareMap, otos);
 
-        shooter.switchAlliance(true, false, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
+        shooter.switchAlliance(true, true, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
@@ -228,9 +228,15 @@ public class TurtleOp extends OpMode{
 //        telemetry.addData("y cmd: ", swerve.yCmdVal);
 //        telemetry.addData("r cmd: ", swerve.rCmdVal);
 
-        telemetry.addData("otos x: ", otos.getPosition().x * 1.6);
-        telemetry.addData("otos y: ", otos.getPosition().y * 1.6);
+        telemetry.addData("otos x: ", otos.getPosition().x);
+        telemetry.addData("otos y: ", otos.getPosition().y);
         telemetry.addData("otos h: ", otos.getPosition().h);
+
+        double xval = shooter.BLUE_BASKET_FAR.x - otos.getPosition().y;
+        double yval = shooter.BLUE_BASKET_FAR.y - (-otos.getPosition().x);
+
+        telemetry.addData("mag: ", Math.hypot(xval, yval));
+
         telemetry.addData("FL OFFSET", swerveDrive.getFLRaw());
         telemetry.addData("FR OFFSET", swerveDrive.getFRRaw());
         telemetry.addData("BL OFFSET", swerveDrive.getBLRaw());

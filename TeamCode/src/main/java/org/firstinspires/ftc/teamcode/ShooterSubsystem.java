@@ -93,7 +93,7 @@ public class ShooterSubsystem {
 
     private double integralSum = 0.0;
     private double lastError = 0.0;
-    private double kP = 0.002; // 0.002
+    private double kP = 0.1; // 0.002
     private double kI = 0.0001; // 0.0001
     private double kD = 0.00; // 0.00
 
@@ -131,6 +131,8 @@ public class ShooterSubsystem {
     private double lastLimelightYaw = 0;
     private double lastCalculatedTargetAngle = 0;
     private double lastTX = 0;
+
+    double targetRPM2;
 
     // Hybrid calibration mode
     private boolean calibrationMode = true;  // Start in reactive mode (visual tracking)
@@ -290,7 +292,7 @@ public class ShooterSubsystem {
     private final double rpmLenience = 100;
     public boolean IsAtTgtRPM()
     {
-        return Math.abs(targetRPM - getCurrentRPM()) < rpmLenience;
+        return Math.abs(targetRPM2 - getCurrentRPM()) < rpmLenience;
     }
 
     public void BangBang() {
@@ -318,8 +320,14 @@ public class ShooterSubsystem {
             hoodResetTimer.reset();
         }
 
-        currentRpm = (int)(r(currentDistance));
-        setTargetRPM(currentRpm);
+        targetRPM2 = (int)(r(currentDistance));
+        setTargetRPM(targetRPM2);
+    }
+
+    public void updateRPMAuton(int rpm)
+    {
+        targetRPM2 = rpm;
+        setTargetRPM(targetRPM2);
     }
 
     /*
@@ -834,7 +842,7 @@ public class ShooterSubsystem {
     public void setTargetRPM(double rpm) {
         this.targetRPM = rpm;
         double ticksPerSecond = (targetRPM / 60.0) * COUNTS_PER_WHEEL_REV;
-//        rightShooter.setVelocity(ticksPerSecond);
+        rightShooter.setVelocity(ticksPerSecond);
     }
     public double targetTurretAngle = 0;
 
@@ -875,14 +883,14 @@ public class ShooterSubsystem {
         lastError = error;
 
         // ADAPTIVE GAINS: Just like my awesome muscles
-        double adaptiveKP = kP;
-        if (Math.abs(error) > 20) {
-            adaptiveKP = 0.008;  // 4x normal gain
-        } else if (Math.abs(error) > 10) {
-            adaptiveKP = 0.004;  // 2x normal gain
-        }
+        double adaptiveKP = 0.026; // 0.03
+//        if (Math.abs(error) > 20) {
+//            adaptiveKP = 0.008;  // 4x normal gain
+//        } else if (Math.abs(error) > 10) {
+//            adaptiveKP = 0.004;  // 2x normal gain
+//        }
 
-        double output = adaptiveKP * error + kI * integralSum + kD * derivative;
+        double output = adaptiveKP * error + 0 * integralSum + 0.0035 * derivative; // 0.0035
 
         double delta = output - lastOutput;
         if (Math.abs(delta) > maxDeltaPower) {
@@ -911,7 +919,12 @@ public class ShooterSubsystem {
             return;
         }
 
-        turretMotor.setPower(output);
+        if (Math.abs(error) < 5 ) {
+            turretMotor.setPower(0);
+        } else {
+
+            turretMotor.setPower(output);
+        }
     }
 
     private void updateHood() {

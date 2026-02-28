@@ -47,15 +47,13 @@ public class MoveCommand {
 
         // movement, will be driven by s1.GetBoolsCompleted()
         command.SetElementFalse('m');
-//        command.SetElementFalse('t'); // turret
-//        command.SetElementFalse('s'); // shooter
+        command.SetElementFalse('t'); // turret
+        command.SetElementFalse('s'); // shooter
 
         shark.initErrX = tgtX - shark.odometry.getPosition().y;
         shark.initErrY = tgtY - (-shark.odometry.getPosition().x);
 
         shark.DihdometryDihtrol2(speed,tgtX,tgtY,rot,d,axis);
-        shooter.setTargetRPM(RPM); // sets bang bang tgt initially
-        shooter.turnToAngle(turretAngle, false);
 
         shooter.setHoodPosition(hoodAngle);
 
@@ -71,15 +69,13 @@ public class MoveCommand {
         {
             intake.outtake(false);
         }
-//        intake.intake(intaking);
-//        intake.outtake(outtaking);
 
         localCopy = command.GetMap();
 
         timeout.reset();
 
         while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && (opMode == null || opMode.opModeIsActive())) {
-            shooter.BangBang(); // continue to run bang bang updates every iter
+
             // for every key (m, e, a, c, w)
             for (Character key : localCopy.keySet()) {
                 switch (key) {
@@ -102,17 +98,20 @@ public class MoveCommand {
                     case 's':
                         if (shooter.IsAtTgtRPM()) {
                             command.SetElementTrue('s');
+                            shooter.updateRPMAuton(RPM);
                         } else {
                             command.SetElementFalse('s');
+                            shooter.updateRPMAuton(RPM);
                         }
                         break;
-
                     case 't':
                         if (shooter.IsAtCorrectTurretPos()) {
                             command.SetElementTrue('t');
-                            shooter.stopTurret();
+                            shooter.turnToAngle(turretAngle - shark.odometry.getPosition().h, false);
+//                            shooter.turnToAngle(turretAngle, false);
                         } else {
-                            shooter.turnToAngle(turretAngle, false);
+                            shooter.turnToAngle(turretAngle - shark.odometry.getPosition().h, false);
+//                            shooter.turnToAngle(turretAngle, false);
                             command.SetElementFalse('t');
                         }
                         break;

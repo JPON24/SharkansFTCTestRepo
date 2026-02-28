@@ -46,9 +46,9 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 1;
+    private double baseP = 0.0028;
     private double baseI = 0.0;
-    private double baseD = 0.1;
+    private double baseD = 0.0005;
     private double baseF = 0.0;
 
     // Rate limiter and power limits
@@ -122,7 +122,7 @@ public class VirtualGoalShooter {
         rpmTable.add(77, 3400);
         rpmTable.add(81, 3450.0);
         rpmTable.add(85, 3700.0);
-        rpmTable.add(90, 3800);
+        rpmTable.add(90, 4500);
 
         hoodTable.add(56, 0.45);
         hoodTable.add(71, 0.5);
@@ -307,8 +307,8 @@ public class VirtualGoalShooter {
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
-        double dx = targetPos.x - pos.x; // 0
-        double dy = targetPos.y - pos.y; // 100
+        double dx = targetPos.x - pos.y; // 0
+        double dy = targetPos.y - (-pos.x); // 100
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -326,8 +326,8 @@ public class VirtualGoalShooter {
         double virtX = targetPos.x - (vFieldX * timeOfFlight);
         double virtY = targetPos.y - (vFieldY * timeOfFlight);
 
-        double virtDx = virtX - pos.x;
-        double virtDy = virtY - pos.y;
+        double virtDx = virtX - pos.y;
+        double virtDy = virtY - (-pos.x);
 
         double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
         double relativeTurretAngle = targetFieldAngle - chassisHeading;
@@ -385,13 +385,13 @@ public class VirtualGoalShooter {
         }
 
         // Adaptive PID Gains — matched from ShooterSubsystem
-        if (Math.abs(error) > 20) {
-            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 4x normal
-        } else if (Math.abs(error) > 10) {
-            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 2x normal
-        } else {
-            turretPID.setPIDF(baseP, baseI, baseD, baseF);
-        }
+//        if (Math.abs(error) > 20) {
+//            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 4x normal
+//        } else if (Math.abs(error) > 10) {
+//            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 2x normal
+//        } else {
+        turretPID.setPIDF(baseP, baseI, baseD, baseF);
+//        }
 
         double power = turretPID.update(targetAngle, currentAngle);
 
@@ -467,7 +467,7 @@ public class VirtualGoalShooter {
 
     private void executeUnwind() {
         // Slightly higher P for unwind, no I/D — just get there smoothly
-        turretPID.setPIDF(baseP * 1.5, 0, 0, 0);
+        turretPID.setPIDF(baseP, 0, baseD, 0);
 
         double power = turretPID.update(unwindTargetAngle, getTurretDegrees());
 

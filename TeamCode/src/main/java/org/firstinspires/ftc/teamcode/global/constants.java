@@ -202,6 +202,9 @@ public class constants {
         public static final double VIRT_BLUE_BASKET_FAR_X = -30.0;
         public static final double VIRT_BLUE_BASKET_FAR_Y = 100;
 
+        public static final double VIRT_BLUE_HUMAN_ZONE_X = 0.0;
+        public static final double VIRT_BLUE_HUMAN_ZONE_Y = 100.0;
+
         public static final double VGS_TURRET_KALMAN_Q = 0.001;
         public static final double VGS_TURRET_KALMAN_R = 0.01;
 
