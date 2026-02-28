@@ -18,8 +18,8 @@ public class constants {
         public static final double TURRET_TICKS_PER_DEGREE = (TURRET_TICKS_PER_REV * TURRET_GEAR_RATIO) / 360.0;
 
         // Turret Limits (Degrees converted to Ticks)
-        public static final double TURRET_MAX_DEG = 235;
-        public static final double TURRET_MIN_DEG = -125;
+        public static final double TURRET_MAX_DEG = 220; // 235
+        public static final double TURRET_MIN_DEG = -110; // -115
         public static final int TURRET_MAX_TICKS = (int)(TURRET_MAX_DEG * TURRET_TICKS_PER_DEGREE);
         public static final int TURRET_MIN_TICKS = (int)(TURRET_MIN_DEG * TURRET_TICKS_PER_DEGREE);
 
@@ -199,7 +199,7 @@ public class constants {
         public static final double VIRT_RED_BASKET_Y = 0.0;
         public static final double VIRT_RED_BASKET_FAR_X = 30.0;
         public static final double VIRT_RED_BASKET_FAR_Y = 110;
-        public static final double VIRT_BLUE_BASKET_FAR_X = -30.0;
+        public static final double VIRT_BLUE_BASKET_FAR_X = -30;
         public static final double VIRT_BLUE_BASKET_FAR_Y = 110;
 
         public static final double VIRT_BLUE_HUMAN_ZONE_X = 0.0;

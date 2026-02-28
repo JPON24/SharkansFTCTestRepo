@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 import org.firstinspires.ftc.teamcode.global.util.math.Ballistics;
@@ -46,8 +47,8 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.25; // 0.2
-    private double baseI = 0.0;
+    private double baseP = 0.4; // 0.2
+    private double baseI = 0.0001;
     private double baseD = 0.0; // 0.05
     private double baseF = 0.0;
 
@@ -119,11 +120,11 @@ public class VirtualGoalShooter {
 //        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
-        rpmTable.add(65, 3400);
-        rpmTable.add(73.5, 3450);
-        rpmTable.add(77, 3500);
-        rpmTable.add(81, 3550.0);
-        rpmTable.add(85, 3800.0);
+        rpmTable.add(65, 3350);
+        rpmTable.add(73.5, 3400);
+        rpmTable.add(77, 3450);
+        rpmTable.add(81, 3500.0);
+        rpmTable.add(85, 3750.0);
         rpmTable.add(90, 4500);
 
         hoodTable.add(56, 0.45);
@@ -304,13 +305,18 @@ public class VirtualGoalShooter {
         return isReadyToShoot() && isTurretOnTarget();
     }
 
+    public double outputAngle = 0;
+
+    public double propComponent = 0;
+    public double derivComponent = 0;
+
     private FiringSolution solveFiringSolution() {
         SparkFunOTOS.Pose2D pos = otos.getPosition();
         SparkFunOTOS.Pose2D vel = otos.getVelocity();
         double chassisHeading = pos.h;
 
         double dx = targetPos.x - pos.y; // 0
-        double dy = targetPos.y - (-pos.x); // 100
+        double dy = targetPos.y + (pos.x); // 100
         double rawDist = Math.hypot(dx, dy);
 
         double tableRPM = rpmTable.get(rawDist);
@@ -332,13 +338,14 @@ public class VirtualGoalShooter {
         double virtDy = virtY - (-pos.x);
 
         double targetFieldAngle = -Math.toDegrees(Math.atan2(dx, dy));
+
         double relativeTurretAngle = targetFieldAngle - chassisHeading;
 
-
+        outputAngle = relativeTurretAngle;
 
         relativeTurretAngle = LinearMath.angleWrap(relativeTurretAngle);
 
-        double virtualDist = Math.hypot(virtDx, virtDy);
+        double virtualDist = Math.hypot(dx, dy);
 
         return new FiringSolution(
                 relativeTurretAngle,
@@ -356,9 +363,12 @@ public class VirtualGoalShooter {
      * Picks the best reachable angle (trying target and target ± 360°),
      * applies soft limits near mechanical stops, and protects against wall impact.
      */
+
+    ElapsedTime dx = new ElapsedTime();
+    double lastTgtErr = 0;
     private void moveTurretToAngle(double targetAngle) {
         double currentAngle = getTurretDegrees();
-
+/*
         // Always evaluate the target AND target ± 360° to find the best in-range option
         targetAngle = pickBestAngle(targetAngle, currentAngle);
 
@@ -405,10 +415,46 @@ public class VirtualGoalShooter {
         lastOutput = power;
 
         // Clamp to max power
-        power = Math.max(-maxPower, Math.min(maxPower, power));
+        power = Math.max(-1, Math.min(1, power));
 
         // Soft Limit: Fade power near mechanical stops
-//        power = applySoftLimits(power, currentAngle);
+//        power = applySoftLimits(power, currentAngle);*/
+
+//        if (targetAngle > constants.TURRET_MIN_DEG)
+//        {
+//            targetAngle = constants.TURRET_MIN_DEG;
+//        }
+
+        if (targetAngle < constants.TURRET_MIN_DEG + 10)
+        {
+            targetAngle = constants.TURRET_MIN_DEG;
+        }
+
+        if (targetAngle > constants.TURRET_MAX_DEG - 10)
+        {
+            targetAngle = constants.TURRET_MAX_DEG;
+        }
+
+        double newp = 0.01;
+        double error = targetAngle-currentAngle;
+
+        double newd = 0.001;
+        double dTerm = (error - lastTgtErr) / dx.seconds();
+
+        double power = newp * error + newd * dTerm;
+
+        if (Math.abs(power) > 0.5)
+        {
+            power *= 0.5;
+        }
+
+        if (Math.abs(error) > 90)
+        {
+            power *= 0.8;
+        }
+
+        lastTgtErr = error;
+        dx.reset();
 
         turretMotor.setPower(power);
     }

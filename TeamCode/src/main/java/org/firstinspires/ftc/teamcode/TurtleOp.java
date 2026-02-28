@@ -200,6 +200,7 @@ public class TurtleOp extends OpMode{
 
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(), shooter.getTargetRPM());
         telemetry.addData("SS angle output", shooter.getHoodAngle());
+        telemetry.addData("shooter turret angle thingy", shooter.outputAngle);
 
 //        telemetry.addData("FL Voltage", drive.getFLVoltage());
 //        telemetry.addData("FR Voltage", drive.getFRVoltage());
