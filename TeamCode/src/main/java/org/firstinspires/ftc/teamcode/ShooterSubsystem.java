@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.global.constants;
 import org.firstinspires.ftc.teamcode.global.control.KalmanFilter;
+import org.firstinspires.ftc.teamcode.global.util.math.InterpLUT;
 
 public class ShooterSubsystem {
 

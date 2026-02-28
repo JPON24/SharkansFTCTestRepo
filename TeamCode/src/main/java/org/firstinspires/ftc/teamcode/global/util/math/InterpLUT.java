@@ -34,9 +34,23 @@ public class InterpLUT {
         Map.Entry<Double, Double> lower = table.floorEntry(input);
         Map.Entry<Double, Double> upper = table.ceilingEntry(input);
 
-        // Safety: If outside the range, clamp to the nearest known value
-        if (lower == null) return upper.getValue();
-        if (upper == null) return lower.getValue();
+        // Below range — extrapolate using first two points
+        if (lower == null) {
+            Map.Entry<Double, Double> first = table.firstEntry();
+            Map.Entry<Double, Double> second = table.higherEntry(first.getKey());
+            if (second == null) return first.getValue();
+            double slope = (second.getValue() - first.getValue()) / (second.getKey() - first.getKey());
+            return first.getValue() + slope * (input - first.getKey());
+        }
+
+        // Above range — extrapolate using last two points
+        if (upper == null) {
+            Map.Entry<Double, Double> last = table.lastEntry();
+            Map.Entry<Double, Double> secondLast = table.lowerEntry(last.getKey());
+            if (secondLast == null) return last.getValue();
+            double slope = (last.getValue() - secondLast.getValue()) / (last.getKey() - secondLast.getKey());
+            return last.getValue() + slope * (input - last.getKey());
+        }
 
         // Linear Interpolation: Calculate the point on the line between the two data points
         double t = (input - lower.getKey()) / (upper.getKey() - lower.getKey());
