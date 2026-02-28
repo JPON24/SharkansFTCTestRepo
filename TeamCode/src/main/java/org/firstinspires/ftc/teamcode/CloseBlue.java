@@ -64,11 +64,12 @@ public class CloseBlue extends LinearOpMode//lemme in pls
             GateIntake(0);
             Shoot(0);
 //
-            GateIntake(0);
+            GateIntake(+2);
             Shoot(0);
 //
             SpikeMarkOne(0);
             Shoot(0);
+            break;
         }
     }
 
@@ -85,29 +86,31 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 2, 0, 0.45, 3300, false, false);
-//        moveCmd.MoveToPosition(0, -30, -25.5, 0, 2, 4, 0, 0.45, 3300, false, false);
-//        sleep(2000);
-//        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 4, 0, 0.45, 3300, false, true);
-//        sleep(1000);
+        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 2, -30, 0.45, 3300, false, false);
+        moveCmd.MoveToPosition(0, -30, -25.5, 0, 2, 4, -30, 0.45, 3300, false, false);
+        // do we need spin up time?
+        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 4, -30, 0.45, 3300, false, true);
+        sleep(500);
     }
 
     private void SpikeMarkOne(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -41, -16, 0, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -41, -16, 0, 2, 2, -30, 0.45, 3300, true, false);
 //        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
 
 //        sleep(1000);
-        moveCmd.MoveToPosition(autonSpeed, -41, -8,0, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -41, 0,0, 2, 2, -30, 0.45, 3300, true, false);
     }
 
     private void SpikeMarkTwo(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -64, -16, 0, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -64, -16, 0, 2, 2, -30, 0.45, 3300, true, false);
 //        moveCmd.MoveToPosition(0, -46, -24, 0, 2, 4, 0, 0.45, 3300, false, false);
 
 //        sleep(1000);
-        moveCmd.MoveToPosition(autonSpeed, -64, -4, 0, 2, 2, 0, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -64, 6, 0, 2, 2, -30, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -64, -16, 0, 2, 2, -30, 0.45, 3300, true, false);
+
     }
 
     // 3 inch drift on gate intake
@@ -115,9 +118,11 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     private void GateIntake(double offset)
     {
         // -43.5, -40
-        moveCmd.MoveToPosition(autonSpeed, -61, -10, 0, 2, 2, 0, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -61, 0, 0, 2, 2, 0, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(0, -61, 0, 0, 2, 4, 0, 0.45, 3300, false, false);
+        // rotate 17
+        moveCmd.MoveToPosition(autonSpeed, -62 + offset, -10, 0, 2, 2, -30, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -62 + offset, 10, 0, 2, 2, -30, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(0, -62 + offset, 10, 0, 2, 4, -30, 0.45, 3300, false, false);
         sleep(gateIntakeTimingMs); // tune this to figure out gate intake timing
+        moveCmd.MoveToPosition(autonSpeed, -62 + offset, -2, 0, 2, 2, -30, 0.45, 3300, true, false);
     }
 }

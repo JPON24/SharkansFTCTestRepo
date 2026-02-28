@@ -581,7 +581,7 @@ public class SharkDrive {
         double angleToTarget = Math.toDegrees(Math.atan2(errors[1], errors[0]));
         double distance = Math.hypot(errors[0], errors[1]);
 
-        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h)));
+        errors[2] = Math.toDegrees(angleWrap(Math.toRadians(tgtRot - pos.h))) / 2.0;
 
 //        completedBools[2] = Math.abs(errors[2]) < 10;
 
@@ -598,6 +598,7 @@ public class SharkDrive {
             errors[2] = 0;
             completedBools[2] = true;
         }
+
         output[2] = pid(errors[2], 2, 10);
 
         lastHeadinerorrthingy = errors[2];

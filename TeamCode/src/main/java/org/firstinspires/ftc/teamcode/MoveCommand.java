@@ -54,7 +54,7 @@ public class MoveCommand {
         shark.initErrY = tgtY - (-shark.odometry.getPosition().x);
 
         shark.DihdometryDihtrol2(speed,tgtX,tgtY,rot,d,axis);
-        shooter.setTargetRPM(0); // sets bang bang tgt initially
+        shooter.setTargetRPM(RPM); // sets bang bang tgt initially
         shooter.turnToAngle(turretAngle, false);
 
         shooter.setHoodPosition(hoodAngle);

@@ -46,9 +46,9 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.1;
+    private double baseP = 1;
     private double baseI = 0.0;
-    private double baseD = 0.01;
+    private double baseD = 0.1;
     private double baseF = 0.0;
 
     // Rate limiter and power limits

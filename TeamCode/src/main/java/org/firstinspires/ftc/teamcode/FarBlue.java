@@ -1,60 +1,106 @@
-//package org.firstinspires.ftc.teamcode;
-//
-//import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-//import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-//
-//@Autonomous
-//public class FarBlue extends LinearOpMode
-//{
-//    MoveCommand moveCmd = new MoveCommand();
-//
-//    private final double autonSpeed = 0.7;
-//
-//
-//    @Override
-//    public void runOpMode()
-//    {
-//        moveCmd.init(hardwareMap, true, this);
-//
-//        waitForStart();
-//        while (opModeIsActive())
-//        {
-//            Shoot(0);
-//            SpikeMarkOne(0);
-//
-//            Shoot(0);
-//            HumanPlayerZone(0);
-//
-//            Shoot(0);
-//            HumanPlayerZone(0);
-//
-//            ShootLeave();
-//            break;
-//        }
-//    }
-//
-//    // offset if otos drifts heavily
-//    private void Shoot(double offset)
-//    {
-//        moveCmd.MoveToPosition(autonSpeed, 0, 5, 0, 1, 4, -15, 0, 4300, false, false);
-//        moveCmd.MoveToPosition(autonSpeed, 0, 5, 0, 1, 4, -15, 0, 4300, false, true);
-//        sleep(500);
-//    }
-//
-//    private void ShootLeave()
-//    {
-//        Shoot(0);
-//        moveCmd.MoveToPosition(autonSpeed, -18, 10, 0, 1, 2, 0, 0, 0, false, false);
-//    }
-//
-//    private void SpikeMarkOne(double offset)
-//    {
-//        moveCmd.MoveToPosition(autonSpeed, -18, 24, 0, 1, 2, -15, 0, 4300, true, false);
-//        moveCmd.MoveToPosition(autonSpeed, -48, 24, 0, 1, 2, -15, 0, 4300, true, false);
-//    }
-//
-//    private void HumanPlayerZone(double offset)
-//    {
-//        moveCmd.MoveToPosition(autonSpeed, -50, 5, -90, 1, 2, -15, 0, 4300, true, false);
-//    }
-//}
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
+@Autonomous
+public class FarBlue extends LinearOpMode//lemme in pls
+{
+    SharkDrive shark = new SharkDrive();
+    MoveCommand moveCmd = new MoveCommand(); //lemme in 2
+
+
+    ShooterSubsystem shooter = new ShooterSubsystem();
+    WorkingSwerve swerve = new WorkingSwerve();
+    floatingIntake intake = new floatingIntake();
+    SparkFunOTOS otos;
+
+    private final double autonSpeed = 1;
+
+    @Override
+    public void runOpMode()
+    {
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+
+        otos.setLinearUnit(DistanceUnit.INCH);
+        otos.setAngularUnit(AngleUnit.DEGREES);
+        otos.calibrateImu();
+        otos.setAngularScalar(1);
+        otos.setLinearScalar(1);
+
+        otos.resetTracking();
+        otos.begin();
+
+        otos.setOffset(new SparkFunOTOS.Pose2D(0, -3.3105, -90));
+
+        otos.setPosition(new SparkFunOTOS.Pose2D(0, 0, 0));
+
+        shark.init(hardwareMap, true, otos);
+        moveCmd.init(hardwareMap, true, shark);
+
+        shooter.initSystem(hardwareMap, otos, 0);
+        swerve.init(hardwareMap);
+        intake.init(hardwareMap);
+
+        swerve.swerveDrive(0,0,0);
+
+        waitForStart();
+        while (opModeIsActive())
+        {
+//            telemetry.addData("otos x:", otos.getPosition().y);
+//            telemetry.addData("otos y:", -otos.getPosition().x);
+//            telemetry.addData("otos h:", otos.getPosition().h);
+//            telemetry.update();
+            ShootInit(0);
+
+            SpikeMarkOne(0);
+            Shoot(0);
+
+            HumanPlayerIntake(0);
+            Shoot(0);
+
+            HumanPlayerIntake(0);
+            Shoot(0);
+
+            HumanPlayerIntake(0);
+            Shoot(0);
+            break;
+        }
+    }
+
+    /*
+
+
+
+     */
+
+    private void ShootInit(double offset)
+    {
+        moveCmd.MoveToPosition(autonSpeed, 6, 0, 0, 2, 2, -17, 0.45, 5000, false, false);
+        sleep(1000);
+        moveCmd.MoveToPosition(0, 6, 0, 0, 2, 4, -17, 0.45, 5000, false, true);
+        sleep(500);
+    }
+
+    private void Shoot(double offset)
+    {
+        moveCmd.MoveToPosition(autonSpeed, 6, 0, 0, 2, 2, -17, 0.45, 5000, false, true);
+        moveCmd.MoveToPosition(0, 6, 0, 0, 2, 4, -17, 0.45, 5000, false, true);
+        sleep(500);
+    }
+
+    private void SpikeMarkOne(double offset)
+    {
+        moveCmd.MoveToPosition(autonSpeed, 30, 48, 0, 2, 2, -17, 0.45, 5000, true, false);
+        moveCmd.MoveToPosition(autonSpeed, 30, 48,0, 2, 2, -17, 0.45, 5000, true, false);
+    }
+
+    private void HumanPlayerIntake(double offset)
+    {
+        moveCmd.MoveToPosition(autonSpeed, 6, 48, 0, 2, 2, -17, 0.45, 5000, true, false);
+    }
+}

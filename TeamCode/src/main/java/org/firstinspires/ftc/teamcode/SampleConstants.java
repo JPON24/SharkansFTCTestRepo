@@ -16,9 +16,9 @@ public class SampleConstants {
     public static double KDX = 0.025;
     public static double KDY = 0.025;
 
-    public static double KPH = 0.08;  // Scaled for direct error (no /10 hack)
+    public static double KPH = 0.05;  // Scaled for direct error (no /10 hack)
     public static double KIH = 0;
-    public static double KDH = 0.002;  // Scaled for direct error (no /10 hack)
+    public static double KDH = 0.001;  // Scaled for direct error (no /10 hack)
 
     /*
     kpx = 0.16
