@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.global.util.gamepad.EnhancedGamepad;
 
 
 @TeleOp
-public class TurtleOp extends OpMode{
+public class TurtleOpRed extends OpMode{
 
     CoaxialSwerve drive = new CoaxialSwerve();
 
@@ -88,7 +88,7 @@ public class TurtleOp extends OpMode{
         shooter = new VirtualGoalShooter();
         shooter.init(hardwareMap, otos);
 
-        shooter.switchAlliance(true, true, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
+        shooter.switchAlliance(false, true, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
@@ -139,7 +139,7 @@ public class TurtleOp extends OpMode{
         }
         lastYButton = gamepad2.y;
 
-        // Manual RPM: dpad up/down (±100 per press)
+
         if (manualMode) {
             if (willIncrement) manualRPM += 100;
             if (willDecrement) manualRPM -= 100;

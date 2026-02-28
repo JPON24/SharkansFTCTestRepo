@@ -47,8 +47,8 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.4; // 0.2
-    private double baseI = 0.0001;
+    private double baseP = 0.01; // 0.2
+    private double baseI = 0.0;
     private double baseD = 0.0; // 0.05
     private double baseF = 0.0;
 
@@ -101,7 +101,7 @@ public class VirtualGoalShooter {
         // Kalman filter for turret encoder — smooths out flywheel vibration noise
         // Q = process noise (low = turret position changes slowly)
         // R = measurement noise (higher = more vibration rejection)
-        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
+//        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -425,38 +425,44 @@ public class VirtualGoalShooter {
 //            targetAngle = constants.TURRET_MIN_DEG;
 //        }
 
-        if (targetAngle < constants.TURRET_MIN_DEG + 10)
-        {
-            targetAngle = constants.TURRET_MIN_DEG;
-        }
 
-        if (targetAngle > constants.TURRET_MAX_DEG - 10)
-        {
-            targetAngle = constants.TURRET_MAX_DEG;
-        }
-
-        double newp = 0.01;
-        double error = targetAngle-currentAngle;
-
-        double newd = 0.001;
-        double dTerm = (error - lastTgtErr) / dx.seconds();
-
-        double power = newp * error + newd * dTerm;
-
-        if (Math.abs(power) > 0.5)
-        {
-            power *= 0.5;
-        }
-
-        if (Math.abs(error) > 90)
-        {
-            power *= 0.8;
-        }
-
-        lastTgtErr = error;
-        dx.reset();
-
-        turretMotor.setPower(power);
+//        if (targetAngle < constants.TURRET_MIN_DEG + 10)
+//        {
+//            targetAngle = constants.TURRET_MIN_DEG;
+//        }
+//
+//        if (targetAngle > constants.TURRET_MAX_DEG - 10)
+//        {
+//            targetAngle = constants.TURRET_MAX_DEG;
+//        }
+//
+//        double newp = 0.01;
+//
+//
+//        double error = targetAngle-currentAngle;
+//
+//        double newd = 0.001;
+//        double dTerm = (error - lastTgtErr) / dx.seconds();
+//
+//        double power = newp * error + newd * dTerm;
+//
+//        if (Math.abs(power) > 0.5)
+//        {
+//            power = 0.5; // power *= 0.5 halves the value but doesn't cap it. An error of 300° gives power = 3.0, halved to 1.5 — still overshooting. You want a clamp, not a multiply:
+//        }
+//
+//        if (Math.abs(error) > 90)
+//        {
+//            power *= 0.8;
+//        }
+//
+//        power = Math.max(1, Math.min(-1, power)); // Clamped Power so you can't have like power = 3 and then like try and half it and it still = 1.5
+//
+//
+//        lastTgtErr = error;
+//        dx.reset();
+//
+//        turretMotor.setPower(power);
     }
 
     /**

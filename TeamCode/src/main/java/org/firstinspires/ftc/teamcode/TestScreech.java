@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -33,6 +34,8 @@ public class TestScreech extends OpMode {
 
     EnhancedGamepad g1 = null;
     EnhancedGamepad g2 = null;
+
+    DcMotorEx flyWheel;
 
     // PID Constants
     double FLkP = 0.0046; // 0.0023
@@ -90,6 +93,9 @@ public class TestScreech extends OpMode {
         frontRightAnalog = hardwareMap.get(AnalogInput.class, "frontRightAnalog");
         backLeftAnalog = hardwareMap.get(AnalogInput.class, "backLeftAnalog");
         backRightAnalog = hardwareMap.get(AnalogInput.class, "backRightAnalog");
+
+        flyWheel = hardwareMap.get(DcMotorEx.class, "rightShooter");
+
 
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
         otos.setOffset(new SparkFunOTOS.Pose2D(0,-3.74016,0));

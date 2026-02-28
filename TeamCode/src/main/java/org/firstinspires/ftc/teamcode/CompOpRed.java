@@ -83,8 +83,8 @@ public class CompOpRed extends OpMode {
 //        zephyr.update();
 
         double leftStickX = gamepad1.left_stick_x;
-        double leftStickY = gamepad1.left_stick_y;
-        double rightStickX = -gamepad1.right_stick_x;
+        double leftStickY = -gamepad1.left_stick_y;
+        double rightStickX = gamepad1.right_stick_x;
 
 
 
