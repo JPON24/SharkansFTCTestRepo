@@ -93,7 +93,7 @@ public class ShooterSubsystem {
 
     private double integralSum = 0.0;
     private double lastError = 0.0;
-    private double kP = 0.002; // 0.002
+    private double kP = 0.04; // 0.002
     private double kI = 0.0001; // 0.0001
     private double kD = 0.00; // 0.00
 
@@ -180,7 +180,7 @@ public class ShooterSubsystem {
         turretMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
         // Kalman filter for turret encoder — smooths flywheel vibration noise
-//        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
+        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
 
         rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter"); //
         rightShooter.setDirection(DcMotorEx.Direction.FORWARD);

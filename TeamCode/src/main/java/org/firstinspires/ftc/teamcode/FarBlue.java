@@ -55,6 +55,9 @@ public class FarBlue extends LinearOpMode//lemme in pls
 //            telemetry.addData("otos y:", -otos.getPosition().x);
 //            telemetry.addData("otos h:", otos.getPosition().h);
 //            telemetry.update();
+
+//            moveCmd.MoveToPosition(autonSpeed, -20, 0, 0, 2, 2, 0, 0, 0, false, false);
+
             ShootInit(0);
 
             SpikeMarkOne(0);

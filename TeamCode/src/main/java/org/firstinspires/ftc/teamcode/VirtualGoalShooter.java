@@ -47,9 +47,9 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.01; // 0.2
+    private double baseP = 0.008;
     private double baseI = 0.0;
-    private double baseD = 0.0; // 0.05
+    private double baseD = 0.0001;
     private double baseF = 0.0;
 
     // Rate limiter and power limits
@@ -73,8 +73,6 @@ public class VirtualGoalShooter {
 
     private PIDController turretPID;
     private KalmanFilter turretFilter;
-
-    private boolean manualOverride = false;
 
     public enum TurretState { TRACKING, UNWINDING }
     private TurretState currentState = TurretState.TRACKING;
@@ -101,7 +99,7 @@ public class VirtualGoalShooter {
         // Kalman filter for turret encoder — smooths out flywheel vibration noise
         // Q = process noise (low = turret position changes slowly)
         // R = measurement noise (higher = more vibration rejection)
-//        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
+        turretFilter = new KalmanFilter(constants.VGS_TURRET_KALMAN_Q, constants.VGS_TURRET_KALMAN_R);
 
         turretMotor = hardwareMap.get(DcMotorEx.class, "turretMotor");
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -351,7 +349,7 @@ public class VirtualGoalShooter {
                 relativeTurretAngle,
                 rpmTable.get(virtualDist),
                 hoodTable.get(virtualDist),
-                virtualDist > 10 && virtualDist < 140
+                virtualDist > 5 && virtualDist < 140
         );
     }
 
@@ -360,33 +358,20 @@ public class VirtualGoalShooter {
     }
 
     /**
-     * Picks the best reachable angle (trying target and target ± 360°),
-     * applies soft limits near mechanical stops, and protects against wall impact.
+     * Moves turret to a target angle using pickBestAngle + PID with hard power clamp.
      */
-
-    ElapsedTime dx = new ElapsedTime();
-    double lastTgtErr = 0;
     private void moveTurretToAngle(double targetAngle) {
         double currentAngle = getTurretDegrees();
-/*
-        // Always evaluate the target AND target ± 360° to find the best in-range option
+
+        // Find the closest in-range angle (target, target±360)
         targetAngle = pickBestAngle(targetAngle, currentAngle);
 
-        // If even the best candidate is out of range, we need to unwind
+        // If still out of range, clamp to safe limits (no unwind)
         if (targetAngle > TURRET_MAX_DEG || targetAngle < TURRET_MIN_DEG) {
-            // Only unwind if cooldown has expired (prevents oscillation loop)
-            if (unwindCooldownCycles <= 0) {
-                double altAngle = (targetAngle > 0) ? targetAngle - 360 : targetAngle + 360;
-//                initiateUnwind(altAngle);
-//                return;
-            }
-            // During cooldown, clamp to nearest safe limit instead of unwinding
-            targetAngle = LinearMath.clamp(targetAngle, TURRET_MIN_DEG + WALL_PROTECTION_ZONE,
+            targetAngle = LinearMath.clamp(targetAngle,
+                    TURRET_MIN_DEG + WALL_PROTECTION_ZONE,
                     TURRET_MAX_DEG - WALL_PROTECTION_ZONE);
         }
-
-        // Decrement cooldown
-        if (unwindCooldownCycles > 0) unwindCooldownCycles--;
 
         // Deadband: stop motor when close enough (prevents jitter)
         double error = targetAngle - currentAngle;
@@ -396,73 +381,24 @@ public class VirtualGoalShooter {
             return;
         }
 
-        // Adaptive PID Gains — matched from ShooterSubsystem
-//        if (Math.abs(error) > 20) {
-//            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 4x normal
-//        } else if (Math.abs(error) > 10) {
-//            turretPID.setPIDF(baseP, baseI, baseD, baseF);  // 2x normal
-//        } else {
+        // PID
         turretPID.setPIDF(baseP, baseI, baseD, baseF);
-//        }
-
         double power = turretPID.update(targetAngle, currentAngle);
 
-        // Rate limiter: prevent sudden power jumps for smoother motion
+        // Rate limiter: prevent sudden power jumps
         double delta = power - lastOutput;
         if (Math.abs(delta) > maxDeltaPower) {
             power = lastOutput + Math.signum(delta) * maxDeltaPower;
         }
         lastOutput = power;
 
-        // Clamp to max power
-        power = Math.max(-1, Math.min(1, power));
+        // Hard power clamp — the key safety measure
+        power = Math.max(-0.5, Math.min(0.5, power));
 
-        // Soft Limit: Fade power near mechanical stops
-//        power = applySoftLimits(power, currentAngle);*/
+        // Wall protection: zero power if at a limit and pushing into it
+        power = applySoftLimits(power, currentAngle);
 
-//        if (targetAngle > constants.TURRET_MIN_DEG)
-//        {
-//            targetAngle = constants.TURRET_MIN_DEG;
-//        }
-
-
-//        if (targetAngle < constants.TURRET_MIN_DEG + 10)
-//        {
-//            targetAngle = constants.TURRET_MIN_DEG;
-//        }
-//
-//        if (targetAngle > constants.TURRET_MAX_DEG - 10)
-//        {
-//            targetAngle = constants.TURRET_MAX_DEG;
-//        }
-//
-//        double newp = 0.01;
-//
-//
-//        double error = targetAngle-currentAngle;
-//
-//        double newd = 0.001;
-//        double dTerm = (error - lastTgtErr) / dx.seconds();
-//
-//        double power = newp * error + newd * dTerm;
-//
-//        if (Math.abs(power) > 0.5)
-//        {
-//            power = 0.5; // power *= 0.5 halves the value but doesn't cap it. An error of 300° gives power = 3.0, halved to 1.5 — still overshooting. You want a clamp, not a multiply:
-//        }
-//
-//        if (Math.abs(error) > 90)
-//        {
-//            power *= 0.8;
-//        }
-//
-//        power = Math.max(1, Math.min(-1, power)); // Clamped Power so you can't have like power = 3 and then like try and half it and it still = 1.5
-//
-//
-//        lastTgtErr = error;
-//        dx.reset();
-//
-//        turretMotor.setPower(power);
+        turretMotor.setPower(power);
     }
 
     /**
@@ -500,15 +436,15 @@ public class VirtualGoalShooter {
         if (distToMax < WALL_PROTECTION_ZONE && power > 0) return 0;
         if (distToMin < WALL_PROTECTION_ZONE && power < 0) return 0;
 
-        // Soft limit: linearly scale power down as we approach the edge
-//        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
-//            double scale = distToMax / SOFT_LIMIT_ZONE;
-//            power *= scale;
-//        }
-//        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
-//            double scale = distToMin / SOFT_LIMIT_ZONE;
-//            power *= scale;
-//        }
+//         Soft limit: linearly scale power down as we approach the edge
+        if (distToMax < SOFT_LIMIT_ZONE && power > 0) {
+            double scale = distToMax / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
+        if (distToMin < SOFT_LIMIT_ZONE && power < 0) {
+            double scale = distToMin / SOFT_LIMIT_ZONE;
+            power *= scale;
+        }
 
         return power;
     }

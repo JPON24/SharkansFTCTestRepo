@@ -62,7 +62,7 @@ public class CloseBlue extends LinearOpMode//lemme in pls
             Shoot(0);
 
             SpikeMarkTwo(0);
-            Shoot(0);
+            Shoot(-1);
 //
 //            GateIntake(0, 0);
 //            Shoot(0);
@@ -71,7 +71,7 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 //            Shoot(0);
 //
             SpikeMarkOne(0);
-            Shoot(0);
+            Shoot(-2);
             break;
         }
     }
@@ -89,15 +89,15 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     // offset if otos drifts heavily
     private void Shoot(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 2, -40, 0.45, 3200, false, false); // might have to swap intaking to true
+        moveCmd.MoveToPosition(autonSpeed, -30 + offset, -25.5 + offset, 0, 2, 2, -40, 0.45, 3200, false, false); // might have to swap intaking to true
         // do we need spin up time?
         timer.reset();
         while (timer.seconds() < 1)
         {
-            moveCmd.MoveToPosition(0, -30, -25.5, 0, 2, 4, -40, 0.45, 3200, false, false);
+            moveCmd.MoveToPosition(0, -30 + offset, -25.5 + offset, 0, 2, 4, -40, 0.45, 3200, false, false);
         }
 
-        moveCmd.MoveToPosition(autonSpeed, -30, -25.5, 0, 2, 4, -40, 0.45, 3200, false, true);
+        moveCmd.MoveToPosition(autonSpeed, -30 + offset, -25.5 + offset, 0, 2, 4, -40, 0.45, 3200, false, true);
         sleep(500);
     }
 
@@ -121,8 +121,8 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
 //        sleep(1000);
         moveCmd.MoveToPosition(autonSpeed, -63, 6, 0, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -63, 20, 0, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(0, -63, 20, 0, 2, 4, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -63, 16, 0, 2, 2, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(0, -63, 16, 0, 2, 4, -40, 0.45, 3300, true, false);
         sleep(500);
 
         moveCmd.MoveToPosition(autonSpeed, -63, -20, 0, 2, 2, -40, 0.45, 3300, false, false);
