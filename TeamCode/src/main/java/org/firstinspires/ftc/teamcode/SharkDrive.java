@@ -25,7 +25,7 @@ public class SharkDrive {
     double lastValidIMUReading = 0;
     double dihP = 0.14; // 0.2
     double dihI = 0;
-    double dihD = 0.015; // 0.0125
+    double dihD = 0.018; // 0.0125
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;

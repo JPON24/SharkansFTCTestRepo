@@ -123,8 +123,8 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
 //        sleep(1000);
         moveCmd.MoveToPosition(autonSpeed, -67, 6, 0, 2, 2, -40, 0.45, 0, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -67, 12, 0, 2, 2, -40, 0.45, 0, true, false);
-        moveCmd.MoveToPosition(0, -67, 12, 0, 2, 4, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -67, 8, 0, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(0, -67, 8, 0, 2, 4, -40, 0.45, 0, true, false);
         sleep(500);
 
         moveCmd.MoveToPosition(autonSpeed, -67, -25.5, 0, 2, 2, -40, 0.45, 0, false, false);
