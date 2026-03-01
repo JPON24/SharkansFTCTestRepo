@@ -421,11 +421,11 @@ public class ShooterSubsystem {
         {
             turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            if (error == 0)
-            {
-                turretMotor.setPower(input * 0.3);
-                return;
-            }
+//            if (error == 0)
+//            {
+//                turretMotor.setPower(input * 0.3);
+//                return;
+//            }
 
             turretMotor.setPower(-turretPower);
         }

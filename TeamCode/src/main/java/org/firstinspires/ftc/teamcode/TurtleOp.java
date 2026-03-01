@@ -88,7 +88,7 @@ public class TurtleOp extends OpMode{
         shooter = new VirtualGoalShooter();
         shooter.init(hardwareMap, otos);
 
-        shooter.switchAlliance(true, true, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
+        shooter.switchAlliance(true, false, false); // 2x2 alliance thingy for far and close + color. True no position sets it to 10 inches in front of you
 
         intake = new floatingIntake();
         intake.init(hardwareMap);
@@ -159,8 +159,7 @@ public class TurtleOp extends OpMode{
         } else if (gamepad2.right_trigger > 0.3) {
             intake.outtake(true);
             outtaking = true;
-        }
-        else {
+        } else {
             outtaking = false;
             intake.intake(false);
             intake.outtake(false);

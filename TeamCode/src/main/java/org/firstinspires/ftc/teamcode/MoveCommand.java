@@ -24,7 +24,8 @@ public class MoveCommand {
     ElapsedTime timeout = new ElapsedTime();
     private LinearOpMode opMode;
 
-    ShooterSubsystem shooter = new ShooterSubsystem();
+//    ShooterSubsystem shooter = new ShooterSubsystem();
+    VirtualGoalShooter shooter = new VirtualGoalShooter();
     floatingIntake intake = new floatingIntake();
 
     // Backward-compatible init (no opMode reference)
@@ -35,7 +36,8 @@ public class MoveCommand {
     public void init(HardwareMap hwMap, boolean isAuton, LinearOpMode opMode, SharkDrive shark) {
         this.opMode = opMode;
         dt.init(hwMap);
-        shooter.initSystem(hwMap, shark.odometry, 0);
+        shooter.init(hwMap, shark.odometry);
+        shooter.switchAlliance(true, false, false);
         intake.init(hwMap);
         this.shark = shark;
     }
@@ -48,24 +50,24 @@ public class MoveCommand {
         // movement, will be driven by s1.GetBoolsCompleted()
         command.SetElementFalse('m');
         command.SetElementFalse('t'); // turret
-        command.SetElementFalse('s'); // shooter
+//        command.SetElementFalse('s'); // shooter
 
         shark.initErrX = tgtX - shark.odometry.getPosition().y;
         shark.initErrY = tgtY - (-shark.odometry.getPosition().x);
 
         shark.DihdometryDihtrol2(speed,tgtX,tgtY,rot,d,axis);
 
-        shooter.setHoodPosition(hoodAngle);
+//        shooter.setHoodPos(hoodAngle);
 
-        if (outtaking)
-        {
-            intake.outtake(true);
-        }
-        else if (intaking)
+//        if (outtaking)
+//        {
+//            intake.outtake(true);
+//        }
+        if (intaking && !outtaking)
         {
             intake.intake(true);
         }
-        else
+        else if (!intaking && !outtaking)
         {
             intake.outtake(false);
         }
@@ -73,6 +75,8 @@ public class MoveCommand {
         localCopy = command.GetMap();
 
         timeout.reset();
+
+        shooter.update();
 
         while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && (opMode == null || opMode.opModeIsActive())) {
 
@@ -94,24 +98,16 @@ public class MoveCommand {
                             command.SetElementFalse('m');
                             break;
                         }
-
-                    case 's':
-                        if (shooter.IsAtTgtRPM()) {
-                            command.SetElementTrue('s');
-                            shooter.updateRPMAuton(RPM);
-                        } else {
-                            command.SetElementFalse('s');
-                            shooter.updateRPMAuton(RPM);
-                        }
-                        break;
                     case 't':
-                        if (shooter.IsAtCorrectTurretPos()) {
+                        if (Math.abs(shooter.getTurretError()) < 3) {
                             command.SetElementTrue('t');
-                            shooter.turnToAngle(turretAngle - shark.odometry.getPosition().h, false);
-//                            shooter.turnToAngle(turretAngle, false);
+                            shooter.update();
+                            if (outtaking) {
+                                intake.outtake(true);
+                            }
                         } else {
-                            shooter.turnToAngle(turretAngle - shark.odometry.getPosition().h, false);
-//                            shooter.turnToAngle(turretAngle, false);
+                            shooter.spinUpShooter();
+                            shooter.update();
                             command.SetElementFalse('t');
                         }
                         break;

@@ -55,7 +55,7 @@ public class VirtualGoalShooter {
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
     private double lastOutput = 0;
-    private double turretDeadband = 5.0; // degrees
+    private double turretDeadband = 3.0; // degrees
 
     public VirtualGoalShooter.StartPosition currentStartState = VirtualGoalShooter.StartPosition.NO_POSITION;
 
@@ -417,23 +417,31 @@ public class VirtualGoalShooter {
      * within mechanical limits and closest to the current position.
      */
     private double pickBestAngle(double target, double current) {
-        double[] candidates = { target, target + 360, target - 360 };
-        double bestAngle = target;
-        double bestDist = Double.MAX_VALUE;
 
-        for (double candidate : candidates) {
-            // Only consider candidates within mechanical range
-            if (candidate >= TURRET_MIN_DEG && candidate <= TURRET_MAX_DEG) {
-                double dist = Math.abs(candidate - current);
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestAngle = candidate;
-                }
-            }
+//        double[] candidates = { target, target + 360, target - 360 };
+//        double bestAngle = target;
+//        double bestDist = Double.MAX_VALUE;
+//
+//        for (double candidate : candidates) {
+//            // Only consider candidates within mechanical range
+//            if (candidate > TURRET_MIN_DEG && candidate < TURRET_MAX_DEG) {
+//                double dist = Math.abs(candidate - current);
+//                if (dist < bestDist) {
+//                    bestDist = dist;
+//                    bestAngle = candidate;
+//                }
+//            }
+//        }
+//
+//        // If no candidate is in range, return original (will trigger unwind)
+
+        if (target > TURRET_MAX_DEG) {
+            target -= 360;
         }
-
-        // If no candidate is in range, return original (will trigger unwind)
-        return bestAngle;
+        if (target < TURRET_MIN_DEG) {
+            target += 360;
+        }
+        return target;
     }
 
     /**
@@ -533,7 +541,7 @@ public class VirtualGoalShooter {
         }
     }
 
-    private void setHoodPos(double pos) {
+    public void setHoodPos(double pos) {
         leftHood.setPosition(pos);
         rightHood.setPosition(pos);
     }

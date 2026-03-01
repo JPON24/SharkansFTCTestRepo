@@ -1,3 +1,4 @@
+//im confused
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
@@ -53,7 +54,7 @@ public class WorkingSwerve {
     double BL_OFFSET = -179.0;
     double BR_OFFSET = -83; //166
 
-    double speed = 0.9; // 0.7
+    double speed = 0.7; // 0.9
 
     double lastTargetFL = 0, lastTargetFR = 0, lastTargetRL = 0, lastTargetRR = 0;
 
@@ -96,7 +97,7 @@ public class WorkingSwerve {
         lastTargetRR = getAngle(backRightAnalog, BR_OFFSET);
     }
 
-    public void swerveDrive(double y_cmd, double x_cmd, double turn_cmd) {
+    public void swerveDriveRobotCentric(double y_cmd, double x_cmd, double turn_cmd) {
 
         if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
             stopDrive();
@@ -105,6 +106,92 @@ public class WorkingSwerve {
 
 
         double currentHeading = otos.getPosition().h;
+
+        double botHeading = Math.toRadians(currentHeading);
+
+        // Rotation buh
+        double rotX = -x_cmd * Math.cos(botHeading) + y_cmd * Math.sin(botHeading);
+        double rotY = -x_cmd * Math.sin(botHeading) - y_cmd * Math.cos(botHeading);
+
+        x_cmd = rotX;
+        y_cmd = rotY;
+
+        double y_fr = y_cmd + turn_cmd * L;
+        double x_fr = x_cmd - turn_cmd * W;
+
+        double y_fl = y_cmd - turn_cmd * L;
+        double x_fl = x_cmd - turn_cmd * W;
+
+        double y_rl = y_cmd - turn_cmd * L;
+        double x_rl = x_cmd + turn_cmd * W;
+
+        double y_rr = y_cmd + turn_cmd * L;
+        double x_rr = x_cmd + turn_cmd * W;
+
+        double speed_fr = Math.hypot(x_fr, y_fr);
+        double speed_fl = Math.hypot(x_fl, y_fl);
+        double speed_rl = Math.hypot(x_rl, y_rl);
+        double speed_rr = Math.hypot(x_rr, y_rr);
+
+        angleFL = (speed_fl < ANGLE_HOLD_SPEED) ? lastTargetFL
+                : Math.toDegrees(Math.atan2(x_fl, y_fl));
+
+        angleFR = (speed_fr < ANGLE_HOLD_SPEED) ? lastTargetFR
+                : Math.toDegrees(Math.atan2(x_fr, y_fr));
+
+        angleRL = (speed_rl < ANGLE_HOLD_SPEED) ? lastTargetRL
+                : Math.toDegrees(Math.atan2(x_rl, y_rl));
+
+        angleRR = (speed_rr < ANGLE_HOLD_SPEED) ? lastTargetRR
+                : Math.toDegrees(Math.atan2(x_rr, y_rr));
+
+        double max = Math.max(Math.max(speed_fr, speed_fl), Math.max(speed_rl, speed_rr));
+        if (max > 1.0) {
+            speed_fr /= max;
+            speed_fl /= max;
+            speed_rl /= max;
+            speed_rr /= max;
+        }
+
+        // Get da currnt wheel angles
+        double currentFL = getAngle(frontLeftAnalog, FL_OFFSET);
+        double currentFR = getAngle(frontRightAnalog, FR_OFFSET);
+        double currentRL = getAngle(backLeftAnalog, BL_OFFSET);
+        double currentRR = getAngle(backRightAnalog, BR_OFFSET);
+        // Run through optimize
+        double[] optFL = optimize(angleFL, speed_fl, currentFL);
+        double[] optFR = optimize(angleFR, speed_fr, currentFR);
+        double[] optRL = optimize(angleRL, speed_rl, currentRL);
+        double[] optRR = optimize(angleRR, speed_rr, currentRR);
+
+        // Set motor speeds... LOWKIRKENUINLY... If it's backwards... JUST REVERSE THE OUTPUT!!
+        flSpeed = optFL[1] * speed;
+        frSpeed = optFR[1] * speed;
+        blSpeed = optRL[1] * speed;
+        brSpeed = optRR[1] * speed;
+
+        frontLeftMotor.setPower(flSpeed);
+        frontRightMotor.setPower(frSpeed);
+        backLeftMotor.setPower(blSpeed);
+        backRightMotor.setPower(brSpeed);
+
+        // Run da PID
+        lastTargetFL = optFL[0];
+        lastTargetFR = optFR[0];
+        lastTargetRL = optRL[0];
+        lastTargetRR = optRR[0];
+
+        runPID(optFL[0], optFR[0], optRL[0], optRR[0],
+                currentFL, currentFR, currentRL, currentRR);
+    }
+    public void swerveDrive(double y_cmd, double x_cmd, double turn_cmd) {
+
+        if (Math.hypot(x_cmd, y_cmd) < 0.05 && Math.abs(turn_cmd) < 0.05) {
+            stopDrive();
+            return;
+        }
+
+        double currentHeading = -otos.getPosition().h;
 
         double botHeading = -Math.toRadians(currentHeading);
 
