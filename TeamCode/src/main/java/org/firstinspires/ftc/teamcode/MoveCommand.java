@@ -49,12 +49,8 @@ public class MoveCommand {
 
         // movement, will be driven by s1.GetBoolsCompleted()
         command.SetElementFalse('m');
-//        if (RPM != 0)
-//        {
         command.SetElementFalse('t'); // turret
         shooter.update();
-//        }
-//        command.SetElementFalse('s'); // shooter
 
         shark.initErrX = tgtX - shark.odometry.getPosition().y;
         shark.initErrY = tgtY - (-shark.odometry.getPosition().x);
@@ -112,7 +108,7 @@ public class MoveCommand {
                         } else {
                             shooter.spinUpShooter();
                             shooter.update();
-                            command.SetElementFalse('t');
+//                            command.SetElementFalse('t');
                         }
                         break;
                 }
