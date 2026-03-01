@@ -79,6 +79,8 @@ public class CompOp extends OpMode {
     public void loop() {
 
         g1.update();
+        g2.update();
+
 
 //        zephyr.update();
 
@@ -157,7 +159,7 @@ public class CompOp extends OpMode {
             shooter.setTargetRPM(0);
         }
 
-        if (hoodUp && hoodAdjust + 0.05 <= 0.65) {
+        if (hoodUp && hoodAdjust + 0.05 <= 1.0) {
             hoodAdjust += 0.05;
         } else if (hoodDown &&  hoodAdjust - 0.05 >= 0){
             hoodAdjust -= 0.05;
@@ -167,18 +169,7 @@ public class CompOp extends OpMode {
         telemetry.addData("turret position: ", shooter.getTurretTicks());
         telemetry.addData("turret mode: ", shooter.getTurretState());
 
-        if (turretPos)
-        {
-            shooter.txTracking(1);
-        }
-        else if (turretNeg)
-        {
-            shooter.txTracking(-1);
-        }
-        else
-        {
-            shooter.txTracking(0);
-        }
+        shooter.txTracking(0);
 
         shooter.BangBang();
 
@@ -270,6 +261,8 @@ public class CompOp extends OpMode {
         telemetry.addData("frSpeed: ", swerve.frSpeed);
         telemetry.addData("blSpeed: ", swerve.blSpeed);
         telemetry.addData("brSpeed: ", swerve.brSpeed);
+
+
 
         telemetry.addData("servo angle: ", swerve.getFLError());
         telemetry.addData("servo angle: ", swerve.getFRError());

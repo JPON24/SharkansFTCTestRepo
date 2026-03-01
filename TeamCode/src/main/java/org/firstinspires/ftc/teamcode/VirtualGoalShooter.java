@@ -47,11 +47,10 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.008;
+    private double baseP = 0.01;
     private double baseI = 0.0;
     private double baseD = 0.0001;
     private double baseF = 0.0;
-
     // Rate limiter and power limits
     private double maxPower = 0.7;
     private double maxDeltaPower = 0.03;
@@ -118,18 +117,30 @@ public class VirtualGoalShooter {
 //        rgbIndicator = hardwareMap.get(Servo.class, "rgbIndicator");
 
         //jacob got that
-        rpmTable.add(65, 3350);
-        rpmTable.add(73.5, 3400);
-        rpmTable.add(77, 3450);
-        rpmTable.add(81, 3500.0);
-        rpmTable.add(85, 3750.0);
-        rpmTable.add(90, 4500);
+        rpmTable.add(33, 2850);
+        rpmTable.add(40, 3300);
+        rpmTable.add(45, 3300);
+        rpmTable.add(50, 3800);
+        rpmTable.add(55, 3350);
+        rpmTable.add(60, 3400);
+        rpmTable.add(65, 3450);
+        rpmTable.add(70, 3450);
+        rpmTable.add(75, 3450);
+        rpmTable.add(80, 3350);
+        rpmTable.add(120, 4000);
 
-        hoodTable.add(56, 0.45);
-        hoodTable.add(71, 0.5);
-        hoodTable.add(77, 0.45);
-        hoodTable.add(81, 0.55);
-        hoodTable.add(85, 0);
+
+        hoodTable.add(33, 0.95);
+        hoodTable.add(40, 0.45);
+        hoodTable.add(45, 0.40);
+        hoodTable.add(50, 0.0);
+        hoodTable.add(55, 0.0);
+        hoodTable.add(60, 0.0);
+        hoodTable.add(65, 0.0);
+        hoodTable.add(70, 0.0);
+        hoodTable.add(75, 0.0);
+        hoodTable.add(80, 0.0);
+        hoodTable.add(120, 0.2);
     }
 
     public void switchAlliance(boolean blue, boolean far, boolean noPosition) {
@@ -555,12 +566,36 @@ public class VirtualGoalShooter {
     }
 
     /**
+     * Debug getters for telemetry
+     */
+    public boolean isValidShot() {
+        return lastSolution != null && lastSolution.validShot;
+    }
+
+    public double getDistance() {
+        SparkFunOTOS.Pose2D pos = otos.getPosition();
+        double dx = targetPos.x - pos.y;
+        double dy = targetPos.y + pos.x;
+        return Math.hypot(dx, dy);
+    }
+
+    public double getTurretAngle() {
+        return getTurretDegrees();
+    }
+
+
+    /**
      * Check if flywheel is currently enabled
      */
     public boolean isFlywheelEnabled() {
         return flywheelEnabled;
     }
-
+    public double getTeleDyeah() {
+        return turretPID.getTeleD();
+    }
+    public double getTeleP() {
+        return turretPID.getTeleP();
+    }
     private static class FiringSolution {
         double turretAngle, rpm, hoodAngle;
         boolean validShot;

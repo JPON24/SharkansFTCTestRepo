@@ -148,7 +148,7 @@ public class TurtleOpRed extends OpMode{
             // Manual hood: bumpers (±0.05 per press)
             if (hoodUp && !lastHoodUp) manualHood += 0.05;
             if (hoodDown && !lastHoodDown) manualHood -= 0.05;
-            manualHood = Math.max(0, Math.min(0.65, manualHood));
+            manualHood = Math.max(0, Math.min(0.9, manualHood));
             lastHoodUp = hoodUp;
             lastHoodDown = hoodDown;
         }
@@ -178,14 +178,16 @@ public class TurtleOpRed extends OpMode{
             gamepad2.stopRumble();
         }
 
-        if (manualMode) {
-            // Manual mode: bypass VGS, set RPM and hood directly
-            shooter.setShooterRPM(manualRPM);
-            shooter.setManualHood(manualHood);
-        } else {
-            // Auto mode: let VGS handle everything
-            shooter.update();
-        }
+//        if (manualMode) {
+//            // Manual mode: bypass VGS, set RPM and hood directly
+//            shooter.setShooterRPM(manualRPM);
+//            shooter.setManualHood(manualHood);
+//        } else {
+//            // Auto mode: let VGS handle everything
+//            shooter.update();
+//        }
+
+        shooter.update();
 
 
 
@@ -269,6 +271,9 @@ public class TurtleOpRed extends OpMode{
         telemetry.addData("otos x: ", otos.getPosition().x);
         telemetry.addData("otos y: ", otos.getPosition().y);
         telemetry.addData("otos h: ", otos.getPosition().h);
+
+        telemetry.addData("P", shooter.getTeleP());
+        telemetry.addData("D", shooter.getTeleDyeah());
 
         double xval = shooter.BLUE_BASKET_FAR.x - otos.getPosition().y;
         double yval = shooter.BLUE_BASKET_FAR.y - (-otos.getPosition().x);

@@ -9,6 +9,8 @@ public class PIDController {
     private double lastError = 0;
     private double integralSum = 0;
     private double maxIntegral = 100;
+    private double teleP = 0;
+    private double teleD = 0;
 
     ElapsedTime timer = new ElapsedTime();
 
@@ -66,6 +68,10 @@ public class PIDController {
 
         double output = pTerm + iTerm + dTerm + fTerm;
 
+        teleP = pTerm;
+        teleD = dTerm;
+
+
         return Range.clip(output, -1.0, 1.0);
     }
 
@@ -84,5 +90,11 @@ public class PIDController {
         integralSum = 0;
         lastError = 0;
         timer.reset();
+    }
+    public double getTeleP() {
+        return teleP;
+    }
+    public double getTeleD() {
+        return teleD;
     }
 }

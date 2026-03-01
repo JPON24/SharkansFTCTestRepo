@@ -214,12 +214,18 @@ public class TurtleOp extends OpMode{
         {
             swerveDrive.resetOTOSTracking();
         }
-
+        telemetry.addData("P", shooter.getTeleP());
+        telemetry.addData("D", shooter.getTeleDyeah());
         telemetry.addData("MODE", manualMode ? "MANUAL" : "AUTO");
         telemetry.addData("RPM (current/target)", "%.0f / %.0f", shooter.getCurrentRPM(),
                 manualMode ? manualRPM : shooter.getTargetRPM());
         telemetry.addData("Hood", manualMode ? String.format("%.2f (manual)", manualHood) : String.format("%.2f (auto)", shooter.getHoodAngle()));
-        telemetry.addData("Turret Angle", "%.1f°", shooter.outputAngle);
+        telemetry.addData("Turret Output Angle", "%.1f°", shooter.outputAngle);
+        telemetry.addData("Valid Shot", shooter.isValidShot());
+        telemetry.addData("Distance", "%.1f in", shooter.getDistance());
+        telemetry.addData("Turret Pos", "%.1f°", shooter.getTurretAngle());
+        telemetry.addData("Turret Target", "%.1f°", shooter.getTargetTurretAngle());
+        telemetry.addData("Turret Error", "%.1f°", shooter.getTurretError());
 
 //        telemetry.addData("FL Voltage", drive.getFLVoltage());
 //        telemetry.addData("FR Voltage", drive.getFRVoltage());
