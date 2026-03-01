@@ -63,13 +63,13 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
             SpikeMarkTwo(0);
             Shoot(-1);
-//
-//            GateIntake(0, 0);
-//            Shoot(0);
-////
-//            GateIntake(+1, 0.5);
-//            Shoot(0);
-//
+
+            GateIntake(0, 0);
+            Shoot(0);
+
+            GateIntake(+1, 0.5);
+            Shoot(0);
+
             SpikeMarkOne(0);
             Shoot(-2);
             break;
