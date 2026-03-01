@@ -47,9 +47,9 @@ public class VirtualGoalShooter {
     private final double TICKS_PER_DEGREE = constants.TURRET_TICKS_PER_DEGREE;
     private final double TICKS_PER_REV_SHOOTER = constants.SHOOTER_COUNTS_PER_MOTOR_REV;
 
-    private double baseP = 0.01;
+    private double baseP = 0.0125;
     private double baseI = 0.0;
-    private double baseD = 0.0001;
+    private double baseD = 0.002;
     private double baseF = 0.0;
     // Rate limiter and power limits
     private double maxPower = 0.7;
@@ -134,12 +134,12 @@ public class VirtualGoalShooter {
         hoodTable.add(40, 0.45);
         hoodTable.add(45, 0.40);
         hoodTable.add(50, 0.0);
-        hoodTable.add(55, 0.0);
-        hoodTable.add(60, 0.0);
-        hoodTable.add(65, 0.0);
-        hoodTable.add(70, 0.0);
-        hoodTable.add(75, 0.0);
-        hoodTable.add(80, 0.0);
+        hoodTable.add(55, 0.05);
+        hoodTable.add(60, 0.05);
+        hoodTable.add(65, 0.05);
+        hoodTable.add(70, 0.05);
+        hoodTable.add(75, 0.05);
+        hoodTable.add(80, 0.05);
         hoodTable.add(120, 0.2);
     }
 
@@ -360,7 +360,7 @@ public class VirtualGoalShooter {
                 relativeTurretAngle,
                 rpmTable.get(virtualDist),
                 hoodTable.get(virtualDist),
-                virtualDist > 5 && virtualDist < 140
+                virtualDist > 5 && virtualDist < 200
         );
     }
 
@@ -518,8 +518,19 @@ public class VirtualGoalShooter {
 
     public void setShooterRPM(double rpm) {
         this.targetRPM = rpm;
-        double vel = (rpm / 60.0) * TICKS_PER_REV_SHOOTER;
-        rightShooter.setVelocity(vel);
+
+        BangBang(rpm);
+    }
+
+    private void BangBang(double rpm)
+    {
+        double error = rpm - getCurrentRPM();
+        double ticksPerSecond = (rpm / 60.0) * TICKS_PER_REV_SHOOTER;
+        if (error > 0) {
+            rightShooter.setVelocity(ticksPerSecond * constants.BANGBANG_COEF);
+        } else {
+            rightShooter.setVelocity(ticksPerSecond);
+        }
     }
 
     private void setHoodPos(double pos) {
