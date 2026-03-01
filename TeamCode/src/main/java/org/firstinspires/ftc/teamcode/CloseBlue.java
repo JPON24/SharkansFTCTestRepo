@@ -93,11 +93,11 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     {
         moveCmd.MoveToPosition(autonSpeed, -30 + offset, -25.5 + offset, 0, 2, 2, -40, 0.45, 3200, false, false); // might have to swap intaking to true
         // do we need spin up time?
-        timer.reset();
-        while (timer.seconds() < 1)
-        {
-            moveCmd.MoveToPosition(0, -30 + offset, -25.5 + offset, 0, 2, 4, -40, 0.45, 3200, false, false);
-        }
+//        timer.reset();
+//        while (timer.seconds() < 1)
+//        {
+//            moveCmd.MoveToPosition(0, -30 + offset, -25.5 + offset, 0, 2, 4, -40, 0.45, 3200, false, false);
+//        }
 
         moveCmd.MoveToPosition(autonSpeed, -30 + offset, -25.5 + offset, 0, 2, 4, -40, 0.45, 3200, false, true);
         sleep(500);
@@ -105,12 +105,12 @@ public class CloseBlue extends LinearOpMode//lemme in pls
 
     private void SpikeMarkOne(double offset)
     {
-        moveCmd.MoveToPosition(autonSpeed, -41, -16, 0, 2, 2, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -41, -16, 0, 2, 2, -40, 0.45, 0, true, false);
 //        moveCmd.MoveToPosition(0, -1.5, -40, 0, 2, 4, 0, 0.45, 3300, false, false);
 
 //        sleep(1000);
-        moveCmd.MoveToPosition(autonSpeed, -41, 6,0, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(0, -41, 6,0, 2, 4, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -41, 6,0, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(0, -41, 6,0, 2, 4, -40, 0.45, 0, true, false);
         sleep(500);
 
     }
@@ -118,16 +118,16 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     private void SpikeMarkTwo(double offset)
     {
         // either -63 or -65
-        moveCmd.MoveToPosition(autonSpeed, -63, -25.5, 0, 2, 2, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -67, -25.5, 0, 2, 2, -40, 0.45, 0, true, false);
 //        moveCmd.MoveToPosition(0, -46, -24, 0, 2, 4, 0, 0.45, 3300, false, false);
 
 //        sleep(1000);
-        moveCmd.MoveToPosition(autonSpeed, -63, 6, 0, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -63, 12, 0, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(0, -63, 12, 0, 2, 4, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -67, 6, 0, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -67, 12, 0, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(0, -67, 12, 0, 2, 4, -40, 0.45, 0, true, false);
         sleep(500);
 
-        moveCmd.MoveToPosition(autonSpeed, -63, -25.5, 0, 2, 2, -40, 0.45, 3300, false, false);
+        moveCmd.MoveToPosition(autonSpeed, -67, -25.5, 0, 2, 2, -40, 0.45, 0, false, false);
 
     }
 
@@ -137,10 +137,10 @@ public class CloseBlue extends LinearOpMode//lemme in pls
     {
         // -43.5, -40
         // rotate 17
-        moveCmd.MoveToPosition(autonSpeed, -70 + offset, -25.5, -40, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(autonSpeed, -70 + offset, 11.5 + y, -40, 2, 2, -40, 0.45, 3300, true, false);
-        moveCmd.MoveToPosition(0, -70 + offset, 11.5 + y, -40, 2, 4, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -70 + offset, -25.5, -40, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -70 + offset, 11.5 + y, -40, 2, 2, -40, 0.45, 0, true, false);
+        moveCmd.MoveToPosition(0, -70 + offset, 11.5 + y, -40, 2, 4, -40, 0.45, 0, true, false);
         sleep(gateIntakeTimingMs); // tune this to figure out gate intake timing
-        moveCmd.MoveToPosition(autonSpeed, -70 + offset, -25.5, -40, 2, 2, -40, 0.45, 3300, true, false);
+        moveCmd.MoveToPosition(autonSpeed, -70 + offset, -25.5, -40, 2, 2, -40, 0.45, 0, true, false);
     }
 }

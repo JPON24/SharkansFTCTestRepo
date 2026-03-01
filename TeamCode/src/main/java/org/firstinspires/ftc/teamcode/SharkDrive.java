@@ -23,9 +23,9 @@ public class SharkDrive {
     SparkFunOTOS.Pose2D lastLimelightPosition = new SparkFunOTOS.Pose2D();
 
     double lastValidIMUReading = 0;
-    double dihP = 0.16; // 0.2
+    double dihP = 0.14; // 0.2
     double dihI = 0;
-    double dihD = 0.0125; // 0.0125
+    double dihD = 0.015; // 0.0125
     double previousDihError = 0;
     double lastHeadinerorrthingy = 0;
     double dihband = 5;

@@ -49,7 +49,11 @@ public class MoveCommand {
 
         // movement, will be driven by s1.GetBoolsCompleted()
         command.SetElementFalse('m');
+//        if (RPM != 0)
+//        {
         command.SetElementFalse('t'); // turret
+        shooter.update();
+//        }
 //        command.SetElementFalse('s'); // shooter
 
         shark.initErrX = tgtX - shark.odometry.getPosition().y;
@@ -76,7 +80,7 @@ public class MoveCommand {
 
         timeout.reset();
 
-        shooter.update();
+
 
         while (!command.GetBoolsCompleted() && timeout.seconds() < 5 && (opMode == null || opMode.opModeIsActive())) {
 
@@ -99,7 +103,7 @@ public class MoveCommand {
                             break;
                         }
                     case 't':
-                        if (Math.abs(shooter.getTurretError()) < 3) {
+                        if (Math.abs(shooter.getTurretError()) < 5) {
                             command.SetElementTrue('t');
                             shooter.update();
                             if (outtaking) {
